@@ -12,6 +12,10 @@ LINTER_IMAGE_NAME := docker.io/golangci/golangci-lint
 LINTER_IMAGE_TAG := v1.50.1
 GO_MOD_VERSION=$(shell hack/go-mod-version.sh)
 
+all: check build
+
+check: fmt check-uncommitted lint test/unit
+
 build:
 	$(CRI_BIN) run --rm \
 	           --volume `pwd`:$(CURDIR):Z \
