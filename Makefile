@@ -10,6 +10,7 @@ CRI_BIN ?= $(shell hack/detect_cri.sh)
 CRI_BUILD_BASE_IMAGE_TAG ?= latest
 LINTER_IMAGE_NAME := docker.io/golangci/golangci-lint
 LINTER_IMAGE_TAG := v1.50.1
+GO_MOD_VERSION=$(shell hack/go-mod-version.sh)
 
 build:
 	$(CRI_BIN) run --rm \
@@ -53,3 +54,10 @@ fmt:
 check-uncommitted:
 	./hack/check-uncommitted.sh
 .PHONY: check-uncommitted
+
+vendor:
+	$(CRI_BIN) run --rm \
+	           --volume `pwd`:$(CURDIR):Z \
+	           --workdir $(CURDIR) \
+	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go mod tidy -compat=$(GO_MOD_VERSION) && go mod vendor
+.PHONY: vendor
