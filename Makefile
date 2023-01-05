@@ -26,3 +26,11 @@ push:
 	$(CRI_BIN) tag $(REG)/$(ORG)/$(CHECKUP_IMAGE_NAME):$(CHECKUP_IMAGE_TAG) $(REG)/$(ORG)/$(CHECKUP_IMAGE_NAME):$(CHECKUP_GIT_TAG)
 	$(CRI_BIN) push $(REG)/$(ORG)/$(CHECKUP_IMAGE_NAME):$(CHECKUP_GIT_TAG)
 .PHONY: push
+
+test/unit:
+	$(CRI_BIN) run --rm \
+	           --volume `pwd`:$(CURDIR):Z \
+	           --workdir $(CURDIR) \
+	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go test -v ./cmd/...
+.PHONY: test/unit
+
