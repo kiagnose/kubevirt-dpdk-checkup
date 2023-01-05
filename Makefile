@@ -8,6 +8,8 @@ GO_IMAGE_TAG := 1.19
 BIN_DIR = $(CURDIR)/_output/bin
 CRI_BIN ?= $(shell hack/detect_cri.sh)
 CRI_BUILD_BASE_IMAGE_TAG ?= latest
+LINTER_IMAGE_NAME := docker.io/golangci/golangci-lint
+LINTER_IMAGE_TAG := v1.50.1
 
 build:
 	$(CRI_BIN) run --rm \
@@ -33,4 +35,11 @@ test/unit:
 	           --workdir $(CURDIR) \
 	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go test -v ./cmd/...
 .PHONY: test/unit
+
+lint:
+	$(CRI_BIN) run --rm \
+	           --volume `pwd`:$(CURDIR):Z \
+	           --workdir $(CURDIR) \
+	            $(LINTER_IMAGE_NAME):$(LINTER_IMAGE_TAG) golangci-lint run --timeout 3m ./cmd/...
+.PHONY: lint
 
