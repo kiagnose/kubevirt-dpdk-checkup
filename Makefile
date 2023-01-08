@@ -65,3 +65,7 @@ vendor:
 	           --workdir $(CURDIR) \
 	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go mod tidy -compat=$(GO_MOD_VERSION) && go mod vendor
 .PHONY: vendor
+
+cluster-up:
+	./cluster/up.sh
+.PHONY: cluster-up
