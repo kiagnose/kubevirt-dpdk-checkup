@@ -69,3 +69,7 @@ vendor:
 cluster-up:
 	./cluster/up.sh
 .PHONY: cluster-up
+
+cluster-down:
+	./cluster/down.sh
+.PHONY: cluster-down
