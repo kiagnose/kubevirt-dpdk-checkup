@@ -50,3 +50,6 @@ fmt:
 	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) gofmt -w .
 .PHONY: fmt
 
+check-uncommitted:
+	./hack/check-uncommitted.sh
+.PHONY: check-uncommitted
