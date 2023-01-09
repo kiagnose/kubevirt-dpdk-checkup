@@ -10,12 +10,35 @@ on:
   workflow_dispatch:
 
 jobs:
-  noop:
-    name: noop
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v3
-      - name: Hello Word
-        run: echo "Hello World"
-
+      - name: Run the linter
+        run: make lint
+  vendor:
+    name: vendor check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Run the vendor check
+        run: make vendor check-uncommitted
+  unit-test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Unit tests
+        run: make test/unit
+  build:
+    name: Build checkup image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Build checkup image
+        run: make build

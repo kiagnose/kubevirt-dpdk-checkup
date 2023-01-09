@@ -20,8 +20,6 @@ build:
 	$(CRI_BIN) run --rm \
 	           --volume `pwd`:$(CURDIR):Z \
 	           --workdir $(CURDIR) \
-	           --user $(shell id -u):$(shell id -g) \
-	           -e XDG_CACHE_HOME=/tmp/.cache \
 	           -e GOOS=linux \
 	           -e GOARCH=amd64 \
 	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go build -v -o $(BIN_DIR)/$(CHECKUP_IMAGE_NAME) ./cmd/
