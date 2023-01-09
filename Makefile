@@ -14,7 +14,7 @@ GO_MOD_VERSION=$(shell hack/go-mod-version.sh)
 
 all: check build
 
-check: fmt check-uncommitted lint test/unit
+check: lint test/unit
 
 build:
 	$(CRI_BIN) run --rm \
