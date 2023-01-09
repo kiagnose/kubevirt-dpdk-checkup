@@ -2,7 +2,7 @@ REG ?= quay.io
 ORG ?= kiagnose
 CHECKUP_IMAGE_NAME ?= kubevirt-dpdk-checkup
 CHECKUP_IMAGE_TAG ?= latest
-CHECKUP_GIT_TAG ?= $(shell git describe --abbrev=8 --tags)
+CHECKUP_GIT_TAG ?= $(shell git describe --always --abbrev=8 --tags)
 GO_IMAGE_NAME := docker.io/library/golang
 GO_IMAGE_TAG := 1.19
 BIN_DIR = $(CURDIR)/_output/bin
