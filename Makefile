@@ -52,7 +52,7 @@ fmt:
 	$(CRI_BIN) run --rm \
 	           --volume `pwd`:$(CURDIR):Z \
 	           --workdir $(CURDIR) \
-	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) gofmt -w .
+	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) gofmt -w ./cmd ./tests
 .PHONY: fmt
 
 check-uncommitted:
