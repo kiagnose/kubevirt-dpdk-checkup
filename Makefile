@@ -45,7 +45,7 @@ lint:
 	$(CRI_BIN) run --rm \
 	           --volume `pwd`:$(CURDIR):Z \
 	           --workdir $(CURDIR) \
-	            $(LINTER_IMAGE_NAME):$(LINTER_IMAGE_TAG) golangci-lint run --timeout 3m ./cmd/...
+	            $(LINTER_IMAGE_NAME):$(LINTER_IMAGE_TAG) golangci-lint run --timeout 3m ./cmd/... ./tests/...
 .PHONY: lint
 
 fmt:
