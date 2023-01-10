@@ -20,13 +20,49 @@
 package tests
 
 import (
+	"os"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"kubevirt.io/client-go/kubecli"
 )
 
 func TestKubevirtDpdkCheckup(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "KubevirtDpdkCheckup Suite")
 }
+
+const (
+	namespaceEnvVarName = "TEST_NAMESPACE"
+	imageEnvVarName     = "TEST_IMAGE"
+)
+
+const (
+	defaultNamespace = "kiagnose-demo"
+	defaultImageName = "quay.io/kiagnose/kubevirt-dpdk-checkup:latest"
+)
+
+var (
+	virtClient    kubecli.KubevirtClient
+	testNamespace string
+	testImageName string
+)
+
+var _ = BeforeSuite(func() {
+	var err error
+	kubeconfig := os.Getenv("KUBECONFIG")
+	Expect(kubeconfig).NotTo(BeEmpty(), "KUBECONFIG env var should not be empty")
+
+	virtClient, err = kubecli.GetKubevirtClientFromFlags("", kubeconfig)
+	Expect(err).NotTo(HaveOccurred())
+
+	if testNamespace = os.Getenv(namespaceEnvVarName); testNamespace == "" {
+		testNamespace = defaultNamespace
+	}
+
+	if testImageName = os.Getenv(imageEnvVarName); testImageName == "" {
+		testImageName = defaultImageName
+	}
+})
