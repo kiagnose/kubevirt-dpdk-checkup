@@ -17,7 +17,7 @@ E2E_TEST_ARGS ?= $(strip -test.v -test.timeout=$(E2E_TEST_TIMEOUT) -ginkgo.v -gi
 
 all: check build
 
-check: fmt check-uncommitted lint test/unit
+check: lint test/unit
 
 build:
 	$(CRI_BIN) run --rm \
