@@ -22,7 +22,7 @@ check: lint test/unit
 build:
 	mkdir -p $(CURDIR)/go-cache
 	$(CRI_BIN) run --rm \
-	           --volume `pwd`:$(CURDIR):Z \
+	           --volume $(CURDIR):$(CURDIR):Z \
 	           --volume $(CURDIR)/go-cache:/root/.cache/go-build:Z \
 	           --workdir $(CURDIR) \
 	           -e GOOS=linux \
@@ -40,7 +40,7 @@ push:
 test/unit:
 	mkdir -p $(CURDIR)/go-cache
 	$(CRI_BIN) run --rm \
-	           --volume `pwd`:$(CURDIR):Z \
+	           --volume $(CURDIR):$(CURDIR):Z \
 	           --volume $(CURDIR)/go-cache:/root/.cache/go-build:Z \
 	           --workdir $(CURDIR) \
 	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go test -v ./cmd/...
@@ -48,7 +48,7 @@ test/unit:
 
 test/e2e:
 	$(CRI_BIN) run --rm \
-	           --volume `pwd`:$(CURDIR):Z \
+	           --volume $(CURDIR):$(CURDIR):Z \
 	           --volume $(HOME)/.kube:/root/.kube:Z \
 	           --workdir $(CURDIR) \
 	           -e KUBECONFIG=/root/.kube/config \
@@ -60,7 +60,7 @@ test/e2e:
 lint:
 	mkdir -p $(CURDIR)/linter-cache
 	$(CRI_BIN) run --rm \
-	           --volume `pwd`:$(CURDIR):Z \
+	           --volume $(CURDIR):$(CURDIR):Z \
 	           --volume $(CURDIR)/linter-cache:/root/.cache:Z \
 	           --workdir $(CURDIR) \
 	            $(LINTER_IMAGE_NAME):$(LINTER_IMAGE_TAG) golangci-lint run --timeout 3m ./cmd/... ./tests/...
@@ -68,7 +68,7 @@ lint:
 
 fmt:
 	$(CRI_BIN) run --rm \
-	           --volume `pwd`:$(CURDIR):Z \
+	           --volume $(CURDIR):$(CURDIR):Z \
 	           --workdir $(CURDIR) \
 	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) gofmt -w ./cmd ./tests
 .PHONY: fmt
@@ -79,7 +79,7 @@ check-uncommitted:
 
 vendor:
 	$(CRI_BIN) run --rm \
-	           --volume `pwd`:$(CURDIR):Z \
+	           --volume $(CURDIR):$(CURDIR):Z \
 	           --workdir $(CURDIR) \
 	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go mod tidy -compat=$(GO_MOD_VERSION) && go mod vendor
 .PHONY: vendor
