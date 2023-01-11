@@ -49,7 +49,8 @@ var _ = Describe("Execute the checkup Job", func() {
 
 		DeferCleanup(func() {
 			backgroundPropagationPolicy := metav1.DeletePropagationBackground
-			err = virtClient.BatchV1().Jobs(testNamespace).Delete(context.Background(), testCheckupJobName, metav1.DeleteOptions{PropagationPolicy: &backgroundPropagationPolicy})
+			err = virtClient.BatchV1().Jobs(testNamespace).Delete(
+				context.Background(), testCheckupJobName, metav1.DeleteOptions{PropagationPolicy: &backgroundPropagationPolicy})
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
