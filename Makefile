@@ -17,8 +17,10 @@ all: check build
 check: fmt check-uncommitted lint test/unit
 
 build:
+	mkdir -p $(CURDIR)/go-cache
 	$(CRI_BIN) run --rm \
 	           --volume `pwd`:$(CURDIR):Z \
+	           --volume $(CURDIR)/go-cache:/root/.cache/go-build:Z \
 	           --workdir $(CURDIR) \
 	           -e GOOS=linux \
 	           -e GOARCH=amd64 \
@@ -33,8 +35,10 @@ push:
 .PHONY: push
 
 test/unit:
+	mkdir -p $(CURDIR)/go-cache
 	$(CRI_BIN) run --rm \
 	           --volume `pwd`:$(CURDIR):Z \
+	           --volume $(CURDIR)/go-cache:/root/.cache/go-build:Z \
 	           --workdir $(CURDIR) \
 	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go test -v ./cmd/...
 .PHONY: test/unit

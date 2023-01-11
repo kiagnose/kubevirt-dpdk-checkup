@@ -17,4 +17,4 @@ _output
 
 # Cache
 linter-cache
-
+go-cache
