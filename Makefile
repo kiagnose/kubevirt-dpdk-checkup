@@ -12,6 +12,9 @@ LINTER_IMAGE_NAME := docker.io/golangci/golangci-lint
 LINTER_IMAGE_TAG := v1.50.1
 GO_MOD_VERSION=$(shell hack/go-mod-version.sh)
 
+E2E_TEST_TIMEOUT ?= 1h
+E2E_TEST_ARGS ?= $(strip -test.v -test.timeout=$(E2E_TEST_TIMEOUT) -ginkgo.v -ginkgo.timeout=$(E2E_TEST_TIMEOUT) $(E2E_TEST_EXTRA_ARGS))
+
 all: check build
 
 check: fmt check-uncommitted lint test/unit
@@ -39,18 +42,29 @@ test/unit:
 	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go test -v ./cmd/...
 .PHONY: test/unit
 
+test/e2e:
+	$(CRI_BIN) run --rm \
+	           --volume `pwd`:$(CURDIR):Z \
+	           --volume $(HOME)/.kube:/root/.kube:Z \
+	           --workdir $(CURDIR) \
+	           -e KUBECONFIG=/root/.kube/config \
+	           -e TEST_IMAGE=$(TEST_IMAGE) \
+	           -e TEST_NAMESPACE=$(TEST_NAMESPACE) \
+	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go test ./tests/... $(E2E_TEST_ARGS)
+.PHONY: test/e2e
+
 lint:
 	$(CRI_BIN) run --rm \
 	           --volume `pwd`:$(CURDIR):Z \
 	           --workdir $(CURDIR) \
-	            $(LINTER_IMAGE_NAME):$(LINTER_IMAGE_TAG) golangci-lint run --timeout 3m ./cmd/...
+	            $(LINTER_IMAGE_NAME):$(LINTER_IMAGE_TAG) golangci-lint run --timeout 3m ./cmd/... ./tests/...
 .PHONY: lint
 
 fmt:
 	$(CRI_BIN) run --rm \
 	           --volume `pwd`:$(CURDIR):Z \
 	           --workdir $(CURDIR) \
-	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) gofmt -w .
+	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) gofmt -w ./cmd ./tests
 .PHONY: fmt
 
 check-uncommitted:
