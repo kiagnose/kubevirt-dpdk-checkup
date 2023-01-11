@@ -43,7 +43,7 @@ test/unit:
 	           --volume $(CURDIR):$(CURDIR):Z \
 	           --volume $(CURDIR)/go-cache:/root/.cache/go-build:Z \
 	           --workdir $(CURDIR) \
-	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go test -v ./cmd/...
+	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go test -v ./cmd/... ./pkg/...
 .PHONY: test/unit
 
 test/e2e:
@@ -63,7 +63,7 @@ lint:
 	           --volume $(CURDIR):$(CURDIR):Z \
 	           --volume $(CURDIR)/linter-cache:/root/.cache:Z \
 	           --workdir $(CURDIR) \
-	            $(LINTER_IMAGE_NAME):$(LINTER_IMAGE_TAG) golangci-lint run --timeout 3m ./cmd/... ./tests/...
+	            $(LINTER_IMAGE_NAME):$(LINTER_IMAGE_TAG) golangci-lint run --timeout 3m ./cmd/... ./pkg/... ./tests/...
 .PHONY: lint
 
 fmt:

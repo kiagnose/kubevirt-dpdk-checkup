@@ -7,6 +7,7 @@ require (
 	github.com/onsi/gomega v1.24.2
 	k8s.io/api v0.26.0
 	k8s.io/apimachinery v0.23.5
+	k8s.io/client-go v12.0.0+incompatible
 	kubevirt.io/client-go v0.58.0
 )
 
@@ -48,7 +49,6 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiextensions-apiserver v0.23.5 // indirect
-	k8s.io/client-go v12.0.0+incompatible // indirect
 	k8s.io/klog/v2 v2.40.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220124234850-424119656bbf // indirect
 	k8s.io/utils v0.0.0-20211116205334-6203023598ed // indirect
