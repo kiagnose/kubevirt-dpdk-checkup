@@ -1,2 +1,6 @@
-#infra folders
+# Infra folders
 .github
+
+# Cache
+linter-cache
+go-cache
