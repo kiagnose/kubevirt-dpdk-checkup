@@ -40,8 +40,10 @@ test/unit:
 .PHONY: test/unit
 
 lint:
+	mkdir -p $(CURDIR)/linter-cache
 	$(CRI_BIN) run --rm \
 	           --volume `pwd`:$(CURDIR):Z \
+	           --volume $(CURDIR)/linter-cache:/root/.cache:Z \
 	           --workdir $(CURDIR) \
 	            $(LINTER_IMAGE_NAME):$(LINTER_IMAGE_TAG) golangci-lint run --timeout 3m ./cmd/...
 .PHONY: lint
