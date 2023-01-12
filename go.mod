@@ -6,6 +6,7 @@ require (
 	github.com/kiagnose/kiagnose v0.2.1-0.20221208132946-95d8c7995fab
 	github.com/onsi/ginkgo/v2 v2.7.0
 	github.com/onsi/gomega v1.24.2
+	github.com/stretchr/testify v1.7.1
 	k8s.io/api v0.26.0
 	k8s.io/apimachinery v0.23.5
 	k8s.io/client-go v12.0.0+incompatible
@@ -37,6 +38,7 @@ require (
 	github.com/openshift/client-go v0.0.0-20210112165513-ebc401615f47 // indirect
 	github.com/openshift/custom-resource-status v1.1.2 // indirect
 	github.com/pborman/uuid v1.2.0 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/net v0.4.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f // indirect
