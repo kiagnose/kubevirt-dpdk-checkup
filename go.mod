@@ -3,6 +3,7 @@ module github.com/kiagnose/kubevirt-dpdk-checkup
 go 1.19
 
 require (
+	github.com/kiagnose/kiagnose v0.2.1-0.20221208132946-95d8c7995fab
 	github.com/onsi/ginkgo/v2 v2.7.0
 	github.com/onsi/gomega v1.24.2
 	k8s.io/api v0.26.0
