@@ -20,9 +20,12 @@
 package pkg
 
 import (
+	"log"
+
 	kconfig "github.com/kiagnose/kiagnose/kiagnose/config"
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/client"
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 )
 
 func Run(rawEnv map[string]string) error {
@@ -31,10 +34,31 @@ func Run(rawEnv map[string]string) error {
 		return err
 	}
 
-	_, err = kconfig.Read(c, rawEnv)
+	baseConfig, err := kconfig.Read(c, rawEnv)
 	if err != nil {
 		return err
 	}
 
+	cfg, err := config.New(baseConfig)
+	if err != nil {
+		return err
+	}
+
+	printConfig(cfg)
+
 	return nil
+}
+
+func printConfig(checkupConfig config.Config) {
+	log.Println("Using the following config:")
+	log.Printf("\t%q: %q", config.NUMASocketParamName, checkupConfig.NUMASocket)
+	log.Printf("\t%q: %q", config.NetworkAttachmentDefinitionNameParamName, checkupConfig.NetworkAttachmentDefinitionName)
+	log.Printf("\t%q: %q", config.PortBandwidthGBParamName, checkupConfig.PortBandwidthGB)
+	log.Printf("\t%q: %q", config.TrafficGeneratorNodeLabelSelectorParamName, checkupConfig.TrafficGeneratorNodeLabelSelector)
+	log.Printf("\t%q: %q", config.TrafficGeneratorPacketsPerSecondInMillionsParamName,
+		checkupConfig.TrafficGeneratorPacketsPerSecondInMillions)
+	log.Printf("\t%q: %q", config.DPDKNodeLabelSelectorParamName, checkupConfig.DPDKNodeLabelSelector)
+	log.Printf("\t%q: %q", config.TrafficGeneratorMacAddressParamName, checkupConfig.TrafficGeneratorMacAddress)
+	log.Printf("\t%q: %q", config.DPDKMacAddressParamName, checkupConfig.DPDKMacAddress)
+	log.Printf("\t%q: %q", config.TestDurationParamName, checkupConfig.TestDuration)
 }
