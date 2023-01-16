@@ -29,20 +29,38 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	testServiceAccountName = "default"
-	testCheckupJobName     = "dpdk-checkup"
+	testServiceAccountName                     = "dpdk-checkup-sa"
+	testKiagnoseConfigMapAccessRoleName        = "kiagnose-configmap-access"
+	testKiagnoseConfigMapAccessRoleBindingName = testKiagnoseConfigMapAccessRoleName
+	testConfigMapName                          = "dpdk-checkup-config"
+	testCheckupJobName                         = "dpdk-checkup"
+
+	paramNUMASocket = "0"
 )
 
 var _ = Describe("Execute the checkup Job", func() {
-	var checkupJob *batchv1.Job
+	var (
+		configMap  *corev1.ConfigMap
+		checkupJob *batchv1.Job
+	)
 
 	BeforeEach(func() {
-		var err error
+		setupCheckupPermissions()
 
+		var err error
+		configMap = newConfigMap()
+		_, err = virtClient.CoreV1().ConfigMaps(testNamespace).Create(context.Background(), configMap, metav1.CreateOptions{})
+		Expect(err).NotTo(HaveOccurred())
+
+		DeferCleanup(func() {
+			err = virtClient.CoreV1().ConfigMaps(testNamespace).Delete(context.Background(), testConfigMapName, metav1.DeleteOptions{})
+			Expect(err).NotTo(HaveOccurred())
+		})
 		checkupJob = newCheckupJob()
 		_, err = virtClient.BatchV1().Jobs(testNamespace).Create(context.Background(), checkupJob, metav1.CreateOptions{})
 		Expect(err).NotTo(HaveOccurred())
@@ -64,8 +82,115 @@ var _ = Describe("Execute the checkup Job", func() {
 				"Type":   Equal(batchv1.JobComplete),
 				"Status": Equal(corev1.ConditionTrue),
 			})))
+
+		configMap, err := virtClient.CoreV1().ConfigMaps(testNamespace).Get(context.Background(), testConfigMapName, metav1.GetOptions{})
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(configMap.Data).NotTo(BeNil())
 	})
 })
+
+func setupCheckupPermissions() {
+	var (
+		err                                error
+		checkupServiceAccount              *corev1.ServiceAccount
+		kiagnoseConfigMapAccessRole        *rbacv1.Role
+		kiagnoseConfigMapAccessRoleBinding *rbacv1.RoleBinding
+	)
+
+	checkupServiceAccount = newServiceAccount(testServiceAccountName)
+	_, err = virtClient.CoreV1().ServiceAccounts(testNamespace).Create(context.Background(), checkupServiceAccount, metav1.CreateOptions{})
+	Expect(err).NotTo(HaveOccurred())
+
+	DeferCleanup(func() {
+		err = virtClient.CoreV1().ServiceAccounts(testNamespace).Delete(context.Background(), checkupServiceAccount.Name, metav1.DeleteOptions{})
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	kiagnoseConfigMapAccessRole = newKiagnoseConfigMapAccessRole(testKiagnoseConfigMapAccessRoleName)
+	_, err = virtClient.RbacV1().Roles(testNamespace).Create(context.Background(), kiagnoseConfigMapAccessRole, metav1.CreateOptions{})
+	Expect(err).NotTo(HaveOccurred())
+
+	DeferCleanup(func() {
+		err = virtClient.RbacV1().Roles(testNamespace).Delete(context.Background(), kiagnoseConfigMapAccessRole.Name, metav1.DeleteOptions{})
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	kiagnoseConfigMapAccessRoleBinding = newKiagnoseConfigMapAccessRoleBinding(
+		testKiagnoseConfigMapAccessRoleBindingName,
+		checkupServiceAccount.Name,
+		kiagnoseConfigMapAccessRole.Name)
+	_, err = virtClient.RbacV1().RoleBindings(testNamespace).Create(
+		context.Background(),
+		kiagnoseConfigMapAccessRoleBinding,
+		metav1.CreateOptions{},
+	)
+	Expect(err).NotTo(HaveOccurred())
+
+	DeferCleanup(func() {
+		err = virtClient.RbacV1().RoleBindings(testNamespace).Delete(
+			context.Background(),
+			kiagnoseConfigMapAccessRoleBinding.Name,
+			metav1.DeleteOptions{},
+		)
+		Expect(err).NotTo(HaveOccurred())
+	})
+}
+
+func newServiceAccount(serviceAccountName string) *corev1.ServiceAccount {
+	return &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: serviceAccountName,
+		},
+	}
+}
+
+func newKiagnoseConfigMapAccessRole(configMapAccessRole string) *rbacv1.Role {
+	return &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: configMapAccessRole,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"configmaps"},
+				Verbs:     []string{"get", "update"},
+			},
+		},
+	}
+}
+
+func newKiagnoseConfigMapAccessRoleBinding(configMapAccessRoleBindingName, serviceAccountName, roleName string) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: configMapAccessRoleBindingName,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind: rbacv1.ServiceAccountKind,
+				Name: serviceAccountName,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "Role",
+			Name:     roleName,
+		},
+	}
+}
+
+func newConfigMap() *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testConfigMapName,
+		},
+		Data: map[string]string{
+			"spec.timeout":                               "1m",
+			"spec.param.NUMASocket":                      paramNUMASocket,
+			"spec.param.networkAttachmentDefinitionName": networkAttachmentDefinitionName,
+		},
+	}
+}
 
 func getJobConditions() []batchv1.JobCondition {
 	checkupJob, err := virtClient.BatchV1().Jobs(testNamespace).Get(context.Background(), testCheckupJobName, metav1.GetOptions{})
@@ -91,7 +216,18 @@ func newCheckupJob() *batchv1.Job {
 						{
 							Name:            testCheckupJobName,
 							Image:           testImageName,
+							ImagePullPolicy: corev1.PullAlways,
 							SecurityContext: newSecurityContext(),
+							Env: []corev1.EnvVar{
+								{
+									Name:  "CONFIGMAP_NAMESPACE",
+									Value: testNamespace,
+								},
+								{
+									Name:  "CONFIGMAP_NAME",
+									Value: testConfigMapName,
+								},
+							},
 						},
 					},
 				},
