@@ -44,6 +44,7 @@ const (
 	trafficGeneratorEastMacAddress             = "DE:AD:BE:EF:00:01"
 	trafficGeneratorWestMacAddress             = "DE:AD:BE:EF:01:00"
 	dpdkEastMacAddress                         = "DE:AD:BE:EF:00:02"
+	dpdkWestMacAddress                         = "DE:AD:BE:EF:02:00"
 	testDuration                               = "30m"
 )
 
@@ -63,6 +64,7 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 	trafficGeneratorEastMacAddressDefault, _ := net.ParseMAC(config.TrafficGeneratorEastMacAddressDefault)
 	trafficGeneratorWestMacAddressDefault, _ := net.ParseMAC(config.TrafficGeneratorWestMacAddressDefault)
 	dpdkEastMacAddressDefault, _ := net.ParseMAC(config.DPDKEastMacAddressDefault)
+	dpdkWestMacAddressDefault, _ := net.ParseMAC(config.DPDKWestMacAddressDefault)
 	expectedConfig := config.Config{
 		PodName:                         testPodName,
 		PodUID:                          testPodUID,
@@ -73,6 +75,7 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		TrafficGeneratorEastMacAddress: trafficGeneratorEastMacAddressDefault,
 		TrafficGeneratorWestMacAddress: trafficGeneratorWestMacAddressDefault,
 		DPDKEastMacAddress:             dpdkEastMacAddressDefault,
+		DPDKWestMacAddress:             dpdkWestMacAddressDefault,
 		TestDuration:                   config.TestDurationDefault,
 	}
 	assert.Equal(t, expectedConfig, actualConfig)
@@ -91,6 +94,7 @@ func TestNewShouldApplyUserConfig(t *testing.T) {
 	trafficGeneratorEastHWAddress, _ := net.ParseMAC(trafficGeneratorEastMacAddress)
 	trafficGeneratorWestHWAddress, _ := net.ParseMAC(trafficGeneratorWestMacAddress)
 	dpdkEastHWAddress, _ := net.ParseMAC(dpdkEastMacAddress)
+	dpdkWestHWAddress, _ := net.ParseMAC(dpdkWestMacAddress)
 	expectedConfig := config.Config{
 		PodName:                         testPodName,
 		PodUID:                          testPodUID,
@@ -103,6 +107,7 @@ func TestNewShouldApplyUserConfig(t *testing.T) {
 		TrafficGeneratorEastMacAddress:             trafficGeneratorEastHWAddress,
 		TrafficGeneratorWestMacAddress:             trafficGeneratorWestHWAddress,
 		DPDKEastMacAddress:                         dpdkEastHWAddress,
+		DPDKWestMacAddress:                         dpdkWestHWAddress,
 		TestDuration:                               30 * time.Minute,
 	}
 	assert.Equal(t, expectedConfig, actualConfig)
@@ -166,6 +171,12 @@ func TestNewShouldFailWhen(t *testing.T) {
 			expectedError:  config.ErrInvalidDPDKEastMacAddress,
 		},
 		{
+			description:    "DPDKWestMacAddress is invalid",
+			key:            config.DPDKWestMacAddressParamName,
+			faultyKeyValue: "AB:CD:EF:GH:IJ:KH",
+			expectedError:  config.ErrInvalidDPDKWestMacAddress,
+		},
+		{
 			description:    "TestDuration is invalid",
 			key:            config.TestDurationParamName,
 			faultyKeyValue: "invalid value",
@@ -201,6 +212,7 @@ func getValidUserParameters() map[string]string {
 		config.TrafficGeneratorEastMacAddressParamName:             trafficGeneratorEastMacAddress,
 		config.TrafficGeneratorWestMacAddressParamName:             trafficGeneratorWestMacAddress,
 		config.DPDKEastMacAddressParamName:                         dpdkEastMacAddress,
+		config.DPDKWestMacAddressParamName:                         dpdkWestMacAddress,
 		config.TestDurationParamName:                               testDuration,
 	}
 }
