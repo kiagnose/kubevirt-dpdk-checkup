@@ -36,6 +36,7 @@ const (
 	TrafficGeneratorPacketsPerSecondInMillionsParamName = "trafficGeneratorPacketsPerSecondInMillions"
 	PortBandwidthGBParamName                            = "portBandwidthGB"
 	TrafficGeneratorEastMacAddressParamName             = "trafficGeneratorEastMacAddress"
+	TrafficGeneratorWestMacAddressParamName             = "trafficGeneratorWestMacAddress"
 	DPDKMacAddressParamName                             = "DPDKMacAddress"
 	TestDurationParamName                               = "testDuration"
 )
@@ -44,6 +45,7 @@ const (
 	TrafficGeneratorPacketsPerSecondInMillionsDefault = 14
 	PortBandwidthGBDefault                            = 10
 	TrafficGeneratorEastMacAddressDefault             = "50:00:00:00:00:01"
+	TrafficGeneratorWestMacAddressDefault             = "50:00:00:00:00:02"
 	DPDKMacAddressDefault                             = "60:00:00:00:00:01"
 	TestDurationDefault                               = 5 * time.Minute
 )
@@ -56,6 +58,7 @@ var (
 	ErrInvalidTrafficGeneratorPacketsPerSecondInMillions = errors.New("invalid Traffic Generator Packets Per Second In Millions")
 	ErrInvalidPortBandwidthGB                            = errors.New("invalid Port Bandwidth [GB]")
 	ErrInvalidTrafficGeneratorEastMacAddress             = errors.New("invalid Traffic Generator East MAC Address")
+	ErrInvalidTrafficGeneratorWestMacAddress             = errors.New("invalid Traffic Generator West MAC Address")
 	ErrInvalidDPDKMacAddress                             = errors.New("invalid DPDK MAC Address")
 	ErrInvalidTestDuration                               = errors.New("invalid Test Duration")
 )
@@ -70,12 +73,14 @@ type Config struct {
 	TrafficGeneratorPacketsPerSecondInMillions int
 	PortBandwidthGB                            int
 	TrafficGeneratorEastMacAddress             net.HardwareAddr
+	TrafficGeneratorWestMacAddress             net.HardwareAddr
 	DPDKMacAddress                             net.HardwareAddr
 	TestDuration                               time.Duration
 }
 
 func New(baseConfig kconfig.Config) (Config, error) {
 	trafficGeneratorEastMacAddressDefault, _ := net.ParseMAC(TrafficGeneratorEastMacAddressDefault)
+	trafficGeneratorWestMacAddressDefault, _ := net.ParseMAC(TrafficGeneratorWestMacAddressDefault)
 	dpdkMacAddressDefault, _ := net.ParseMAC(DPDKMacAddressDefault)
 	newConfig := Config{
 		PodName:                           baseConfig.PodName,
@@ -86,6 +91,7 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		TrafficGeneratorPacketsPerSecondInMillions: TrafficGeneratorPacketsPerSecondInMillionsDefault,
 		PortBandwidthGB:                PortBandwidthGBDefault,
 		TrafficGeneratorEastMacAddress: trafficGeneratorEastMacAddressDefault,
+		TrafficGeneratorWestMacAddress: trafficGeneratorWestMacAddressDefault,
 		DPDKMacAddress:                 dpdkMacAddressDefault,
 		TestDuration:                   TestDurationDefault,
 	}
@@ -132,6 +138,15 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 			return Config{}, ErrInvalidTrafficGeneratorEastMacAddress
 		}
 		newConfig.TrafficGeneratorEastMacAddress = trafficGeneratorEastMacAddress
+	}
+
+	if rawTrafficGeneratorWestMacAddress :=
+		baseConfig.Params[TrafficGeneratorWestMacAddressParamName]; rawTrafficGeneratorWestMacAddress != "" {
+		trafficGeneratorWestMacAddress, err := net.ParseMAC(rawTrafficGeneratorWestMacAddress)
+		if err != nil {
+			return Config{}, ErrInvalidTrafficGeneratorWestMacAddress
+		}
+		newConfig.TrafficGeneratorWestMacAddress = trafficGeneratorWestMacAddress
 	}
 
 	if rawDPDKMacAddress := baseConfig.Params[DPDKMacAddressParamName]; rawDPDKMacAddress != "" {
