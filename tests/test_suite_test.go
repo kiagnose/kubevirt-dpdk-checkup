@@ -35,19 +35,22 @@ func TestKubevirtDpdkCheckup(t *testing.T) {
 }
 
 const (
-	namespaceEnvVarName = "TEST_NAMESPACE"
-	imageEnvVarName     = "TEST_IMAGE"
+	namespaceEnvVarName                    = "TEST_NAMESPACE"
+	imageEnvVarName                        = "TEST_IMAGE"
+	networkAttachmentDefinitionNameVarName = "NETWORK_ATTACHMENT_DEFINITION_NAME"
 )
 
 const (
-	defaultNamespace = "kiagnose-demo"
-	defaultImageName = "quay.io/kiagnose/kubevirt-dpdk-checkup:latest"
+	defaultNamespace                       = "kiagnose-demo"
+	defaultImageName                       = "quay.io/kiagnose/kubevirt-dpdk-checkup:latest"
+	defaultNetworkAttachmentDefinitionName = "intel-dpdk-network-1"
 )
 
 var (
-	virtClient    kubecli.KubevirtClient
-	testNamespace string
-	testImageName string
+	virtClient                      kubecli.KubevirtClient
+	testNamespace                   string
+	testImageName                   string
+	networkAttachmentDefinitionName string
 )
 
 var _ = BeforeSuite(func() {
@@ -64,5 +67,9 @@ var _ = BeforeSuite(func() {
 
 	if testImageName = os.Getenv(imageEnvVarName); testImageName == "" {
 		testImageName = defaultImageName
+	}
+
+	if networkAttachmentDefinitionName = os.Getenv(networkAttachmentDefinitionNameVarName); networkAttachmentDefinitionName == "" {
+		networkAttachmentDefinitionName = defaultNetworkAttachmentDefinitionName
 	}
 })

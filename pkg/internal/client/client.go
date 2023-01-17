@@ -17,24 +17,27 @@
  *
  */
 
-package main
+package client
 
 import (
-	"log"
-	"os"
-
-	"github.com/kiagnose/kiagnose/kiagnose/environment"
-
-	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg"
+	"k8s.io/client-go/rest"
+	"kubevirt.io/client-go/kubecli"
 )
 
-func main() {
-	log.Println("kubevirt-dpdk-checkup starting...")
-	rawEnv := environment.EnvToMap(os.Environ())
+type Client struct {
+	kubecli.KubevirtClient
+}
 
-	const errMessagePrefix = "kubevirt-dpdk-checkup failed"
-
-	if err := pkg.Run(rawEnv); err != nil {
-		log.Fatalf("%s: %v\n", errMessagePrefix, err)
+func New() (*Client, error) {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
 	}
+
+	client, err := kubecli.GetKubevirtClientFromRESTConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Client{client}, nil
 }
