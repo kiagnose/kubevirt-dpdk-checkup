@@ -41,7 +41,7 @@ const (
 	trafficGeneratorNodeLabelSelector          = "node-role.kubernetes.io/worker-dpdk1"
 	trafficGeneratorPacketsPerSecondInMillions = 6
 	dpdkNodeLabelSelector                      = "node-role.kubernetes.io/worker-dpdk2"
-	trafficGeneratorMacAddress                 = "DE:AD:BE:EF:00:01"
+	trafficGeneratorEastMacAddress             = "DE:AD:BE:EF:00:01"
 	dpdkMacAddress                             = "DE:AD:BE:EF:00:02"
 	testDuration                               = "30m"
 )
@@ -59,7 +59,7 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 	actualConfig, err := config.New(baseConfig)
 	assert.NoError(t, err)
 
-	trafficGeneratorMacAddressDefault, _ := net.ParseMAC(config.TrafficGeneratorMacAddressDefault)
+	trafficGeneratorEastMacAddressDefault, _ := net.ParseMAC(config.TrafficGeneratorEastMacAddressDefault)
 	dpdkMacAddressDefault, _ := net.ParseMAC(config.DPDKMacAddressDefault)
 	expectedConfig := config.Config{
 		PodName:                         testPodName,
@@ -67,10 +67,10 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		NUMASocket:                      numaSocket,
 		NetworkAttachmentDefinitionName: networkAttachmentDefinitionName,
 		TrafficGeneratorPacketsPerSecondInMillions: config.TrafficGeneratorPacketsPerSecondInMillionsDefault,
-		PortBandwidthGB:            config.PortBandwidthGBDefault,
-		TrafficGeneratorMacAddress: trafficGeneratorMacAddressDefault,
-		DPDKMacAddress:             dpdkMacAddressDefault,
-		TestDuration:               config.TestDurationDefault,
+		PortBandwidthGB:                config.PortBandwidthGBDefault,
+		TrafficGeneratorEastMacAddress: trafficGeneratorEastMacAddressDefault,
+		DPDKMacAddress:                 dpdkMacAddressDefault,
+		TestDuration:                   config.TestDurationDefault,
 	}
 	assert.Equal(t, expectedConfig, actualConfig)
 }
@@ -85,7 +85,7 @@ func TestNewShouldApplyUserConfig(t *testing.T) {
 	actualConfig, err := config.New(baseConfig)
 	assert.NoError(t, err)
 
-	trafficGeneratorHWAddress, _ := net.ParseMAC(trafficGeneratorMacAddress)
+	trafficGeneratorEastHWAddress, _ := net.ParseMAC(trafficGeneratorEastMacAddress)
 	dpdkHWAddress, _ := net.ParseMAC(dpdkMacAddress)
 	expectedConfig := config.Config{
 		PodName:                         testPodName,
@@ -96,7 +96,7 @@ func TestNewShouldApplyUserConfig(t *testing.T) {
 		TrafficGeneratorPacketsPerSecondInMillions: trafficGeneratorPacketsPerSecondInMillions,
 		TrafficGeneratorNodeLabelSelector:          trafficGeneratorNodeLabelSelector,
 		DPDKNodeLabelSelector:                      dpdkNodeLabelSelector,
-		TrafficGeneratorMacAddress:                 trafficGeneratorHWAddress,
+		TrafficGeneratorEastMacAddress:             trafficGeneratorEastHWAddress,
 		DPDKMacAddress:                             dpdkHWAddress,
 		TestDuration:                               30 * time.Minute,
 	}
@@ -143,10 +143,10 @@ func TestNewShouldFailWhen(t *testing.T) {
 			expectedError:  config.ErrInvalidPortBandwidthGB,
 		},
 		{
-			description:    "TrafficGeneratorMacAddress is invalid",
-			key:            config.TrafficGeneratorMacAddressParamName,
+			description:    "TrafficGeneratorEastMacAddress is invalid",
+			key:            config.TrafficGeneratorEastMacAddressParamName,
 			faultyKeyValue: "AB:CD:EF:GH:IJ:KH",
-			expectedError:  config.ErrInvalidTrafficGeneratorMacAddress,
+			expectedError:  config.ErrInvalidTrafficGeneratorEastMacAddress,
 		},
 		{
 			description:    "DPDKMacAddress is invalid",
@@ -187,7 +187,7 @@ func getValidUserParameters() map[string]string {
 		config.TrafficGeneratorNodeLabelSelectorParamName:          trafficGeneratorNodeLabelSelector,
 		config.TrafficGeneratorPacketsPerSecondInMillionsParamName: fmt.Sprintf("%d", trafficGeneratorPacketsPerSecondInMillions),
 		config.DPDKNodeLabelSelectorParamName:                      dpdkNodeLabelSelector,
-		config.TrafficGeneratorMacAddressParamName:                 trafficGeneratorMacAddress,
+		config.TrafficGeneratorEastMacAddressParamName:             trafficGeneratorEastMacAddress,
 		config.DPDKMacAddressParamName:                             dpdkMacAddress,
 		config.TestDurationParamName:                               testDuration,
 	}

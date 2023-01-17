@@ -35,7 +35,7 @@ const (
 	DPDKNodeLabelSelectorParamName                      = "DPDKNodeLabelSelector"
 	TrafficGeneratorPacketsPerSecondInMillionsParamName = "trafficGeneratorPacketsPerSecondInMillions"
 	PortBandwidthGBParamName                            = "portBandwidthGB"
-	TrafficGeneratorMacAddressParamName                 = "trafficGeneratorMacAddress"
+	TrafficGeneratorEastMacAddressParamName             = "trafficGeneratorEastMacAddress"
 	DPDKMacAddressParamName                             = "DPDKMacAddress"
 	TestDurationParamName                               = "testDuration"
 )
@@ -43,7 +43,7 @@ const (
 const (
 	TrafficGeneratorPacketsPerSecondInMillionsDefault = 14
 	PortBandwidthGBDefault                            = 10
-	TrafficGeneratorMacAddressDefault                 = "50:00:00:00:00:01"
+	TrafficGeneratorEastMacAddressDefault             = "50:00:00:00:00:01"
 	DPDKMacAddressDefault                             = "60:00:00:00:00:01"
 	TestDurationDefault                               = 5 * time.Minute
 )
@@ -55,7 +55,7 @@ var (
 	ErrInvalidDPDKNodeLabelSelector                      = errors.New("invalid DPDK Node Label Selector")
 	ErrInvalidTrafficGeneratorPacketsPerSecondInMillions = errors.New("invalid Traffic Generator Packets Per Second In Millions")
 	ErrInvalidPortBandwidthGB                            = errors.New("invalid Port Bandwidth [GB]")
-	ErrInvalidTrafficGeneratorMacAddress                 = errors.New("invalid Traffic Generator MAC Address")
+	ErrInvalidTrafficGeneratorEastMacAddress             = errors.New("invalid Traffic Generator East MAC Address")
 	ErrInvalidDPDKMacAddress                             = errors.New("invalid DPDK MAC Address")
 	ErrInvalidTestDuration                               = errors.New("invalid Test Duration")
 )
@@ -69,13 +69,13 @@ type Config struct {
 	DPDKNodeLabelSelector                      string
 	TrafficGeneratorPacketsPerSecondInMillions int
 	PortBandwidthGB                            int
-	TrafficGeneratorMacAddress                 net.HardwareAddr
+	TrafficGeneratorEastMacAddress             net.HardwareAddr
 	DPDKMacAddress                             net.HardwareAddr
 	TestDuration                               time.Duration
 }
 
 func New(baseConfig kconfig.Config) (Config, error) {
-	trafficGeneratorMacAddressDefault, _ := net.ParseMAC(TrafficGeneratorMacAddressDefault)
+	trafficGeneratorEastMacAddressDefault, _ := net.ParseMAC(TrafficGeneratorEastMacAddressDefault)
 	dpdkMacAddressDefault, _ := net.ParseMAC(DPDKMacAddressDefault)
 	newConfig := Config{
 		PodName:                           baseConfig.PodName,
@@ -84,10 +84,10 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		TrafficGeneratorNodeLabelSelector: baseConfig.Params[TrafficGeneratorNodeLabelSelectorParamName],
 		DPDKNodeLabelSelector:             baseConfig.Params[DPDKNodeLabelSelectorParamName],
 		TrafficGeneratorPacketsPerSecondInMillions: TrafficGeneratorPacketsPerSecondInMillionsDefault,
-		PortBandwidthGB:            PortBandwidthGBDefault,
-		TrafficGeneratorMacAddress: trafficGeneratorMacAddressDefault,
-		DPDKMacAddress:             dpdkMacAddressDefault,
-		TestDuration:               TestDurationDefault,
+		PortBandwidthGB:                PortBandwidthGBDefault,
+		TrafficGeneratorEastMacAddress: trafficGeneratorEastMacAddressDefault,
+		DPDKMacAddress:                 dpdkMacAddressDefault,
+		TestDuration:                   TestDurationDefault,
 	}
 
 	var rawNUMASocket string
@@ -125,12 +125,13 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 		newConfig.PortBandwidthGB = portBandwidthGB
 	}
 
-	if rawTrafficGeneratorMacAddress := baseConfig.Params[TrafficGeneratorMacAddressParamName]; rawTrafficGeneratorMacAddress != "" {
-		trafficGeneratorMacAddress, err := net.ParseMAC(rawTrafficGeneratorMacAddress)
+	if rawTrafficGeneratorEastMacAddress :=
+		baseConfig.Params[TrafficGeneratorEastMacAddressParamName]; rawTrafficGeneratorEastMacAddress != "" {
+		trafficGeneratorEastMacAddress, err := net.ParseMAC(rawTrafficGeneratorEastMacAddress)
 		if err != nil {
-			return Config{}, ErrInvalidTrafficGeneratorMacAddress
+			return Config{}, ErrInvalidTrafficGeneratorEastMacAddress
 		}
-		newConfig.TrafficGeneratorMacAddress = trafficGeneratorMacAddress
+		newConfig.TrafficGeneratorEastMacAddress = trafficGeneratorEastMacAddress
 	}
 
 	if rawDPDKMacAddress := baseConfig.Params[DPDKMacAddressParamName]; rawDPDKMacAddress != "" {
