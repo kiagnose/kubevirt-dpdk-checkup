@@ -35,16 +35,20 @@ const (
 	DPDKNodeLabelSelectorParamName                      = "DPDKNodeLabelSelector"
 	TrafficGeneratorPacketsPerSecondInMillionsParamName = "trafficGeneratorPacketsPerSecondInMillions"
 	PortBandwidthGBParamName                            = "portBandwidthGB"
-	TrafficGeneratorMacAddressParamName                 = "trafficGeneratorMacAddress"
-	DPDKMacAddressParamName                             = "DPDKMacAddress"
+	TrafficGeneratorEastMacAddressParamName             = "trafficGeneratorEastMacAddress"
+	TrafficGeneratorWestMacAddressParamName             = "trafficGeneratorWestMacAddress"
+	DPDKEastMacAddressParamName                         = "DPDKEastMacAddress"
+	DPDKWestMacAddressParamName                         = "DPDKWestMacAddress"
 	TestDurationParamName                               = "testDuration"
 )
 
 const (
 	TrafficGeneratorPacketsPerSecondInMillionsDefault = 14
 	PortBandwidthGBDefault                            = 10
-	TrafficGeneratorMacAddressDefault                 = "50:00:00:00:00:01"
-	DPDKMacAddressDefault                             = "60:00:00:00:00:01"
+	TrafficGeneratorEastMacAddressDefault             = "50:00:00:00:00:01"
+	TrafficGeneratorWestMacAddressDefault             = "50:00:00:00:00:02"
+	DPDKEastMacAddressDefault                         = "60:00:00:00:00:01"
+	DPDKWestMacAddressDefault                         = "60:00:00:00:00:02"
 	TestDurationDefault                               = 5 * time.Minute
 )
 
@@ -55,8 +59,10 @@ var (
 	ErrInvalidDPDKNodeLabelSelector                      = errors.New("invalid DPDK Node Label Selector")
 	ErrInvalidTrafficGeneratorPacketsPerSecondInMillions = errors.New("invalid Traffic Generator Packets Per Second In Millions")
 	ErrInvalidPortBandwidthGB                            = errors.New("invalid Port Bandwidth [GB]")
-	ErrInvalidTrafficGeneratorMacAddress                 = errors.New("invalid Traffic Generator MAC Address")
-	ErrInvalidDPDKMacAddress                             = errors.New("invalid DPDK MAC Address")
+	ErrInvalidTrafficGeneratorEastMacAddress             = errors.New("invalid Traffic Generator East MAC Address")
+	ErrInvalidTrafficGeneratorWestMacAddress             = errors.New("invalid Traffic Generator West MAC Address")
+	ErrInvalidDPDKEastMacAddress                         = errors.New("invalid DPDK East MAC Address")
+	ErrInvalidDPDKWestMacAddress                         = errors.New("invalid DPDK West MAC Address")
 	ErrInvalidTestDuration                               = errors.New("invalid Test Duration")
 )
 
@@ -69,14 +75,18 @@ type Config struct {
 	DPDKNodeLabelSelector                      string
 	TrafficGeneratorPacketsPerSecondInMillions int
 	PortBandwidthGB                            int
-	TrafficGeneratorMacAddress                 net.HardwareAddr
-	DPDKMacAddress                             net.HardwareAddr
+	TrafficGeneratorEastMacAddress             net.HardwareAddr
+	TrafficGeneratorWestMacAddress             net.HardwareAddr
+	DPDKEastMacAddress                         net.HardwareAddr
+	DPDKWestMacAddress                         net.HardwareAddr
 	TestDuration                               time.Duration
 }
 
 func New(baseConfig kconfig.Config) (Config, error) {
-	trafficGeneratorMacAddressDefault, _ := net.ParseMAC(TrafficGeneratorMacAddressDefault)
-	dpdkMacAddressDefault, _ := net.ParseMAC(DPDKMacAddressDefault)
+	trafficGeneratorEastMacAddressDefault, _ := net.ParseMAC(TrafficGeneratorEastMacAddressDefault)
+	trafficGeneratorWestMacAddressDefault, _ := net.ParseMAC(TrafficGeneratorWestMacAddressDefault)
+	dpdkEastMacAddressDefault, _ := net.ParseMAC(DPDKEastMacAddressDefault)
+	dpdkWestMacAddressDefault, _ := net.ParseMAC(DPDKWestMacAddressDefault)
 	newConfig := Config{
 		PodName:                           baseConfig.PodName,
 		PodUID:                            baseConfig.PodUID,
@@ -84,18 +94,20 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		TrafficGeneratorNodeLabelSelector: baseConfig.Params[TrafficGeneratorNodeLabelSelectorParamName],
 		DPDKNodeLabelSelector:             baseConfig.Params[DPDKNodeLabelSelectorParamName],
 		TrafficGeneratorPacketsPerSecondInMillions: TrafficGeneratorPacketsPerSecondInMillionsDefault,
-		PortBandwidthGB:            PortBandwidthGBDefault,
-		TrafficGeneratorMacAddress: trafficGeneratorMacAddressDefault,
-		DPDKMacAddress:             dpdkMacAddressDefault,
-		TestDuration:               TestDurationDefault,
+		PortBandwidthGB:                PortBandwidthGBDefault,
+		TrafficGeneratorEastMacAddress: trafficGeneratorEastMacAddressDefault,
+		TrafficGeneratorWestMacAddress: trafficGeneratorWestMacAddressDefault,
+		DPDKEastMacAddress:             dpdkEastMacAddressDefault,
+		DPDKWestMacAddress:             dpdkWestMacAddressDefault,
+		TestDuration:                   TestDurationDefault,
 	}
 
 	var rawNUMASocket string
 	if rawNUMASocket = baseConfig.Params[NUMASocketParamName]; rawNUMASocket == "" {
 		return Config{}, ErrInvalidNUMASocket
 	}
-	numaSocket, err := strconv.Atoi(rawNUMASocket)
-	if err != nil || numaSocket < 0 {
+	numaSocket, err := parseNonNegativeInt(rawNUMASocket)
+	if err != nil {
 		return Config{}, ErrInvalidNUMASocket
 	}
 	newConfig.NUMASocket = numaSocket
@@ -108,46 +120,72 @@ func New(baseConfig kconfig.Config) (Config, error) {
 }
 
 func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, error) {
-	if rawTrafficGeneratorPacketsPerSecondInMillions :=
-		baseConfig.Params[TrafficGeneratorPacketsPerSecondInMillionsParamName]; rawTrafficGeneratorPacketsPerSecondInMillions != "" {
-		trafficGeneratorPacketsPerSecondInMillions, err := strconv.Atoi(rawTrafficGeneratorPacketsPerSecondInMillions)
-		if err != nil || trafficGeneratorPacketsPerSecondInMillions < 0 {
+	var err error
+
+	if rawVal := baseConfig.Params[TrafficGeneratorPacketsPerSecondInMillionsParamName]; rawVal != "" {
+		newConfig.TrafficGeneratorPacketsPerSecondInMillions, err = parseNonNegativeInt(rawVal)
+		if err != nil {
 			return Config{}, ErrInvalidTrafficGeneratorPacketsPerSecondInMillions
 		}
-		newConfig.TrafficGeneratorPacketsPerSecondInMillions = trafficGeneratorPacketsPerSecondInMillions
 	}
 
-	if rawPortBandwidthGB := baseConfig.Params[PortBandwidthGBParamName]; rawPortBandwidthGB != "" {
-		portBandwidthGB, err := strconv.Atoi(rawPortBandwidthGB)
-		if err != nil || portBandwidthGB <= 0 {
+	if rawVal := baseConfig.Params[PortBandwidthGBParamName]; rawVal != "" {
+		newConfig.PortBandwidthGB, err = parseNonZeroPositiveInt(rawVal)
+		if err != nil {
 			return Config{}, ErrInvalidPortBandwidthGB
 		}
-		newConfig.PortBandwidthGB = portBandwidthGB
 	}
 
-	if rawTrafficGeneratorMacAddress := baseConfig.Params[TrafficGeneratorMacAddressParamName]; rawTrafficGeneratorMacAddress != "" {
-		trafficGeneratorMacAddress, err := net.ParseMAC(rawTrafficGeneratorMacAddress)
+	if rawVal := baseConfig.Params[TrafficGeneratorEastMacAddressParamName]; rawVal != "" {
+		newConfig.TrafficGeneratorEastMacAddress, err = net.ParseMAC(rawVal)
 		if err != nil {
-			return Config{}, ErrInvalidTrafficGeneratorMacAddress
+			return Config{}, ErrInvalidTrafficGeneratorEastMacAddress
 		}
-		newConfig.TrafficGeneratorMacAddress = trafficGeneratorMacAddress
 	}
 
-	if rawDPDKMacAddress := baseConfig.Params[DPDKMacAddressParamName]; rawDPDKMacAddress != "" {
-		dpdkMacAddress, err := net.ParseMAC(rawDPDKMacAddress)
+	if rawVal := baseConfig.Params[TrafficGeneratorWestMacAddressParamName]; rawVal != "" {
+		newConfig.TrafficGeneratorWestMacAddress, err = net.ParseMAC(rawVal)
 		if err != nil {
-			return Config{}, ErrInvalidDPDKMacAddress
+			return Config{}, ErrInvalidTrafficGeneratorWestMacAddress
 		}
-		newConfig.DPDKMacAddress = dpdkMacAddress
 	}
 
-	if rawTestDuration := baseConfig.Params[TestDurationParamName]; rawTestDuration != "" {
-		testDuration, err := time.ParseDuration(rawTestDuration)
+	if rawVal := baseConfig.Params[DPDKEastMacAddressParamName]; rawVal != "" {
+		newConfig.DPDKEastMacAddress, err = net.ParseMAC(rawVal)
+		if err != nil {
+			return Config{}, ErrInvalidDPDKEastMacAddress
+		}
+	}
+
+	if rawVal := baseConfig.Params[DPDKWestMacAddressParamName]; rawVal != "" {
+		newConfig.DPDKWestMacAddress, err = net.ParseMAC(rawVal)
+		if err != nil {
+			return Config{}, ErrInvalidDPDKWestMacAddress
+		}
+	}
+
+	if rawVal := baseConfig.Params[TestDurationParamName]; rawVal != "" {
+		newConfig.TestDuration, err = time.ParseDuration(rawVal)
 		if err != nil {
 			return Config{}, ErrInvalidTestDuration
 		}
-		newConfig.TestDuration = testDuration
 	}
 
 	return newConfig, nil
+}
+
+func parseNonZeroPositiveInt(rawVal string) (int, error) {
+	val, err := strconv.Atoi(rawVal)
+	if err != nil || val <= 0 {
+		return 0, errors.New("parameter is zero or negative")
+	}
+	return val, nil
+}
+
+func parseNonNegativeInt(rawVal string) (int, error) {
+	val, err := strconv.Atoi(rawVal)
+	if err != nil || val < 0 {
+		return 0, errors.New("parameter is negative")
+	}
+	return val, nil
 }
