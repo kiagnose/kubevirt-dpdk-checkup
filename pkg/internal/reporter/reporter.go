@@ -19,15 +19,54 @@
 
 package reporter
 
-import "github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/status"
+import (
+	"fmt"
+
+	"k8s.io/client-go/kubernetes"
+
+	kreporter "github.com/kiagnose/kiagnose/kiagnose/reporter"
+
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/status"
+)
+
+const (
+	DropRateKey             = "dropRate"
+	TrafficGeneratorNodeKey = "trafficGeneratorNode"
+	DPDKVMNodeKey           = "DPDKVMNodeKey"
+)
 
 type Reporter struct {
+	kreporter.Reporter
 }
 
-func New() *Reporter {
-	return &Reporter{}
+func New(c kubernetes.Interface, configMapNamespace, configMapName string) *Reporter {
+	r := kreporter.New(c, configMapNamespace, configMapName)
+	return &Reporter{*r}
 }
 
 func (r *Reporter) Report(checkupStatus status.Status) error {
-	return nil
+	if !r.HasData() {
+		return r.Reporter.Report(checkupStatus.Status)
+	}
+
+	checkupStatus.Succeeded = len(checkupStatus.FailureReason) == 0
+
+	checkupStatus.Status.Results = formatResults(checkupStatus)
+
+	return r.Reporter.Report(checkupStatus.Status)
+}
+
+func formatResults(checkupStatus status.Status) map[string]string {
+	var emptyResults status.Results
+	if checkupStatus.Results == emptyResults {
+		return map[string]string{}
+	}
+
+	formattedResults := map[string]string{
+		DropRateKey:             fmt.Sprintf("%d", checkupStatus.Results.DropRate),
+		TrafficGeneratorNodeKey: checkupStatus.Results.TrafficGeneratorNode,
+		DPDKVMNodeKey:           checkupStatus.Results.DPDKVMNode,
+	}
+
+	return formattedResults
 }
