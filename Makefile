@@ -20,10 +20,10 @@ all: check build
 check: lint test/unit
 
 build:
-	mkdir -p $(CURDIR)/go-cache
+	mkdir -p $(CURDIR)/_go-cache
 	$(CRI_BIN) run --rm \
 	           --volume $(CURDIR):$(CURDIR):Z \
-	           --volume $(CURDIR)/go-cache:/root/.cache/go-build:Z \
+	           --volume $(CURDIR)/_go-cache:/root/.cache/go-build:Z \
 	           --workdir $(CURDIR) \
 	           -e GOOS=linux \
 	           -e GOARCH=amd64 \
@@ -38,10 +38,10 @@ push:
 .PHONY: push
 
 test/unit:
-	mkdir -p $(CURDIR)/go-cache
+	mkdir -p $(CURDIR)/_go-cache
 	$(CRI_BIN) run --rm \
 	           --volume $(CURDIR):$(CURDIR):Z \
-	           --volume $(CURDIR)/go-cache:/root/.cache/go-build:Z \
+	           --volume $(CURDIR)/_go-cache:/root/.cache/go-build:Z \
 	           --workdir $(CURDIR) \
 	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go test -v ./cmd/... ./pkg/...
 .PHONY: test/unit
@@ -59,10 +59,10 @@ test/e2e:
 .PHONY: test/e2e
 
 lint:
-	mkdir -p $(CURDIR)/linter-cache
+	mkdir -p $(CURDIR)/_linter-cache
 	$(CRI_BIN) run --rm \
 	           --volume $(CURDIR):$(CURDIR):Z \
-	           --volume $(CURDIR)/linter-cache:/root/.cache:Z \
+	           --volume $(CURDIR)/_linter-cache:/root/.cache:Z \
 	           --workdir $(CURDIR) \
 	            $(LINTER_IMAGE_NAME):$(LINTER_IMAGE_TAG) golangci-lint run --timeout 3m ./cmd/... ./pkg/... ./tests/...
 .PHONY: lint

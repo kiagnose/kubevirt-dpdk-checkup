@@ -16,5 +16,5 @@ _output
 # vendor/
 
 # Cache
-linter-cache
-go-cache
+_linter-cache
+_go-cache
