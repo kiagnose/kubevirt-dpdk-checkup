@@ -221,7 +221,7 @@ func newKubeVirtDPDKCheckerRole() *rbacv1.Role {
 			{
 				APIGroups: []string{"kubevirt.io"},
 				Resources: []string{"virtualmachineinstances"},
-				Verbs:     []string{"create"},
+				Verbs:     []string{"create", "delete"},
 			},
 		},
 	}
