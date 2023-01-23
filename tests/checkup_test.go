@@ -34,11 +34,10 @@ import (
 )
 
 const (
-	testServiceAccountName                     = "dpdk-checkup-sa"
-	testKiagnoseConfigMapAccessRoleName        = "kiagnose-configmap-access"
-	testKiagnoseConfigMapAccessRoleBindingName = testKiagnoseConfigMapAccessRoleName
-	testConfigMapName                          = "dpdk-checkup-config"
-	testCheckupJobName                         = "dpdk-checkup"
+	testServiceAccountName              = "dpdk-checkup-sa"
+	testKiagnoseConfigMapAccessRoleName = "kiagnose-configmap-access"
+	testConfigMapName                   = "dpdk-checkup-config"
+	testCheckupJobName                  = "dpdk-checkup"
 
 	paramNUMASocket = "0"
 )
@@ -132,8 +131,8 @@ func setupCheckupPermissions() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	kiagnoseConfigMapAccessRoleBinding = newKiagnoseConfigMapAccessRoleBinding(
-		testKiagnoseConfigMapAccessRoleBindingName,
+	kiagnoseConfigMapAccessRoleBinding = newRoleBinding(
+		kiagnoseConfigMapAccessRole.Name,
 		checkupServiceAccount.Name,
 		kiagnoseConfigMapAccessRole.Name)
 	kiagnoseConfigMapAccessRoleBinding, err = virtClient.RbacV1().RoleBindings(testNamespace).Create(
@@ -176,10 +175,10 @@ func newKiagnoseConfigMapAccessRole(configMapAccessRole string) *rbacv1.Role {
 	}
 }
 
-func newKiagnoseConfigMapAccessRoleBinding(configMapAccessRoleBindingName, serviceAccountName, roleName string) *rbacv1.RoleBinding {
+func newRoleBinding(name, serviceAccountName, roleName string) *rbacv1.RoleBinding {
 	return &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: configMapAccessRoleBindingName,
+			Name: name,
 		},
 		Subjects: []rbacv1.Subject{
 			{
