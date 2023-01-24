@@ -168,7 +168,6 @@ chpasswd:
 		vmi.WithHugePages(),
 		vmi.WithMemoryRequest("8Gi"),
 		vmi.WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds),
-		vmi.WithNodeSelector(checkupConfig.DPDKNodeLabelSelector),
 		vmi.WithPVCVolume(rootDiskName, "rhel8-yummy-gorilla"),
 		vmi.WithVirtIODisk(rootDiskName),
 		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, userData),

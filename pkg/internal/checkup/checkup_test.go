@@ -168,12 +168,10 @@ func (cs *clientStub) VMIName() string {
 
 func newTestConfig() config.Config {
 	return config.Config{
-		PodName:                           testPodName,
-		PodUID:                            testPodUID,
-		NUMASocket:                        0,
-		NetworkAttachmentDefinitionName:   testNetworkAttachmentDefinitionName,
-		TrafficGeneratorNodeLabelSelector: "",
-		DPDKNodeLabelSelector:             "",
+		PodName:                         testPodName,
+		PodUID:                          testPodUID,
+		NUMASocket:                      0,
+		NetworkAttachmentDefinitionName: testNetworkAttachmentDefinitionName,
 		TrafficGeneratorPacketsPerSecondInMillions: config.TrafficGeneratorPacketsPerSecondInMillionsDefault,
 		PortBandwidthGB:                config.PortBandwidthGBDefault,
 		TrafficGeneratorEastMacAddress: net.HardwareAddr{},

@@ -21,8 +21,10 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"strconv"
+	"strings"
 	"time"
 
 	kconfig "github.com/kiagnose/kiagnose/kiagnose/config"
@@ -40,6 +42,7 @@ const (
 	DPDKEastMacAddressParamName                         = "DPDKEastMacAddress"
 	DPDKWestMacAddressParamName                         = "DPDKWestMacAddress"
 	TestDurationParamName                               = "testDuration"
+	labelFormat                                         = "label format is key=value"
 )
 
 const (
@@ -55,8 +58,8 @@ const (
 var (
 	ErrInvalidNUMASocket                                 = errors.New("invalid NUMA Socket")
 	ErrInvalidNetworkAttachmentDefinitionName            = errors.New("invalid Network-Attachment-Definition Name")
-	ErrInvalidTrafficGeneratorNodeLabelSelector          = errors.New("invalid Traffic Generator Node Label Selector")
-	ErrInvalidDPDKNodeLabelSelector                      = errors.New("invalid DPDK Node Label Selector")
+	ErrInvalidTrafficGeneratorNodeLabelSelector          = errors.New("invalid Traffic Generator Node Label Selector. " + labelFormat)
+	ErrInvalidDPDKNodeLabelSelector                      = errors.New("invalid DPDK Node Label Selector. " + labelFormat)
 	ErrInvalidTrafficGeneratorPacketsPerSecondInMillions = errors.New("invalid Traffic Generator Packets Per Second In Millions")
 	ErrInvalidPortBandwidthGB                            = errors.New("invalid Port Bandwidth [GB]")
 	ErrInvalidTrafficGeneratorEastMacAddress             = errors.New("invalid Traffic Generator East MAC Address")
@@ -66,13 +69,17 @@ var (
 	ErrInvalidTestDuration                               = errors.New("invalid Test Duration")
 )
 
+type Label struct {
+	Key, Value string
+}
+
 type Config struct {
 	PodName                                    string
 	PodUID                                     string
 	NUMASocket                                 int
 	NetworkAttachmentDefinitionName            string
-	TrafficGeneratorNodeLabelSelector          string
-	DPDKNodeLabelSelector                      string
+	TrafficGeneratorNodeLabelSelector          Label
+	DPDKNodeLabelSelector                      Label
 	TrafficGeneratorPacketsPerSecondInMillions int
 	PortBandwidthGB                            int
 	TrafficGeneratorEastMacAddress             net.HardwareAddr
@@ -88,11 +95,9 @@ func New(baseConfig kconfig.Config) (Config, error) {
 	dpdkEastMacAddressDefault, _ := net.ParseMAC(DPDKEastMacAddressDefault)
 	dpdkWestMacAddressDefault, _ := net.ParseMAC(DPDKWestMacAddressDefault)
 	newConfig := Config{
-		PodName:                           baseConfig.PodName,
-		PodUID:                            baseConfig.PodUID,
-		NetworkAttachmentDefinitionName:   baseConfig.Params[NetworkAttachmentDefinitionNameParamName],
-		TrafficGeneratorNodeLabelSelector: baseConfig.Params[TrafficGeneratorNodeLabelSelectorParamName],
-		DPDKNodeLabelSelector:             baseConfig.Params[DPDKNodeLabelSelectorParamName],
+		PodName:                         baseConfig.PodName,
+		PodUID:                          baseConfig.PodUID,
+		NetworkAttachmentDefinitionName: baseConfig.Params[NetworkAttachmentDefinitionNameParamName],
 		TrafficGeneratorPacketsPerSecondInMillions: TrafficGeneratorPacketsPerSecondInMillionsDefault,
 		PortBandwidthGB:                PortBandwidthGBDefault,
 		TrafficGeneratorEastMacAddress: trafficGeneratorEastMacAddressDefault,
@@ -122,7 +127,16 @@ func New(baseConfig kconfig.Config) (Config, error) {
 func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, error) {
 	var err error
 
-	if rawVal := baseConfig.Params[TrafficGeneratorPacketsPerSecondInMillionsParamName]; rawVal != "" {
+	if newConfig, err = setLabelSelectorParams(baseConfig, newConfig); err != nil {
+		return Config{}, err
+	}
+
+	if newConfig, err = setMacAddressParams(baseConfig, newConfig); err != nil {
+		return Config{}, err
+	}
+
+	if rawVal :=
+		baseConfig.Params[TrafficGeneratorPacketsPerSecondInMillionsParamName]; rawVal != "" {
 		newConfig.TrafficGeneratorPacketsPerSecondInMillions, err = parseNonNegativeInt(rawVal)
 		if err != nil {
 			return Config{}, ErrInvalidTrafficGeneratorPacketsPerSecondInMillions
@@ -136,6 +150,36 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 		}
 	}
 
+	if rawVal := baseConfig.Params[TestDurationParamName]; rawVal != "" {
+		newConfig.TestDuration, err = time.ParseDuration(rawVal)
+		if err != nil {
+			return Config{}, ErrInvalidTestDuration
+		}
+	}
+
+	return newConfig, nil
+}
+
+func setLabelSelectorParams(baseConfig kconfig.Config, newConfig Config) (Config, error) {
+	var err error
+	if rawVal := baseConfig.Params[TrafficGeneratorNodeLabelSelectorParamName]; rawVal != "" {
+		newConfig.TrafficGeneratorNodeLabelSelector, err = ParseLabel(rawVal)
+		if err != nil {
+			return Config{}, ErrInvalidTrafficGeneratorNodeLabelSelector
+		}
+	}
+
+	if rawVal := baseConfig.Params[DPDKNodeLabelSelectorParamName]; rawVal != "" {
+		newConfig.DPDKNodeLabelSelector, err = ParseLabel(rawVal)
+		if err != nil {
+			return Config{}, ErrInvalidDPDKNodeLabelSelector
+		}
+	}
+	return newConfig, nil
+}
+
+func setMacAddressParams(baseConfig kconfig.Config, newConfig Config) (Config, error) {
+	var err error
 	if rawVal := baseConfig.Params[TrafficGeneratorEastMacAddressParamName]; rawVal != "" {
 		newConfig.TrafficGeneratorEastMacAddress, err = net.ParseMAC(rawVal)
 		if err != nil {
@@ -163,14 +207,6 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 			return Config{}, ErrInvalidDPDKWestMacAddress
 		}
 	}
-
-	if rawVal := baseConfig.Params[TestDurationParamName]; rawVal != "" {
-		newConfig.TestDuration, err = time.ParseDuration(rawVal)
-		if err != nil {
-			return Config{}, ErrInvalidTestDuration
-		}
-	}
-
 	return newConfig, nil
 }
 
@@ -188,4 +224,13 @@ func parseNonNegativeInt(rawVal string) (int, error) {
 		return 0, errors.New("parameter is negative")
 	}
 	return val, nil
+}
+
+func ParseLabel(str string) (Label, error) {
+	const labelArgumentsNum = 2
+	s := strings.Split(str, "=")
+	if len(s) != labelArgumentsNum {
+		return Label{}, fmt.Errorf("invalid label format")
+	}
+	return Label{s[0], s[1]}, nil
 }

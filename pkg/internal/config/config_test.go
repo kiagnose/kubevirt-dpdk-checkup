@@ -38,9 +38,9 @@ const (
 	numaSocket                                 = 1
 	networkAttachmentDefinitionName            = "intel-dpdk-network1"
 	portBandwidthGB                            = 100
-	trafficGeneratorNodeLabelSelector          = "node-role.kubernetes.io/worker-dpdk1"
+	trafficGeneratorNodeLabelSelector          = "node-role.kubernetes.io/worker-dpdk1=''"
 	trafficGeneratorPacketsPerSecondInMillions = 6
-	dpdkNodeLabelSelector                      = "node-role.kubernetes.io/worker-dpdk2"
+	dpdkNodeLabelSelector                      = "node-role.kubernetes.io/worker-dpdk2="
 	trafficGeneratorEastMacAddress             = "DE:AD:BE:EF:00:01"
 	trafficGeneratorWestMacAddress             = "DE:AD:BE:EF:01:00"
 	dpdkEastMacAddress                         = "DE:AD:BE:EF:00:02"
@@ -95,6 +95,8 @@ func TestNewShouldApplyUserConfig(t *testing.T) {
 	trafficGeneratorWestHWAddress, _ := net.ParseMAC(trafficGeneratorWestMacAddress)
 	dpdkEastHWAddress, _ := net.ParseMAC(dpdkEastMacAddress)
 	dpdkWestHWAddress, _ := net.ParseMAC(dpdkWestMacAddress)
+	trafficGeneratorNodeLabelSelectorLabel, _ := config.ParseLabel(trafficGeneratorNodeLabelSelector)
+	dpdkNodeLabelSelectorLabel, _ := config.ParseLabel(dpdkNodeLabelSelector)
 	expectedConfig := config.Config{
 		PodName:                         testPodName,
 		PodUID:                          testPodUID,
@@ -102,8 +104,8 @@ func TestNewShouldApplyUserConfig(t *testing.T) {
 		PortBandwidthGB:                 portBandwidthGB,
 		NetworkAttachmentDefinitionName: networkAttachmentDefinitionName,
 		TrafficGeneratorPacketsPerSecondInMillions: trafficGeneratorPacketsPerSecondInMillions,
-		TrafficGeneratorNodeLabelSelector:          trafficGeneratorNodeLabelSelector,
-		DPDKNodeLabelSelector:                      dpdkNodeLabelSelector,
+		TrafficGeneratorNodeLabelSelector:          trafficGeneratorNodeLabelSelectorLabel,
+		DPDKNodeLabelSelector:                      dpdkNodeLabelSelectorLabel,
 		TrafficGeneratorEastMacAddress:             trafficGeneratorEastHWAddress,
 		TrafficGeneratorWestMacAddress:             trafficGeneratorWestHWAddress,
 		DPDKEastMacAddress:                         dpdkEastHWAddress,
@@ -139,6 +141,18 @@ func TestNewShouldFailWhen(t *testing.T) {
 			key:            config.NetworkAttachmentDefinitionNameParamName,
 			faultyKeyValue: "",
 			expectedError:  config.ErrInvalidNetworkAttachmentDefinitionName,
+		},
+		{
+			description:    "TrafficGeneratorNodeLabelSelector is invalid",
+			key:            config.TrafficGeneratorNodeLabelSelectorParamName,
+			faultyKeyValue: "wrong:format",
+			expectedError:  config.ErrInvalidTrafficGeneratorNodeLabelSelector,
+		},
+		{
+			description:    "DPDKNodeLabelSelector is invalid",
+			key:            config.DPDKNodeLabelSelectorParamName,
+			faultyKeyValue: "invalid-format",
+			expectedError:  config.ErrInvalidDPDKNodeLabelSelector,
 		},
 		{
 			description:    "TrafficGeneratorPacketsPerSecondInMillions is invalid",

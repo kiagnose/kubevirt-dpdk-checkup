@@ -164,20 +164,6 @@ func WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds int64) Opti
 	}
 }
 
-func WithNodeSelector(nodeName string) Option {
-	return func(vmi *kvcorev1.VirtualMachineInstance) {
-		if nodeName == "" {
-			return
-		}
-
-		if vmi.Spec.NodeSelector == nil {
-			vmi.Spec.NodeSelector = map[string]string{}
-		}
-
-		vmi.Spec.NodeSelector[corev1.LabelHostname] = nodeName
-	}
-}
-
 func WithMultusNetwork(name, networkAttachmentDefinitionName string) Option {
 	return func(vmi *kvcorev1.VirtualMachineInstance) {
 		vmi.Spec.Networks = append(vmi.Spec.Networks, kvcorev1.Network{
