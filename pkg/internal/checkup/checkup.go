@@ -47,6 +47,7 @@ type kubeVirtVMIClient interface {
 type Checkup struct {
 	client    kubeVirtVMIClient
 	namespace string
+	params    config.Config
 	vmi       *kvcorev1.VirtualMachineInstance
 }
 
@@ -56,6 +57,7 @@ func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config
 	return &Checkup{
 		client:    client,
 		namespace: namespace,
+		params:    checkupConfig,
 		vmi:       newDPDKVMI(checkupConfig),
 	}
 }
