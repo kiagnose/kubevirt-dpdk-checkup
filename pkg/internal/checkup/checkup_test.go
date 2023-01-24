@@ -122,12 +122,14 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 		vmiReadFailure     error
 		vmiDeletionFailure error
 		podDeletionFailure error
+		podReadFailure     error
 		expectedFailure    string
 	}
 
 	const (
 		vmiReadFailureMsg     = "failed to delete VMI"
 		vmiDeletionFailureMsg = "failed to read VMI"
+		podReadFailureMsg     = "failed to read Pod"
 		podDeletionFailureMsg = "failed to delete Pod"
 	)
 	testCases := []FailTestCase{
@@ -146,6 +148,11 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 			podDeletionFailure: errors.New(podDeletionFailureMsg),
 			expectedFailure:    podDeletionFailureMsg,
 		},
+		{
+			description:     "wait for Traffic generator Pod deletion fails",
+			podReadFailure:  errors.New(podReadFailureMsg),
+			expectedFailure: podReadFailureMsg,
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -162,6 +169,7 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 			testClient.vmiDeletionFailure = testCase.vmiDeletionFailure
 			testClient.vmiReadFailure = testCase.vmiReadFailure
 			testClient.podDeletionFailure = testCase.podDeletionFailure
+			testClient.podReadFailure = testCase.podReadFailure
 			assert.ErrorContains(t, testCheckup.Teardown(context.Background()), testCase.expectedFailure)
 		})
 	}

@@ -116,6 +116,10 @@ func (c *Checkup) Teardown(ctx context.Context) error {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 
+	if err := c.waitForPodDeletion(ctx); err != nil {
+		return fmt.Errorf("%s: %w", errPrefix, err)
+	}
+
 	return nil
 }
 
@@ -242,7 +246,7 @@ func (c *Checkup) waitForPodRunningStatus(ctx context.Context, namespace, name s
 	}
 	const interval = time.Second * 5
 	if err := wait.PollImmediateUntilWithContext(ctx, interval, conditionFn); err != nil {
-		return nil, fmt.Errorf("failed to wait for POD '%s' to be in Running Phase: %v", podFullName, err)
+		return nil, fmt.Errorf("failed to wait for Pod '%s' to be in Running Phase: %v", podFullName, err)
 	}
 
 	log.Printf("Pod %s is Running", podFullName)
@@ -281,6 +285,27 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		pod.WithNetworkRequestAnnotation(secondaryNetworkRequest),
 		pod.WithHugepagesVolume(),
 	)
+}
+
+func (c *Checkup) waitForPodDeletion(ctx context.Context) error {
+	podFullName := ObjectFullName(c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
+	log.Printf("Waiting for Pod %q to be deleted..", podFullName)
+
+	conditionFn := func(ctx context.Context) (bool, error) {
+		var err error
+		_, err = c.client.GetPod(ctx, c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
+		if k8serrors.IsNotFound(err) {
+			return true, nil
+		}
+		return false, err
+	}
+	const interval = 5 * time.Second
+	if err := wait.PollImmediateUntilWithContext(ctx, interval, conditionFn); err != nil {
+		return fmt.Errorf("failed to wait for POD %q to be in deleted: %v", podFullName, err)
+	}
+
+	log.Printf("Pod %q is deleted", podFullName)
+	return nil
 }
 
 func (c *Checkup) deletePod(ctx context.Context) error {
