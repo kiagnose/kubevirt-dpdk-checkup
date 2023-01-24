@@ -47,6 +47,7 @@ type kubeVirtVMIClient interface {
 	GetVirtualMachineInstance(ctx context.Context, namespace, name string) (*kvcorev1.VirtualMachineInstance, error)
 	DeleteVirtualMachineInstance(ctx context.Context, namespace, name string) error
 	CreatePod(ctx context.Context, namespace string, pod *k8scorev1.Pod) (*k8scorev1.Pod, error)
+	DeletePod(ctx context.Context, namespace, name string) error
 	GetPod(ctx context.Context, namespace, name string) (*k8scorev1.Pod, error)
 }
 
@@ -108,6 +109,10 @@ func (c *Checkup) Teardown(ctx context.Context) error {
 	}
 
 	if err := c.waitForVMIDeletion(ctx); err != nil {
+		return fmt.Errorf("%s: %w", errPrefix, err)
+	}
+
+	if err := c.deletePod(ctx); err != nil {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 
@@ -276,4 +281,20 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		pod.WithNetworkRequestAnnotation(secondaryNetworkRequest),
 		pod.WithHugepagesVolume(),
 	)
+}
+
+func (c *Checkup) deletePod(ctx context.Context) error {
+	if c.trafficGeneratorPod == nil {
+		return fmt.Errorf("failed to delete traffic generator Pod, object doesn't exist")
+	}
+
+	vmiFullName := ObjectFullName(c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
+
+	log.Printf("Trying to delete traffic generator Pod: %q", vmiFullName)
+	if err := c.client.DeletePod(ctx, c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name); err != nil {
+		log.Printf("Failed to delete traffic generator Pod: %q", vmiFullName)
+		return err
+	}
+
+	return nil
 }

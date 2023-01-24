@@ -67,6 +67,11 @@ func TestCheckupShouldSucceed(t *testing.T) {
 	_, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
 	assert.ErrorContains(t, err, "not found")
 
+	podName := testClient.TrafficGeneratorPodName()
+	assert.NotEmpty(t, podName)
+	_, err = testClient.GetPod(context.Background(), testNamespace, podName)
+	assert.ErrorContains(t, err, "not found")
+
 	actualResults := testCheckup.Results()
 	expectedResults := status.Results{}
 
@@ -116,12 +121,14 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 		description        string
 		vmiReadFailure     error
 		vmiDeletionFailure error
+		podDeletionFailure error
 		expectedFailure    string
 	}
 
 	const (
 		vmiReadFailureMsg     = "failed to delete VMI"
 		vmiDeletionFailureMsg = "failed to read VMI"
+		podDeletionFailureMsg = "failed to delete Pod"
 	)
 	testCases := []FailTestCase{
 		{
@@ -134,13 +141,16 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 			vmiDeletionFailure: errors.New(vmiDeletionFailureMsg),
 			expectedFailure:    vmiDeletionFailureMsg,
 		},
+		{
+			description:        "Traffic generator Pod deletion fails",
+			podDeletionFailure: errors.New(podDeletionFailureMsg),
+			expectedFailure:    podDeletionFailureMsg,
+		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.description, func(t *testing.T) {
 			testClient := newClientStub()
-			testClient.vmiDeletionFailure = testCase.vmiDeletionFailure
-			testClient.vmiReadFailure = testCase.vmiReadFailure
 			testConfig := newTestConfig()
 
 			testCheckup := checkup.New(testClient, testNamespace, testConfig)
@@ -149,6 +159,9 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 			assert.NoError(t, testCheckup.Setup(context.Background()))
 			assert.NoError(t, testCheckup.Run(context.Background()))
 
+			testClient.vmiDeletionFailure = testCase.vmiDeletionFailure
+			testClient.vmiReadFailure = testCase.vmiReadFailure
+			testClient.podDeletionFailure = testCase.podDeletionFailure
 			assert.ErrorContains(t, testCheckup.Teardown(context.Background()), testCase.expectedFailure)
 		})
 	}
@@ -160,6 +173,7 @@ type clientStub struct {
 	returnNetAttachDef *networkv1.NetworkAttachmentDefinition
 	podCreationFailure error
 	podReadFailure     error
+	podDeletionFailure error
 	vmiCreationFailure error
 	vmiReadFailure     error
 	vmiDeletionFailure error
@@ -226,13 +240,28 @@ func (cs *clientStub) CreatePod(_ context.Context, namespace string, pod *k8scor
 	return pod, nil
 }
 
+func (cs *clientStub) DeletePod(_ context.Context, namespace, name string) error {
+	if cs.podDeletionFailure != nil {
+		return cs.podDeletionFailure
+	}
+
+	podFullName := checkup.ObjectFullName(namespace, name)
+	delete(cs.createdPods, podFullName)
+
+	return nil
+}
+
 func (cs *clientStub) GetPod(_ context.Context, namespace, name string) (*k8scorev1.Pod, error) {
 	if cs.podReadFailure != nil {
 		return nil, cs.podReadFailure
 	}
 
 	podFullName := checkup.ObjectFullName(namespace, name)
-	return cs.createdPods[podFullName], nil
+	pod, exist := cs.createdPods[podFullName]
+	if !exist {
+		return nil, k8serrors.NewNotFound(schema.GroupResource{Group: "", Resource: "pods"}, name)
+	}
+	return pod, nil
 }
 
 func (cs *clientStub) TrafficGeneratorPodName() string {
