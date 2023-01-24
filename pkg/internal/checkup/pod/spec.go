@@ -149,3 +149,7 @@ func WithPodContainer(container *corev1.Container) PodOption {
 		pod.Spec.Containers = append(pod.Spec.Containers, *container)
 	}
 }
+
+func PodInRunningPhase(pod *corev1.Pod) bool {
+	return pod.Status.Phase == corev1.PodRunning
+}

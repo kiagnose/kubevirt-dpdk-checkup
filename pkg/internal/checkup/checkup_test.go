@@ -26,9 +26,12 @@ import (
 	"strings"
 	"testing"
 
+	networkv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
 	assert "github.com/stretchr/testify/require"
 
+	k8scorev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	kvcorev1 "kubevirt.io/api/core/v1"
@@ -43,11 +46,17 @@ const (
 	testPodUID                          = "0123456789-0123456789"
 	testNamespace                       = "target-ns"
 	testNetworkAttachmentDefinitionName = "dpdk-network"
+	trafficGeneratorEastMacAddress      = "DE:AD:BE:EF:00:01"
+	trafficGeneratorWestMacAddress      = "DE:AD:BE:EF:01:00"
+	dpdkEastMacAddress                  = "DE:AD:BE:EF:00:02"
+	dpdkWestMacAddress                  = "DE:AD:BE:EF:02:00"
 )
 
 func TestCheckupShouldSucceed(t *testing.T) {
 	testClient := newClientStub()
-	testCheckup := checkup.New(testClient, testNamespace, newTestConfig())
+	testConfig := newTestConfig()
+	testCheckup := checkup.New(testClient, testNamespace, testConfig)
+	testClient.returnNetAttachDef = newNetAttachDef(testConfig.NetworkAttachmentDefinitionName)
 
 	assert.NoError(t, testCheckup.Setup(context.Background()))
 	assert.NoError(t, testCheckup.Run(context.Background()))
@@ -69,44 +78,88 @@ func TestSetupShouldFail(t *testing.T) {
 		expectedVMICreationFailure := errors.New("failed to create VMI")
 
 		testClient := newClientStub()
+		testConfig := newTestConfig()
 		testClient.vmiCreationFailure = expectedVMICreationFailure
-		testCheckup := checkup.New(testClient, testNamespace, newTestConfig())
+		testCheckup := checkup.New(testClient, testNamespace, testConfig)
+		testClient.returnNetAttachDef = newNetAttachDef(testConfig.NetworkAttachmentDefinitionName)
 
 		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedVMICreationFailure.Error())
+	})
+
+	t.Run("when Pod creation fails", func(t *testing.T) {
+		expectedPodCreationFailure := errors.New("failed to create Pod")
+
+		testClient := newClientStub()
+		testConfig := newTestConfig()
+		testClient.podCreationFailure = expectedPodCreationFailure
+		testCheckup := checkup.New(testClient, testNamespace, testConfig)
+		testClient.returnNetAttachDef = newNetAttachDef(testConfig.NetworkAttachmentDefinitionName)
+
+		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedPodCreationFailure.Error())
+	})
+
+	t.Run("when wait Pod Running fails on read", func(t *testing.T) {
+		expectedPodReadFailure := errors.New("failed to read Pod")
+
+		testClient := newClientStub()
+		testConfig := newTestConfig()
+		testClient.podReadFailure = expectedPodReadFailure
+		testCheckup := checkup.New(testClient, testNamespace, testConfig)
+		testClient.returnNetAttachDef = newNetAttachDef(testConfig.NetworkAttachmentDefinitionName)
+
+		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedPodReadFailure.Error())
 	})
 }
 
 func TestTeardownShouldFailWhen(t *testing.T) {
-	t.Run("VMI deletion fails", func(t *testing.T) {
-		expectedVMIDeletionFailure := errors.New("failed to delete VMI")
+	type FailTestCase struct {
+		description        string
+		vmiReadFailure     error
+		vmiDeletionFailure error
+		expectedFailure    string
+	}
 
-		testClient := newClientStub()
-		testClient.vmiDeletionFailure = expectedVMIDeletionFailure
-		testCheckup := checkup.New(testClient, testNamespace, newTestConfig())
+	const (
+		vmiReadFailureMsg     = "failed to delete VMI"
+		vmiDeletionFailureMsg = "failed to read VMI"
+	)
+	testCases := []FailTestCase{
+		{
+			description:     "VMI deletion fails",
+			vmiReadFailure:  errors.New(vmiReadFailureMsg),
+			expectedFailure: vmiReadFailureMsg,
+		},
+		{
+			description:        "wait for VMI deletion fails",
+			vmiDeletionFailure: errors.New(vmiDeletionFailureMsg),
+			expectedFailure:    vmiDeletionFailureMsg,
+		},
+	}
 
-		assert.NoError(t, testCheckup.Setup(context.Background()))
-		assert.NoError(t, testCheckup.Run(context.Background()))
+	for _, testCase := range testCases {
+		t.Run(testCase.description, func(t *testing.T) {
+			testClient := newClientStub()
+			testClient.vmiDeletionFailure = testCase.vmiDeletionFailure
+			testClient.vmiReadFailure = testCase.vmiReadFailure
+			testConfig := newTestConfig()
 
-		assert.ErrorContains(t, testCheckup.Teardown(context.Background()), expectedVMIDeletionFailure.Error())
-	})
+			testCheckup := checkup.New(testClient, testNamespace, testConfig)
+			testClient.returnNetAttachDef = newNetAttachDef(testConfig.NetworkAttachmentDefinitionName)
 
-	t.Run("wait for VMI deletion fails", func(t *testing.T) {
-		expectedReadFailure := errors.New("failed to read VMI")
+			assert.NoError(t, testCheckup.Setup(context.Background()))
+			assert.NoError(t, testCheckup.Run(context.Background()))
 
-		testClient := newClientStub()
-		testClient.vmiReadFailure = expectedReadFailure
-
-		testCheckup := checkup.New(testClient, testNamespace, newTestConfig())
-
-		assert.NoError(t, testCheckup.Setup(context.Background()))
-		assert.NoError(t, testCheckup.Run(context.Background()))
-
-		assert.ErrorContains(t, testCheckup.Teardown(context.Background()), expectedReadFailure.Error())
-	})
+			assert.ErrorContains(t, testCheckup.Teardown(context.Background()), testCase.expectedFailure)
+		})
+	}
 }
 
 type clientStub struct {
 	createdVMIs        map[string]*kvcorev1.VirtualMachineInstance
+	createdPods        map[string]*k8scorev1.Pod
+	returnNetAttachDef *networkv1.NetworkAttachmentDefinition
+	podCreationFailure error
+	podReadFailure     error
 	vmiCreationFailure error
 	vmiReadFailure     error
 	vmiDeletionFailure error
@@ -115,6 +168,7 @@ type clientStub struct {
 func newClientStub() *clientStub {
 	return &clientStub{
 		createdVMIs: map[string]*kvcorev1.VirtualMachineInstance{},
+		createdPods: map[string]*k8scorev1.Pod{},
 	}
 }
 
@@ -156,6 +210,50 @@ func (cs *clientStub) DeleteVirtualMachineInstance(_ context.Context, namespace,
 	return nil
 }
 
+func (cs *clientStub) GetNetworkAttachmentDefinition(_ context.Context, _, _ string) (*networkv1.NetworkAttachmentDefinition, error) {
+	return cs.returnNetAttachDef, nil
+}
+
+func (cs *clientStub) CreatePod(_ context.Context, namespace string, pod *k8scorev1.Pod) (*k8scorev1.Pod, error) {
+	if cs.podCreationFailure != nil {
+		return nil, cs.podCreationFailure
+	}
+
+	podFullName := checkup.ObjectFullName(namespace, pod.Name)
+	pod.Status.Phase = k8scorev1.PodRunning
+	cs.createdPods[podFullName] = pod
+
+	return pod, nil
+}
+
+func (cs *clientStub) GetPod(_ context.Context, namespace, name string) (*k8scorev1.Pod, error) {
+	if cs.podReadFailure != nil {
+		return nil, cs.podReadFailure
+	}
+
+	podFullName := checkup.ObjectFullName(namespace, name)
+	return cs.createdPods[podFullName], nil
+}
+
+func (cs *clientStub) TrafficGeneratorPodName() string {
+	for podName := range cs.createdPods {
+		if strings.Contains(podName, checkup.TrexPodNamePrefix) {
+			return podName
+		}
+	}
+
+	return ""
+}
+
+func newNetAttachDef(name string) *networkv1.NetworkAttachmentDefinition {
+	return &networkv1.NetworkAttachmentDefinition{
+		ObjectMeta: k8smetav1.ObjectMeta{
+			Name:      name,
+			Namespace: testNamespace,
+		},
+	}
+}
+
 func (cs *clientStub) VMIName() string {
 	for vmiName := range cs.createdVMIs {
 		if strings.Contains(vmiName, checkup.VMINamePrefix) {
@@ -167,6 +265,10 @@ func (cs *clientStub) VMIName() string {
 }
 
 func newTestConfig() config.Config {
+	trafficGeneratorEastHWAddress, _ := net.ParseMAC(trafficGeneratorEastMacAddress)
+	trafficGeneratorWestHWAddress, _ := net.ParseMAC(trafficGeneratorWestMacAddress)
+	dpdkEastHWAddress, _ := net.ParseMAC(dpdkEastMacAddress)
+	dpdkWestHWAddress, _ := net.ParseMAC(dpdkWestMacAddress)
 	return config.Config{
 		PodName:                           testPodName,
 		PodUID:                            testPodUID,
@@ -176,10 +278,10 @@ func newTestConfig() config.Config {
 		DPDKNodeLabelSelector:             "",
 		TrafficGeneratorPacketsPerSecondInMillions: config.TrafficGeneratorPacketsPerSecondInMillionsDefault,
 		PortBandwidthGB:                config.PortBandwidthGBDefault,
-		TrafficGeneratorEastMacAddress: net.HardwareAddr{},
-		TrafficGeneratorWestMacAddress: net.HardwareAddr{},
-		DPDKEastMacAddress:             net.HardwareAddr{},
-		DPDKWestMacAddress:             net.HardwareAddr{},
+		TrafficGeneratorEastMacAddress: trafficGeneratorEastHWAddress,
+		TrafficGeneratorWestMacAddress: trafficGeneratorWestHWAddress,
+		DPDKEastMacAddress:             dpdkEastHWAddress,
+		DPDKWestMacAddress:             dpdkWestHWAddress,
 		TestDuration:                   config.TestDurationDefault,
 	}
 }
