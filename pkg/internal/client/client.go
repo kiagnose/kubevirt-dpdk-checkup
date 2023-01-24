@@ -61,6 +61,10 @@ func (c *Client) GetPod(ctx context.Context, namespace, name string) (*corev1.Po
 	return c.KubevirtClient.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
+func (c *Client) DeletePod(ctx context.Context, namespace, name string) error {
+	return c.KubevirtClient.CoreV1().Pods(namespace).Delete(ctx, name, metav1.DeleteOptions{})
+}
+
 func (c *Client) CreateVirtualMachineInstance(ctx context.Context,
 	namespace string,
 	vmi *kvcorev1.VirtualMachineInstance) (*kvcorev1.VirtualMachineInstance, error) {
