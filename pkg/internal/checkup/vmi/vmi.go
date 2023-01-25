@@ -62,6 +62,18 @@ func New(name string, options ...Option) *kvcorev1.VirtualMachineInstance {
 	return newVMI
 }
 
+func WithLabels(labels map[string]string) Option {
+	return func(vmi *kvcorev1.VirtualMachineInstance) {
+		if vmi.Labels == nil {
+			vmi.Labels = map[string]string{}
+		}
+
+		for key, val := range labels {
+			vmi.Labels[key] = val
+		}
+	}
+}
+
 func WithoutCRIOCPULoadBalancing() Option {
 	return func(vmi *kvcorev1.VirtualMachineInstance) {
 		if vmi.ObjectMeta.Annotations == nil {
@@ -206,6 +218,15 @@ func WithCloudInitNoCloudVolume(name, userData string) Option {
 		}
 
 		vmi.Spec.Volumes = append(vmi.Spec.Volumes, newVolume)
+	}
+}
+
+// WithAffinity adds the given affinity.
+func WithAffinity(affinity *corev1.Affinity) Option {
+	return func(vmi *kvcorev1.VirtualMachineInstance) {
+		if affinity != nil {
+			vmi.Spec.Affinity = affinity
+		}
 	}
 }
 
