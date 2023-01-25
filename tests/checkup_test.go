@@ -36,6 +36,7 @@ import (
 const (
 	testServiceAccountName              = "dpdk-checkup-sa"
 	testKiagnoseConfigMapAccessRoleName = "kiagnose-configmap-access"
+	testKubeVirtDPDKCheckerRoleName     = "kubevirt-dpdk-checker"
 	testConfigMapName                   = "dpdk-checkup-config"
 	testCheckupJobName                  = "dpdk-checkup"
 
@@ -95,6 +96,8 @@ func setupCheckupPermissions() {
 		checkupServiceAccount              *corev1.ServiceAccount
 		kiagnoseConfigMapAccessRole        *rbacv1.Role
 		kiagnoseConfigMapAccessRoleBinding *rbacv1.RoleBinding
+		kubeVirtDPDKCheckerRole            *rbacv1.Role
+		kubeVirtDPDKCheckerRoleBinding     *rbacv1.RoleBinding
 	)
 
 	checkupServiceAccount = newServiceAccount(testServiceAccountName)
@@ -150,6 +153,40 @@ func setupCheckupPermissions() {
 		)
 		Expect(err).NotTo(HaveOccurred())
 	})
+
+	kubeVirtDPDKCheckerRole = newKubeVirtDPDKCheckerRole()
+	kubeVirtDPDKCheckerRole, err = virtClient.RbacV1().Roles(testNamespace).Create(
+		context.Background(),
+		kubeVirtDPDKCheckerRole,
+		metav1.CreateOptions{},
+	)
+	Expect(err).NotTo(HaveOccurred())
+
+	DeferCleanup(func() {
+		err = virtClient.RbacV1().Roles(kubeVirtDPDKCheckerRole.Namespace).Delete(
+			context.Background(),
+			kubeVirtDPDKCheckerRole.Name,
+			metav1.DeleteOptions{},
+		)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	kubeVirtDPDKCheckerRoleBinding = newRoleBinding(kubeVirtDPDKCheckerRole.Name, checkupServiceAccount.Name, kubeVirtDPDKCheckerRole.Name)
+	kubeVirtDPDKCheckerRoleBinding, err = virtClient.RbacV1().RoleBindings(testNamespace).Create(
+		context.Background(),
+		kubeVirtDPDKCheckerRoleBinding,
+		metav1.CreateOptions{},
+	)
+	Expect(err).NotTo(HaveOccurred())
+
+	DeferCleanup(func() {
+		err = virtClient.RbacV1().RoleBindings(kubeVirtDPDKCheckerRoleBinding.Namespace).Delete(
+			context.Background(),
+			kubeVirtDPDKCheckerRoleBinding.Name,
+			metav1.DeleteOptions{},
+		)
+		Expect(err).NotTo(HaveOccurred())
+	})
 }
 
 func newServiceAccount(serviceAccountName string) *corev1.ServiceAccount {
@@ -170,6 +207,21 @@ func newKiagnoseConfigMapAccessRole(configMapAccessRole string) *rbacv1.Role {
 				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
 				Verbs:     []string{"get", "update"},
+			},
+		},
+	}
+}
+
+func newKubeVirtDPDKCheckerRole() *rbacv1.Role {
+	return &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testKubeVirtDPDKCheckerRoleName,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"kubevirt.io"},
+				Resources: []string{"virtualmachineinstances"},
+				Verbs:     []string{"create"},
 			},
 		},
 	}

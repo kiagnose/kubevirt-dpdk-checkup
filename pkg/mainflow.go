@@ -32,7 +32,7 @@ import (
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/reporter"
 )
 
-func Run(rawEnv map[string]string) error {
+func Run(rawEnv map[string]string, namespace string) error {
 	c, err := client.New()
 	if err != nil {
 		return err
@@ -50,9 +50,12 @@ func Run(rawEnv map[string]string) error {
 
 	printConfig(cfg)
 
-	l := launcher.New(checkup.New(), reporter.New(c, baseConfig.ConfigMapNamespace, baseConfig.ConfigMapName))
+	l := launcher.New(checkup.New(c, namespace, cfg), reporter.New(c, baseConfig.ConfigMapNamespace, baseConfig.ConfigMapName))
 
-	return l.Run(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), baseConfig.Timeout)
+	defer cancel()
+
+	return l.Run(ctx)
 }
 
 func printConfig(checkupConfig config.Config) {
