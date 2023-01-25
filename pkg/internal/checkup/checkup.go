@@ -274,6 +274,7 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		pod.WithContainerCPUsStrict(TrexPodNumCPUs),
 		pod.WithContainerHugepagesResources(TrexPodNumHugepages),
 		pod.WithContainerHugepagesVolumeMount(),
+		pod.WithContainerLibModulesVolumeMount(),
 	)
 
 	return pod.NewPod(randomizeName(TrexPodNamePrefix),
@@ -285,6 +286,7 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		pod.WithNodeSelector(checkupConfig.TrafficGeneratorNodeLabelSelector),
 		pod.WithNetworkRequestAnnotation(secondaryNetworkRequest),
 		pod.WithHugepagesVolume(),
+		pod.WithLibModulesVolume(),
 	)
 }
 
