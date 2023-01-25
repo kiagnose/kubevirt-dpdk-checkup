@@ -25,12 +25,14 @@ import (
 	"log"
 	"time"
 
+	k8corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	k8srand "k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	kvcorev1 "kubevirt.io/api/core/v1"
 
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/affinity"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/vmi"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/status"
@@ -50,7 +52,11 @@ type Checkup struct {
 	vmi       *kvcorev1.VirtualMachineInstance
 }
 
-const VMINamePrefix = "dpdk-vmi"
+const (
+	VMINamePrefix = "dpdk-vmi"
+	TrexLabelStr  = "app=trex"
+	DPDKLabelStr  = "app=testpmd"
+)
 
 func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config) *Checkup {
 	return &Checkup{
@@ -153,8 +159,19 @@ chpasswd:
 
 		terminationGracePeriodSeconds = 180
 	)
+	trexLabel, _ := config.ParseLabel(TrexLabelStr)
+	dpdkLabel, _ := config.ParseLabel(DPDKLabelStr)
+
+	var af *k8corev1.Affinity
+	if checkupConfig.DPDKNodeLabelSelector.Key != "" {
+		af = &k8corev1.Affinity{NodeAffinity: affinity.NewNodeAffinity(checkupConfig.DPDKNodeLabelSelector)}
+	} else {
+		af = &k8corev1.Affinity{PodAntiAffinity: affinity.NewPodAntiAffinity(trexLabel)}
+	}
 
 	return vmi.New(randomizeName(VMINamePrefix),
+		vmi.WithLabels(map[string]string{dpdkLabel.Key: dpdkLabel.Value}),
+		vmi.WithAffinity(af),
 		vmi.WithoutCRIOCPULoadBalancing(),
 		vmi.WithoutCRIOCPUQuota(),
 		vmi.WithoutCRIOIRQLoadBalancing(),
