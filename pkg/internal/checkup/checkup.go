@@ -22,8 +22,12 @@ package checkup
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	k8srand "k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	kvcorev1 "kubevirt.io/api/core/v1"
 
@@ -36,6 +40,8 @@ type kubeVirtVMIClient interface {
 	CreateVirtualMachineInstance(ctx context.Context,
 		namespace string,
 		vmi *kvcorev1.VirtualMachineInstance) (*kvcorev1.VirtualMachineInstance, error)
+	GetVirtualMachineInstance(ctx context.Context, namespace, name string) (*kvcorev1.VirtualMachineInstance, error)
+	DeleteVirtualMachineInstance(ctx context.Context, namespace, name string) error
 }
 
 type Checkup struct {
@@ -69,11 +75,62 @@ func (c *Checkup) Run(ctx context.Context) error {
 }
 
 func (c *Checkup) Teardown(ctx context.Context) error {
+	const errPrefix = "teardown"
+
+	if err := c.deleteVMI(ctx); err != nil {
+		return fmt.Errorf("%s: %w", errPrefix, err)
+	}
+
+	if err := c.waitForVMIDeletion(ctx); err != nil {
+		return fmt.Errorf("%s: %w", errPrefix, err)
+	}
+
 	return nil
 }
 
 func (c *Checkup) Results() status.Results {
 	return status.Results{}
+}
+
+func (c *Checkup) deleteVMI(ctx context.Context) error {
+	if c.vmi == nil {
+		return fmt.Errorf("failed to delete VMI, object doesn't exist")
+	}
+
+	vmiFullName := ObjectFullName(c.vmi.Namespace, c.vmi.Name)
+
+	log.Printf("Trying to delete VMI: %q", vmiFullName)
+	if err := c.client.DeleteVirtualMachineInstance(ctx, c.vmi.Namespace, c.vmi.Name); err != nil {
+		log.Printf("Failed to delete VMI: %q", vmiFullName)
+		return err
+	}
+
+	return nil
+}
+
+func (c *Checkup) waitForVMIDeletion(ctx context.Context) error {
+	vmiFullName := ObjectFullName(c.vmi.Namespace, c.vmi.Name)
+	log.Printf("Waiting for VMI %q to be deleted...", vmiFullName)
+
+	conditionFn := func(ctx context.Context) (bool, error) {
+		_, err := c.client.GetVirtualMachineInstance(ctx, c.vmi.Namespace, c.vmi.Name)
+		if k8serrors.IsNotFound(err) {
+			return true, nil
+		}
+		return false, err
+	}
+	const pollInterval = 5 * time.Second
+	if err := wait.PollImmediateUntilWithContext(ctx, pollInterval, conditionFn); err != nil {
+		return fmt.Errorf("failed to wait for VMI %q to be deleted: %v", vmiFullName, err)
+	}
+
+	log.Printf("VMI %q was deleted successfully", vmiFullName)
+
+	return nil
+}
+
+func ObjectFullName(namespace, name string) string {
+	return fmt.Sprintf("%s/%s", namespace, name)
 }
 
 func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
