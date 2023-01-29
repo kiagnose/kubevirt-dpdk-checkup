@@ -22,6 +22,7 @@ package client
 import (
 	"context"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 
@@ -50,6 +51,14 @@ func New() (*Client, error) {
 	}
 
 	return &Client{client}, nil
+}
+
+func (c *Client) CreatePod(ctx context.Context, namespace string, pod *corev1.Pod) (*corev1.Pod, error) {
+	return c.KubevirtClient.CoreV1().Pods(namespace).Create(ctx, pod, metav1.CreateOptions{})
+}
+
+func (c *Client) GetPod(ctx context.Context, namespace, name string) (*corev1.Pod, error) {
+	return c.KubevirtClient.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
 func (c *Client) CreateVirtualMachineInstance(ctx context.Context,
