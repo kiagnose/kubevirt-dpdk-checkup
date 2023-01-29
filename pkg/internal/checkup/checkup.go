@@ -291,17 +291,23 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 	const (
 		trafficGeneratorPodCPUCount       = "8"
 		trafficGeneratorPodHugepagesCount = "8Gi"
+
+		portBandwidthParamName = "PORT_BANDWIDTH_GB"
+		numaSocketParamName    = "NUMA_SOCKET"
+		verboseParamName       = "SET_VERBOSE"
 	)
 
 	envVars := map[string]string{
-		config.PortBandwidthGBParamName: fmt.Sprintf("%d", checkupConfig.PortBandwidthGB),
+		portBandwidthParamName: fmt.Sprintf("%d", checkupConfig.PortBandwidthGB),
+		numaSocketParamName:    fmt.Sprintf("%d", checkupConfig.NUMASocket),
+		verboseParamName:       "FALSE",
 	}
 	securityContext := pod.NewSecurityContext(int64(0), false,
 		[]k8scorev1.Capability{"IPC_LOCK", "SYS_RESOURCE", "NET_RAW", "NET_ADMIN"})
 
 	trafficGeneratorContainer := pod.NewPodContainer(TrafficGeneratorPodNamePrefix,
 		pod.WithContainerImage(checkupConfig.TrafficGeneratorImage),
-		pod.WithContainerCommand([]string{"/bin/bash", "-c", "sleep INF"}),
+		pod.WithContainerCommand([]string{"/bin/bash", "/opt/scripts/main.sh"}),
 		pod.WithContainerSecurityContext(securityContext),
 		pod.WithContainerEnvVars(envVars),
 		pod.WithContainerCPUsStrict(trafficGeneratorPodCPUCount),
