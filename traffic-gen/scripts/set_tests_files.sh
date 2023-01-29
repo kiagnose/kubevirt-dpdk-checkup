@@ -19,8 +19,25 @@
 
 set -eu
 
-echo "setting params to trex_cfg.yaml"
-/opt/scripts/set_traffic_gen_cfg_file.sh
+if [ "${SET_VERBOSE}" == "TRUE" ]; then
+	set -x
+fi
 
-echo "setting params to traffic-gen test files"
-/opt/scripts/set_tests_files.sh
+mkdir -p /opt/tests
+
+print_params() {
+	echo SRC_WEST_MAC_ADDRESS="${SRC_WEST_MAC_ADDRESS}"
+	echo SRC_EAST_MAC_ADDRESS="${SRC_EAST_MAC_ADDRESS}"
+	echo DST_WEST_MAC_ADDRESS="${DST_WEST_MAC_ADDRESS}"
+	echo DST_EAST_MAC_ADDRESS="${DST_EAST_MAC_ADDRESS}"
+	echo NUM_OF_CPUS="${NUM_OF_CPUS}"
+}
+
+print_params
+
+# set tests files
+envsubst < /opt/templates/testpmd.py.in > /opt/tests/testpmd.py
+envsubst < /opt/templates/testpmd_addr.py.in > /opt/tests/testpmd_addr.py
+
+cat /opt/tests/testpmd.py
+cat /opt/tests/testpmd_addr.py
