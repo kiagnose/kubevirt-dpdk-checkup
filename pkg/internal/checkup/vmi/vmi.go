@@ -23,6 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	kvcorev1 "kubevirt.io/api/core/v1"
 )
 
@@ -60,6 +61,19 @@ func New(name string, options ...Option) *kvcorev1.VirtualMachineInstance {
 	}
 
 	return newVMI
+}
+
+func WithOwnerReference(ownerName, ownerUID string) Option {
+	return func(vmi *kvcorev1.VirtualMachineInstance) {
+		if ownerUID != "" && ownerName != "" {
+			vmi.ObjectMeta.OwnerReferences = append(vmi.ObjectMeta.OwnerReferences, metav1.OwnerReference{
+				APIVersion: "v1",
+				Kind:       "Pod",
+				Name:       ownerName,
+				UID:        types.UID(ownerUID),
+			})
+		}
+	}
 }
 
 func WithoutCRIOCPULoadBalancing() Option {

@@ -181,6 +181,7 @@ chpasswd:
 	)
 
 	return vmi.New(randomizeName(VMINamePrefix),
+		vmi.WithOwnerReference(checkupConfig.PodName, checkupConfig.PodUID),
 		vmi.WithoutCRIOCPULoadBalancing(),
 		vmi.WithoutCRIOCPUQuota(),
 		vmi.WithoutCRIOIRQLoadBalancing(),
