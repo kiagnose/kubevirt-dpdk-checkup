@@ -19,11 +19,14 @@
 
 set -eu
 
-echo "setting params to trex_cfg.yaml"
-/opt/scripts/set_traffic_gen_cfg_file.sh
+if [ "${SET_VERBOSE}" == "TRUE" ]; then
+	set -x
+fi
 
-echo "setting params to traffic-gen test files"
-/opt/scripts/set_tests_files.sh
+print_params() {
+	echo NUM_OF_TRAFFIC_CPUS="${NUM_OF_TRAFFIC_CPUS}"
+}
 
-echo "run traffic_gen daemon"
-/opt/scripts/run_traffic_gen_daemon.sh
+print_params
+
+./t-rex-64 --no-ofed-check --no-hw-flow-stat -i -c "${NUM_OF_TRAFFIC_CPUS}" --iom 0

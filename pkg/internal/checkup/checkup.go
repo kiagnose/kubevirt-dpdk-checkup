@@ -289,12 +289,14 @@ func (c *Checkup) waitForPodRunningStatus(ctx context.Context, namespace, name s
 
 func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest string) *k8scorev1.Pod {
 	const (
-		trafficGeneratorPodCPUCount       = 8
-		trafficGeneratorPodHugepagesCount = "8Gi"
+		trafficGeneratorPodCPUCount            = 8
+		trafficGeneratorPodNumOfNonTrafficCPUs = 2
+		trafficGeneratorPodHugepagesCount      = "8Gi"
 
 		portBandwidthParamName     = "PORT_BANDWIDTH_GB"
 		numaSocketParamName        = "NUMA_SOCKET"
 		verboseParamName           = "SET_VERBOSE"
+		numTrafficCpusParamName    = "NUM_OF_TRAFFIC_CPUS"
 		numCpusParamName           = "NUM_OF_CPUS"
 		srcWestMACAddressParamName = "SRC_WEST_MAC_ADDRESS"
 		srcEastMACAddressParamName = "SRC_EAST_MAC_ADDRESS"
@@ -305,6 +307,7 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 	envVars := map[string]string{
 		portBandwidthParamName:     fmt.Sprintf("%d", checkupConfig.PortBandwidthGB),
 		numaSocketParamName:        fmt.Sprintf("%d", checkupConfig.NUMASocket),
+		numTrafficCpusParamName:    fmt.Sprintf("%d", trafficGeneratorPodCPUCount-trafficGeneratorPodNumOfNonTrafficCPUs),
 		numCpusParamName:           fmt.Sprintf("%d", trafficGeneratorPodCPUCount),
 		srcWestMACAddressParamName: checkupConfig.TrafficGeneratorWestMacAddress.String(),
 		srcEastMACAddressParamName: checkupConfig.TrafficGeneratorEastMacAddress.String(),
