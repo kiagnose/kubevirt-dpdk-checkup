@@ -25,12 +25,16 @@ import (
 	"log"
 	"time"
 
+	k8scorev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	k8srand "k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	networkv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
+
 	kvcorev1 "kubevirt.io/api/core/v1"
 
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/pod"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/vmi"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/status"
@@ -42,25 +46,47 @@ type kubeVirtVMIClient interface {
 		vmi *kvcorev1.VirtualMachineInstance) (*kvcorev1.VirtualMachineInstance, error)
 	GetVirtualMachineInstance(ctx context.Context, namespace, name string) (*kvcorev1.VirtualMachineInstance, error)
 	DeleteVirtualMachineInstance(ctx context.Context, namespace, name string) error
+	CreatePod(ctx context.Context, namespace string, pod *k8scorev1.Pod) (*k8scorev1.Pod, error)
+	GetPod(ctx context.Context, namespace, name string) (*k8scorev1.Pod, error)
 }
 
 type Checkup struct {
-	client    kubeVirtVMIClient
-	namespace string
-	vmi       *kvcorev1.VirtualMachineInstance
+	client              kubeVirtVMIClient
+	namespace           string
+	params              config.Config
+	vmi                 *kvcorev1.VirtualMachineInstance
+	trafficGeneratorPod *k8scorev1.Pod
 }
 
-const VMINamePrefix = "dpdk-vmi"
+const (
+	VMINamePrefix     = "dpdk-vmi"
+	TrexPodNamePrefix = "trex"
+)
 
 func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config) *Checkup {
 	return &Checkup{
 		client:    client,
 		namespace: namespace,
+		params:    checkupConfig,
 		vmi:       newDPDKVMI(checkupConfig),
 	}
 }
 
 func (c *Checkup) Setup(ctx context.Context) error {
+	const errMessagePrefix = "setup"
+	var err error
+
+	c.trafficGeneratorPod, err = c.createTrafficGeneratorPod(ctx)
+	if err != nil {
+		return fmt.Errorf("%s: %w", errMessagePrefix, err)
+	}
+
+	createdTrafficGeneratorPod, err := c.waitForPodRunningStatus(ctx, c.namespace, c.trafficGeneratorPod.Name)
+	if err != nil {
+		return fmt.Errorf("%s: %w", errMessagePrefix, err)
+	}
+	c.trafficGeneratorPod = createdTrafficGeneratorPod
+
 	createdVMI, err := c.client.CreateVirtualMachineInstance(ctx, c.namespace, c.vmi)
 	if err != nil {
 		return err
@@ -180,4 +206,74 @@ func randomizeName(prefix string) string {
 	const randomStringLen = 5
 
 	return fmt.Sprintf("%s-%s", prefix, k8srand.String(randomStringLen))
+}
+
+func (c *Checkup) createTrafficGeneratorPod(ctx context.Context) (*k8scorev1.Pod, error) {
+	secondaryNetworksRequest, err := pod.CreateNetworksRequest([]networkv1.NetworkSelectionElement{
+		{Name: c.params.NetworkAttachmentDefinitionName, Namespace: c.namespace, MacRequest: c.params.TrafficGeneratorEastMacAddress.String()},
+		{Name: c.params.NetworkAttachmentDefinitionName, Namespace: c.namespace, MacRequest: c.params.TrafficGeneratorWestMacAddress.String()},
+	})
+	if err != nil {
+		return nil, err
+	}
+	trexPod := newTrafficGeneratorPod(c.params, secondaryNetworksRequest)
+
+	log.Printf("Creating Pod %s..", ObjectFullName(c.namespace, trexPod.Name))
+	return c.client.CreatePod(ctx, c.namespace, trexPod)
+}
+
+func (c *Checkup) waitForPodRunningStatus(ctx context.Context, namespace, name string) (*k8scorev1.Pod, error) {
+	podFullName := ObjectFullName(c.namespace, name)
+	log.Printf("Waiting for Pod %s..", podFullName)
+	var updatedPod *k8scorev1.Pod
+
+	conditionFn := func(ctx context.Context) (bool, error) {
+		var err error
+		updatedPod, err = c.client.GetPod(ctx, namespace, name)
+		if err != nil {
+			return false, err
+		}
+		return pod.PodInRunningPhase(updatedPod), nil
+	}
+	const interval = time.Second * 5
+	if err := wait.PollImmediateUntilWithContext(ctx, interval, conditionFn); err != nil {
+		return nil, fmt.Errorf("failed to wait for POD '%s' to be in Running Phase: %v", podFullName, err)
+	}
+
+	log.Printf("Pod %s is Running", podFullName)
+	return updatedPod, nil
+}
+
+func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest string) *k8scorev1.Pod {
+	const (
+		TrexPodNumCPUs      = "8"
+		TrexPodNumHugepages = "8Gi"
+	)
+
+	envVars := map[string]string{
+		config.PortBandwidthGBParamName: fmt.Sprintf("%d", checkupConfig.PortBandwidthGB),
+	}
+	securityContext := pod.NewSecurityContext(int64(0), false,
+		[]k8scorev1.Capability{"IPC_LOCK", "SYS_RESOURCE", "NET_RAW", "NET_ADMIN"})
+
+	trexContainer := pod.NewPodContainer(TrexPodNamePrefix,
+		pod.WithContainerImage(pod.ContainerDiskImage),
+		pod.WithContainerCommand([]string{"/bin/bash", "-c", "sleep INF"}),
+		pod.WithContainerSecurityContext(securityContext),
+		pod.WithContainerEnvVars(envVars),
+		pod.WithContainerCPUsStrict(TrexPodNumCPUs),
+		pod.WithContainerHugepagesResources(TrexPodNumHugepages),
+		pod.WithContainerHugepagesVolumeMount(),
+	)
+
+	return pod.NewPod(randomizeName(TrexPodNamePrefix),
+		pod.WithPodContainer(trexContainer),
+		pod.WithoutCRIOCPULoadBalancing(),
+		pod.WithoutCRIOCPUQuota(),
+		pod.WithoutCRIOIRQLoadBalancing(),
+		pod.WithOwnerReference(checkupConfig.PodName, checkupConfig.PodUID),
+		pod.WithNodeSelector(checkupConfig.TrafficGeneratorNodeLabelSelector),
+		pod.WithNetworkRequestAnnotation(secondaryNetworkRequest),
+		pod.WithHugepagesVolume(),
+	)
 }
