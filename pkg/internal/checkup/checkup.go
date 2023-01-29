@@ -23,6 +23,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	k8scorev1 "k8s.io/api/core/v1"
@@ -62,6 +63,11 @@ type Checkup struct {
 const (
 	VMINamePrefix                 = "dpdk-vmi"
 	TrafficGeneratorPodNamePrefix = "kubevirt-dpdk-checkup-traffic-gen"
+)
+
+const (
+	vmiUsername = "cloud-user"
+	vmiPassword = "0tli-pxem-xknu" // #nosec
 )
 
 func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config) *Checkup {
@@ -208,12 +214,6 @@ func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 		CPUTreadsCount    = 2
 		rootDiskName      = "rootdisk"
 		cloudInitDiskName = "cloudinitdisk"
-		userData          = `#cloud-config
-user: cloud-user
-password: 0tli-pxem-xknu
-chpasswd:
-  expire: false`
-
 		eastNetworkName   = "nic-east"
 		eastNICPCIAddress = "0000:06:00.0"
 		westNetworkName   = "nic-west"
@@ -240,7 +240,7 @@ chpasswd:
 		vmi.WithNodeSelector(checkupConfig.DPDKNodeLabelSelector),
 		vmi.WithPVCVolume(rootDiskName, "rhel8-yummy-gorilla"),
 		vmi.WithVirtIODisk(rootDiskName),
-		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, userData),
+		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(vmiUsername, vmiPassword)),
 		vmi.WithVirtIODisk(cloudInitDiskName),
 	)
 }
@@ -359,4 +359,15 @@ func (c *Checkup) deletePod(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func CloudInit(username, password string) string {
+	sb := strings.Builder{}
+	sb.WriteString("#cloud-config\n")
+	sb.WriteString(fmt.Sprintf("user: %s\n", username))
+	sb.WriteString(fmt.Sprintf("password: %s\n", password))
+	sb.WriteString("chpasswd:\n")
+	sb.WriteString("  expire: false")
+
+	return sb.String()
 }
