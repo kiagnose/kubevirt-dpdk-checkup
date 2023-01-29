@@ -3,6 +3,9 @@ ORG ?= kiagnose
 CHECKUP_IMAGE_NAME ?= kubevirt-dpdk-checkup
 CHECKUP_IMAGE_TAG ?= latest
 CHECKUP_GIT_TAG ?= $(shell git describe --always --abbrev=8 --tags)
+TRAFFIC_GEN_IMAGE_NAME ?= kubevirt-dpdk-checkup-traffic-gen
+TRAFFIC_GEN_IMAGE_TAG ?= latest
+TRAFFIC_GEN_GIT_TAG ?= $(CHECKUP_GIT_TAG)
 GO_IMAGE_NAME := docker.io/library/golang
 GO_IMAGE_TAG := 1.19
 BIN_DIR = $(CURDIR)/_output/bin
@@ -19,7 +22,7 @@ all: check build
 
 check: lint test/unit
 
-build:
+build: build-traffic-gen
 	mkdir -p $(CURDIR)/_go-cache
 	$(CRI_BIN) run --rm \
 	           --volume $(CURDIR):$(CURDIR):Z \
@@ -31,11 +34,21 @@ build:
 	$(CRI_BIN) build --build-arg BASE_IMAGE_TAG=$(CRI_BUILD_BASE_IMAGE_TAG) . -t $(REG)/$(ORG)/$(CHECKUP_IMAGE_NAME):$(CHECKUP_IMAGE_TAG)
 .PHONY: build
 
-push:
+push: push-traffic-gen
 	$(CRI_BIN) push $(REG)/$(ORG)/$(CHECKUP_IMAGE_NAME):$(CHECKUP_IMAGE_TAG)
 	$(CRI_BIN) tag $(REG)/$(ORG)/$(CHECKUP_IMAGE_NAME):$(CHECKUP_IMAGE_TAG) $(REG)/$(ORG)/$(CHECKUP_IMAGE_NAME):$(CHECKUP_GIT_TAG)
 	$(CRI_BIN) push $(REG)/$(ORG)/$(CHECKUP_IMAGE_NAME):$(CHECKUP_GIT_TAG)
 .PHONY: push
+
+build-traffic-gen:
+	$(CRI_BIN) build -f traffic-gen/Dockerfile -t $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_IMAGE_TAG) traffic-gen
+.PHONY: build-traffic-gen
+
+push-traffic-gen:
+	$(CRI_BIN) push $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_IMAGE_TAG)
+	$(CRI_BIN) tag $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_IMAGE_TAG) $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_GIT_TAG)
+	$(CRI_BIN) push $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_IMAGE_TAG)
+.PHONY: push-traffic-gen
 
 test/unit:
 	mkdir -p $(CURDIR)/_go-cache
