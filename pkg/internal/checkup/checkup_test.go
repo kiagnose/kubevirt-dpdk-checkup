@@ -26,12 +26,10 @@ import (
 	"strings"
 	"testing"
 
-	networkv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
 	assert "github.com/stretchr/testify/require"
 
 	k8scorev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	kvcorev1 "kubevirt.io/api/core/v1"
@@ -56,7 +54,6 @@ func TestCheckupShouldSucceed(t *testing.T) {
 	testClient := newClientStub()
 	testConfig := newTestConfig()
 	testCheckup := checkup.New(testClient, testNamespace, testConfig)
-	testClient.returnNetAttachDef = newNetAttachDef(testConfig.NetworkAttachmentDefinitionName)
 
 	assert.NoError(t, testCheckup.Setup(context.Background()))
 	assert.NoError(t, testCheckup.Run(context.Background()))
@@ -86,7 +83,6 @@ func TestSetupShouldFail(t *testing.T) {
 		testConfig := newTestConfig()
 		testClient.vmiCreationFailure = expectedVMICreationFailure
 		testCheckup := checkup.New(testClient, testNamespace, testConfig)
-		testClient.returnNetAttachDef = newNetAttachDef(testConfig.NetworkAttachmentDefinitionName)
 
 		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedVMICreationFailure.Error())
 	})
@@ -98,7 +94,6 @@ func TestSetupShouldFail(t *testing.T) {
 		testConfig := newTestConfig()
 		testClient.podCreationFailure = expectedPodCreationFailure
 		testCheckup := checkup.New(testClient, testNamespace, testConfig)
-		testClient.returnNetAttachDef = newNetAttachDef(testConfig.NetworkAttachmentDefinitionName)
 
 		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedPodCreationFailure.Error())
 	})
@@ -110,7 +105,6 @@ func TestSetupShouldFail(t *testing.T) {
 		testConfig := newTestConfig()
 		testClient.podReadFailure = expectedPodReadFailure
 		testCheckup := checkup.New(testClient, testNamespace, testConfig)
-		testClient.returnNetAttachDef = newNetAttachDef(testConfig.NetworkAttachmentDefinitionName)
 
 		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedPodReadFailure.Error())
 	})
@@ -161,7 +155,6 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 			testConfig := newTestConfig()
 
 			testCheckup := checkup.New(testClient, testNamespace, testConfig)
-			testClient.returnNetAttachDef = newNetAttachDef(testConfig.NetworkAttachmentDefinitionName)
 
 			assert.NoError(t, testCheckup.Setup(context.Background()))
 			assert.NoError(t, testCheckup.Run(context.Background()))
@@ -178,7 +171,6 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 type clientStub struct {
 	createdVMIs        map[string]*kvcorev1.VirtualMachineInstance
 	createdPods        map[string]*k8scorev1.Pod
-	returnNetAttachDef *networkv1.NetworkAttachmentDefinition
 	podCreationFailure error
 	podReadFailure     error
 	podDeletionFailure error
@@ -232,10 +224,6 @@ func (cs *clientStub) DeleteVirtualMachineInstance(_ context.Context, namespace,
 	return nil
 }
 
-func (cs *clientStub) GetNetworkAttachmentDefinition(_ context.Context, _, _ string) (*networkv1.NetworkAttachmentDefinition, error) {
-	return cs.returnNetAttachDef, nil
-}
-
 func (cs *clientStub) CreatePod(_ context.Context, namespace string, pod *k8scorev1.Pod) (*k8scorev1.Pod, error) {
 	if cs.podCreationFailure != nil {
 		return nil, cs.podCreationFailure
@@ -280,15 +268,6 @@ func (cs *clientStub) TrafficGeneratorPodName() string {
 	}
 
 	return ""
-}
-
-func newNetAttachDef(name string) *networkv1.NetworkAttachmentDefinition {
-	return &networkv1.NetworkAttachmentDefinition{
-		ObjectMeta: k8smetav1.ObjectMeta{
-			Name:      name,
-			Namespace: testNamespace,
-		},
-	}
 }
 
 func (cs *clientStub) VMIName() string {
