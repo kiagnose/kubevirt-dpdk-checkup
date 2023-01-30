@@ -123,6 +123,26 @@ func TestNewPodWithHugepagesVolume(t *testing.T) {
 	assert.Equal(t, expectedPod, actualPod)
 }
 
+func TestNewPodWithLibModulesVolume(t *testing.T) {
+	actualPod := pod.NewPod(testPodName, pod.WithLibModulesVolume())
+
+	directoryHostPath := k8scorev1.HostPathDirectory
+	expectedPod := newBasePod(actualPod.Name)
+	expectedPod.Spec.Volumes = []k8scorev1.Volume{
+		{
+			Name: "modules",
+			VolumeSource: k8scorev1.VolumeSource{
+				HostPath: &k8scorev1.HostPathVolumeSource{
+					Path: "/lib/modules",
+					Type: &directoryHostPath,
+				},
+			},
+		},
+	}
+
+	assert.Equal(t, expectedPod, actualPod)
+}
+
 func TestNewPodWithoutCRIOCPULoadBalancing(t *testing.T) {
 	actualPod := pod.NewPod(testPodName, pod.WithoutCRIOCPULoadBalancing())
 
@@ -185,6 +205,13 @@ func newContainer(name string) k8scorev1.Container {
 		Image:           pod.ContainerDiskImage,
 		ImagePullPolicy: k8scorev1.PullAlways,
 		Command:         []string{"/bin/bash", "-c", "sleep INF"},
+		VolumeMounts: []k8scorev1.VolumeMount{
+			{
+				Name:      "modules",
+				MountPath: "/lib/modules",
+				ReadOnly:  true,
+			},
+		},
 		SecurityContext: &k8scorev1.SecurityContext{
 			AllowPrivilegeEscalation: &falseBool,
 			Capabilities: &k8scorev1.Capabilities{

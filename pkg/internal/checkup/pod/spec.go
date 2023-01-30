@@ -100,6 +100,21 @@ func WithHugepagesVolume() PodOption {
 	}
 }
 
+func WithLibModulesVolume() PodOption {
+	return func(pod *corev1.Pod) {
+		pod.Spec.Volumes = append(pod.Spec.Volumes,
+			corev1.Volume{
+				Name: "modules",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/lib/modules",
+						Type: pointer(corev1.HostPathDirectory),
+					},
+				},
+			})
+	}
+}
+
 func WithoutCRIOCPULoadBalancing() PodOption {
 	return func(pod *corev1.Pod) {
 		if pod.ObjectMeta.Annotations == nil {

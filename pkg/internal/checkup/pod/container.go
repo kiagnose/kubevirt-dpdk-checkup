@@ -107,6 +107,16 @@ func WithContainerHugepagesVolumeMount() ContainerOption {
 	}
 }
 
+func WithContainerLibModulesVolumeMount() ContainerOption {
+	return func(container *corev1.Container) {
+		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+			Name:      "modules",
+			MountPath: "/lib/modules",
+			ReadOnly:  true,
+		})
+	}
+}
+
 func NewSecurityContext(user int64, allowPrivilegeEscalation bool, addCapabilities []corev1.Capability) *corev1.SecurityContext {
 	return &corev1.SecurityContext{
 		AllowPrivilegeEscalation: pointer(allowPrivilegeEscalation),
