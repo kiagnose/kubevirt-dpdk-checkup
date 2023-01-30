@@ -90,6 +90,17 @@ func TestSetupShouldFail(t *testing.T) {
 		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedVMICreationFailure.Error())
 	})
 
+	t.Run("when wait for VMI to boot fails", func(t *testing.T) {
+		expectedVMIReadFailure := errors.New("failed to read VMI")
+
+		testClient := newClientStub()
+		testConfig := newTestConfig()
+		testClient.vmiReadFailure = expectedVMIReadFailure
+		testCheckup := checkup.New(testClient, testNamespace, testConfig)
+
+		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedVMIReadFailure.Error())
+	})
+
 	t.Run("when Pod creation fails", func(t *testing.T) {
 		expectedPodCreationFailure := errors.New("failed to create Pod")
 
@@ -214,6 +225,11 @@ func (cs *clientStub) GetVirtualMachineInstance(_ context.Context, namespace, na
 	if !exist {
 		return nil, k8serrors.NewNotFound(schema.GroupResource{Group: "kubevirt.io", Resource: "virtualmachineinstances"}, name)
 	}
+
+	vmi.Status.Conditions = append(vmi.Status.Conditions, kvcorev1.VirtualMachineInstanceCondition{
+		Type:   kvcorev1.VirtualMachineInstanceAgentConnected,
+		Status: k8scorev1.ConditionTrue,
+	})
 
 	return vmi, nil
 }
