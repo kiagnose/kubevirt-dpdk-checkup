@@ -311,6 +311,7 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 
 	return pod.NewPod(randomizeName(TrexPodNamePrefix),
 		pod.WithPodContainer(trexContainer),
+		pod.WithRuntimeClassName(checkupConfig.TrafficGeneratorRuntimeClassName),
 		pod.WithoutCRIOCPULoadBalancing(),
 		pod.WithoutCRIOCPUQuota(),
 		pod.WithoutCRIOIRQLoadBalancing(),
