@@ -52,6 +52,10 @@ type kubeVirtVMIClient interface {
 	GetPod(ctx context.Context, namespace, name string) (*k8scorev1.Pod, error)
 }
 
+type testExecutor interface {
+	Execute(ctx context.Context, vmiName string) (status.Results, error)
+}
+
 type Checkup struct {
 	client              kubeVirtVMIClient
 	namespace           string
@@ -59,6 +63,7 @@ type Checkup struct {
 	vmi                 *kvcorev1.VirtualMachineInstance
 	trafficGeneratorPod *k8scorev1.Pod
 	results             status.Results
+	executor            testExecutor
 }
 
 const (
@@ -67,16 +72,17 @@ const (
 )
 
 const (
-	vmiUsername = "cloud-user"
-	vmiPassword = "0tli-pxem-xknu" // #nosec
+	VMIUsername = "cloud-user"
+	VMIPassword = "0tli-pxem-xknu" // #nosec
 )
 
-func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config) *Checkup {
+func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config, executor testExecutor) *Checkup {
 	return &Checkup{
 		client:    client,
 		namespace: namespace,
 		params:    checkupConfig,
 		vmi:       newDPDKVMI(checkupConfig),
+		executor:  executor,
 	}
 }
 
@@ -110,6 +116,13 @@ func (c *Checkup) Setup(ctx context.Context) error {
 }
 
 func (c *Checkup) Run(ctx context.Context) error {
+	var err error
+
+	c.results, err = c.executor.Execute(ctx, c.vmi.Name)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -241,7 +254,7 @@ func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 		vmi.WithNodeSelector(checkupConfig.DPDKNodeLabelSelector),
 		vmi.WithPVCVolume(rootDiskName, "rhel8-yummy-gorilla"),
 		vmi.WithVirtIODisk(rootDiskName),
-		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(vmiUsername, vmiPassword)),
+		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(VMIUsername, VMIPassword)),
 		vmi.WithVirtIODisk(cloudInitDiskName),
 	)
 }
