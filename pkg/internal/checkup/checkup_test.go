@@ -56,16 +56,19 @@ func TestCheckupShouldSucceed(t *testing.T) {
 	testCheckup := checkup.New(testClient, testNamespace, testConfig)
 
 	assert.NoError(t, testCheckup.Setup(context.Background()))
-	assert.NoError(t, testCheckup.Run(context.Background()))
-	assert.NoError(t, testCheckup.Teardown(context.Background()))
 
 	vmiName := testClient.VMIName()
 	assert.NotEmpty(t, vmiName)
-	_, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
-	assert.ErrorContains(t, err, "not found")
 
 	podName := testClient.TrafficGeneratorPodName()
 	assert.NotEmpty(t, podName)
+
+	assert.NoError(t, testCheckup.Run(context.Background()))
+	assert.NoError(t, testCheckup.Teardown(context.Background()))
+
+	_, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
+	assert.ErrorContains(t, err, "not found")
+
 	_, err = testClient.GetPod(context.Background(), testNamespace, podName)
 	assert.ErrorContains(t, err, "not found")
 
@@ -193,7 +196,9 @@ func (cs *clientStub) CreateVirtualMachineInstance(_ context.Context,
 		return nil, cs.vmiCreationFailure
 	}
 
-	vmiFullName := checkup.ObjectFullName(namespace, vmi.Name)
+	vmi.Namespace = namespace
+
+	vmiFullName := checkup.ObjectFullName(vmi.Namespace, vmi.Name)
 	cs.createdVMIs[vmiFullName] = vmi
 
 	return vmi, nil
@@ -219,6 +224,11 @@ func (cs *clientStub) DeleteVirtualMachineInstance(_ context.Context, namespace,
 	}
 
 	vmiFullName := checkup.ObjectFullName(namespace, name)
+	_, exist := cs.createdVMIs[vmiFullName]
+	if !exist {
+		return k8serrors.NewNotFound(schema.GroupResource{Group: "kubevirt.io", Resource: "virtualmachineinstances"}, name)
+	}
+
 	delete(cs.createdVMIs, vmiFullName)
 
 	return nil
@@ -229,7 +239,9 @@ func (cs *clientStub) CreatePod(_ context.Context, namespace string, pod *k8scor
 		return nil, cs.podCreationFailure
 	}
 
-	podFullName := checkup.ObjectFullName(namespace, pod.Name)
+	pod.Namespace = namespace
+
+	podFullName := checkup.ObjectFullName(pod.Namespace, pod.Name)
 	pod.Status.Phase = k8scorev1.PodRunning
 	cs.createdPods[podFullName] = pod
 
@@ -242,6 +254,11 @@ func (cs *clientStub) DeletePod(_ context.Context, namespace, name string) error
 	}
 
 	podFullName := checkup.ObjectFullName(namespace, name)
+	_, exist := cs.createdPods[podFullName]
+	if !exist {
+		return k8serrors.NewNotFound(schema.GroupResource{Group: "", Resource: "pods"}, name)
+	}
+
 	delete(cs.createdPods, podFullName)
 
 	return nil
@@ -261,9 +278,9 @@ func (cs *clientStub) GetPod(_ context.Context, namespace, name string) (*k8scor
 }
 
 func (cs *clientStub) TrafficGeneratorPodName() string {
-	for podName := range cs.createdPods {
-		if strings.Contains(podName, checkup.TrexPodNamePrefix) {
-			return podName
+	for _, pod := range cs.createdPods {
+		if strings.Contains(pod.Name, checkup.TrexPodNamePrefix) {
+			return pod.Name
 		}
 	}
 
@@ -271,9 +288,9 @@ func (cs *clientStub) TrafficGeneratorPodName() string {
 }
 
 func (cs *clientStub) VMIName() string {
-	for vmiName := range cs.createdVMIs {
-		if strings.Contains(vmiName, checkup.VMINamePrefix) {
-			return vmiName
+	for _, vmi := range cs.createdVMIs {
+		if strings.Contains(vmi.Name, checkup.VMINamePrefix) {
+			return vmi.Name
 		}
 	}
 
