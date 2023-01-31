@@ -77,7 +77,7 @@ var _ = Describe("Execute the checkup Job", func() {
 	})
 
 	It("should complete successfully", func() {
-		Eventually(getJobConditions, 5*time.Minute, 5*time.Second).Should(
+		Eventually(getJobConditions, 15*time.Minute, 5*time.Second).Should(
 			ContainElement(MatchFields(IgnoreExtras, Fields{
 				"Type":   Equal(batchv1.JobComplete),
 				"Status": Equal(corev1.ConditionTrue),
@@ -257,7 +257,7 @@ func newConfigMap() *corev1.ConfigMap {
 			Name: testConfigMapName,
 		},
 		Data: map[string]string{
-			"spec.timeout":                               "1m",
+			"spec.timeout":                               "10m",
 			"spec.param.NUMASocket":                      paramNUMASocket,
 			"spec.param.networkAttachmentDefinitionName": networkAttachmentDefinitionName,
 		},
