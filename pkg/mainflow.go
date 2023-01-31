@@ -60,14 +60,14 @@ func Run(rawEnv map[string]string, namespace string) error {
 
 func printConfig(checkupConfig config.Config) {
 	log.Println("Using the following config:")
-	log.Printf("\t%q: %q", config.NUMASocketParamName, checkupConfig.NUMASocket)
-	log.Printf("\t%q: %q", config.NetworkAttachmentDefinitionNameParamName, checkupConfig.NetworkAttachmentDefinitionName)
-	log.Printf("\t%q: %q", config.PortBandwidthGBParamName, checkupConfig.PortBandwidthGB)
-	log.Printf("\t%q: %q", config.TrafficGeneratorNodeLabelSelectorParamName, checkupConfig.TrafficGeneratorNodeLabelSelector)
-	log.Printf("\t%q: %q", config.TrafficGeneratorPacketsPerSecondInMillionsParamName,
+	log.Printf("%q: %q", config.NUMASocketParamName, checkupConfig.NUMASocket)
+	log.Printf("%q: %q", config.NetworkAttachmentDefinitionNameParamName, checkupConfig.NetworkAttachmentDefinitionName)
+	log.Printf("%q: %q", config.PortBandwidthGBParamName, checkupConfig.PortBandwidthGB)
+	log.Printf("%q: %q", config.TrafficGeneratorNodeLabelSelectorParamName, checkupConfig.TrafficGeneratorNodeLabelSelector)
+	log.Printf("%q: %q", config.TrafficGeneratorPacketsPerSecondInMillionsParamName,
 		checkupConfig.TrafficGeneratorPacketsPerSecondInMillions)
-	log.Printf("\t%q: %q", config.DPDKNodeLabelSelectorParamName, checkupConfig.DPDKNodeLabelSelector)
-	log.Printf("\t%q: %q", config.TrafficGeneratorEastMacAddressParamName, checkupConfig.TrafficGeneratorEastMacAddress)
-	log.Printf("\t%q: %q", config.DPDKEastMacAddressParamName, checkupConfig.DPDKEastMacAddress)
-	log.Printf("\t%q: %q", config.TestDurationParamName, checkupConfig.TestDuration)
+	log.Printf("%q: %q", config.DPDKNodeLabelSelectorParamName, checkupConfig.DPDKNodeLabelSelector)
+	log.Printf("%q: %q", config.TrafficGeneratorEastMacAddressParamName, checkupConfig.TrafficGeneratorEastMacAddress)
+	log.Printf("%q: %q", config.DPDKEastMacAddressParamName, checkupConfig.DPDKEastMacAddress)
+	log.Printf("%q: %q", config.TestDurationParamName, checkupConfig.TestDuration)
 }
