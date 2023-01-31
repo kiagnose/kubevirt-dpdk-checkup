@@ -55,6 +55,7 @@ test/e2e:
 	           -e TEST_IMAGE=$(TEST_IMAGE) \
 	           -e TEST_NAMESPACE=$(TEST_NAMESPACE) \
 	           -e NETWORK_ATTACHMENT_DEFINITION_NAME=$(NETWORK_ATTACHMENT_DEFINITION_NAME) \
+	           -e RUNTIME_CLASS_NAME=$(RUNTIME_CLASS_NAME) \
 	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go test ./tests/... $(E2E_TEST_ARGS)
 .PHONY: test/e2e
 
