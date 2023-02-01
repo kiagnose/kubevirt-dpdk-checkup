@@ -187,6 +187,16 @@ func TestNewPodWithNodeSelector(t *testing.T) {
 	assert.Equal(t, expectedPod, actualPod)
 }
 
+func TestNewPodWithRuntimeClassName(t *testing.T) {
+	runtimeClass := "my-runtime-class"
+	actualPod := pod.NewPod(testPodName, pod.WithRuntimeClassName(runtimeClass))
+
+	expectedPod := newBasePod(actualPod.Name)
+	expectedPod.Spec.RuntimeClassName = &runtimeClass
+
+	assert.Equal(t, expectedPod, actualPod)
+}
+
 func TestNewPodWithContainer(t *testing.T) {
 	container := newContainer(testContainerName)
 	actualPod := pod.NewPod(testPodName, pod.WithPodContainer(&container))

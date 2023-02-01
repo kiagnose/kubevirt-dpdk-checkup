@@ -31,6 +31,7 @@ import (
 const (
 	NUMASocketParamName                                 = "NUMASocket"
 	NetworkAttachmentDefinitionNameParamName            = "networkAttachmentDefinitionName"
+	TrafficGeneratorRuntimeClassNameParamName           = "trafficGeneratorRuntimeClassName"
 	TrafficGeneratorNodeLabelSelectorParamName          = "trafficGeneratorNodeLabelSelector"
 	DPDKNodeLabelSelectorParamName                      = "DPDKNodeLabelSelector"
 	TrafficGeneratorPacketsPerSecondInMillionsParamName = "trafficGeneratorPacketsPerSecondInMillions"
@@ -55,6 +56,7 @@ const (
 var (
 	ErrInvalidNUMASocket                                 = errors.New("invalid NUMA Socket")
 	ErrInvalidNetworkAttachmentDefinitionName            = errors.New("invalid Network-Attachment-Definition Name")
+	ErrInvalidTrafficGeneratorRuntimeClassName           = errors.New("invalid Traffic Generator Runtime class Name")
 	ErrInvalidTrafficGeneratorNodeLabelSelector          = errors.New("invalid Traffic Generator Node Label Selector")
 	ErrInvalidDPDKNodeLabelSelector                      = errors.New("invalid DPDK Node Label Selector")
 	ErrInvalidTrafficGeneratorPacketsPerSecondInMillions = errors.New("invalid Traffic Generator Packets Per Second In Millions")
@@ -70,6 +72,7 @@ type Config struct {
 	PodName                                    string
 	PodUID                                     string
 	NUMASocket                                 int
+	TrafficGeneratorRuntimeClassName           string
 	NetworkAttachmentDefinitionName            string
 	TrafficGeneratorNodeLabelSelector          string
 	DPDKNodeLabelSelector                      string
@@ -88,18 +91,19 @@ func New(baseConfig kconfig.Config) (Config, error) {
 	dpdkEastMacAddressDefault, _ := net.ParseMAC(DPDKEastMacAddressDefault)
 	dpdkWestMacAddressDefault, _ := net.ParseMAC(DPDKWestMacAddressDefault)
 	newConfig := Config{
-		PodName:                           baseConfig.PodName,
-		PodUID:                            baseConfig.PodUID,
-		NetworkAttachmentDefinitionName:   baseConfig.Params[NetworkAttachmentDefinitionNameParamName],
-		TrafficGeneratorNodeLabelSelector: baseConfig.Params[TrafficGeneratorNodeLabelSelectorParamName],
-		DPDKNodeLabelSelector:             baseConfig.Params[DPDKNodeLabelSelectorParamName],
+		PodName:                                    baseConfig.PodName,
+		PodUID:                                     baseConfig.PodUID,
+		NetworkAttachmentDefinitionName:            baseConfig.Params[NetworkAttachmentDefinitionNameParamName],
+		TrafficGeneratorRuntimeClassName:           baseConfig.Params[TrafficGeneratorRuntimeClassNameParamName],
+		TrafficGeneratorNodeLabelSelector:          baseConfig.Params[TrafficGeneratorNodeLabelSelectorParamName],
+		DPDKNodeLabelSelector:                      baseConfig.Params[DPDKNodeLabelSelectorParamName],
 		TrafficGeneratorPacketsPerSecondInMillions: TrafficGeneratorPacketsPerSecondInMillionsDefault,
-		PortBandwidthGB:                PortBandwidthGBDefault,
-		TrafficGeneratorEastMacAddress: trafficGeneratorEastMacAddressDefault,
-		TrafficGeneratorWestMacAddress: trafficGeneratorWestMacAddressDefault,
-		DPDKEastMacAddress:             dpdkEastMacAddressDefault,
-		DPDKWestMacAddress:             dpdkWestMacAddressDefault,
-		TestDuration:                   TestDurationDefault,
+		PortBandwidthGB:                            PortBandwidthGBDefault,
+		TrafficGeneratorEastMacAddress:             trafficGeneratorEastMacAddressDefault,
+		TrafficGeneratorWestMacAddress:             trafficGeneratorWestMacAddressDefault,
+		DPDKEastMacAddress:                         dpdkEastMacAddressDefault,
+		DPDKWestMacAddress:                         dpdkWestMacAddressDefault,
+		TestDuration:                               TestDurationDefault,
 	}
 
 	var rawNUMASocket string
@@ -114,6 +118,10 @@ func New(baseConfig kconfig.Config) (Config, error) {
 
 	if newConfig.NetworkAttachmentDefinitionName == "" {
 		return Config{}, ErrInvalidNetworkAttachmentDefinitionName
+	}
+
+	if newConfig.TrafficGeneratorRuntimeClassName == "" {
+		return Config{}, ErrInvalidTrafficGeneratorRuntimeClassName
 	}
 
 	return setOptionalParams(baseConfig, newConfig)

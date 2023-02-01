@@ -37,6 +37,7 @@ const (
 	testPodUID                                 = "0123456789-0123456789"
 	numaSocket                                 = 1
 	networkAttachmentDefinitionName            = "intel-dpdk-network1"
+	trafficGeneratorRuntimeClassName           = "dpdk-runtimeclass"
 	portBandwidthGB                            = 100
 	trafficGeneratorNodeLabelSelector          = "node-role.kubernetes.io/worker-dpdk1"
 	trafficGeneratorPacketsPerSecondInMillions = 6
@@ -53,8 +54,9 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		PodName: testPodName,
 		PodUID:  testPodUID,
 		Params: map[string]string{
-			config.NUMASocketParamName:                      fmt.Sprintf("%d", numaSocket),
-			config.NetworkAttachmentDefinitionNameParamName: networkAttachmentDefinitionName,
+			config.NUMASocketParamName:                       fmt.Sprintf("%d", numaSocket),
+			config.NetworkAttachmentDefinitionNameParamName:  networkAttachmentDefinitionName,
+			config.TrafficGeneratorRuntimeClassNameParamName: trafficGeneratorRuntimeClassName,
 		},
 	}
 
@@ -66,10 +68,11 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 	dpdkEastMacAddressDefault, _ := net.ParseMAC(config.DPDKEastMacAddressDefault)
 	dpdkWestMacAddressDefault, _ := net.ParseMAC(config.DPDKWestMacAddressDefault)
 	expectedConfig := config.Config{
-		PodName:                         testPodName,
-		PodUID:                          testPodUID,
-		NUMASocket:                      numaSocket,
-		NetworkAttachmentDefinitionName: networkAttachmentDefinitionName,
+		PodName:                          testPodName,
+		PodUID:                           testPodUID,
+		NUMASocket:                       numaSocket,
+		TrafficGeneratorRuntimeClassName: trafficGeneratorRuntimeClassName,
+		NetworkAttachmentDefinitionName:  networkAttachmentDefinitionName,
 		TrafficGeneratorPacketsPerSecondInMillions: config.TrafficGeneratorPacketsPerSecondInMillionsDefault,
 		PortBandwidthGB:                config.PortBandwidthGBDefault,
 		TrafficGeneratorEastMacAddress: trafficGeneratorEastMacAddressDefault,
@@ -96,11 +99,12 @@ func TestNewShouldApplyUserConfig(t *testing.T) {
 	dpdkEastHWAddress, _ := net.ParseMAC(dpdkEastMacAddress)
 	dpdkWestHWAddress, _ := net.ParseMAC(dpdkWestMacAddress)
 	expectedConfig := config.Config{
-		PodName:                         testPodName,
-		PodUID:                          testPodUID,
-		NUMASocket:                      numaSocket,
-		PortBandwidthGB:                 portBandwidthGB,
-		NetworkAttachmentDefinitionName: networkAttachmentDefinitionName,
+		PodName:                          testPodName,
+		PodUID:                           testPodUID,
+		NUMASocket:                       numaSocket,
+		TrafficGeneratorRuntimeClassName: trafficGeneratorRuntimeClassName,
+		PortBandwidthGB:                  portBandwidthGB,
+		NetworkAttachmentDefinitionName:  networkAttachmentDefinitionName,
 		TrafficGeneratorPacketsPerSecondInMillions: trafficGeneratorPacketsPerSecondInMillions,
 		TrafficGeneratorNodeLabelSelector:          trafficGeneratorNodeLabelSelector,
 		DPDKNodeLabelSelector:                      dpdkNodeLabelSelector,
@@ -133,6 +137,12 @@ func TestNewShouldFailWhen(t *testing.T) {
 			key:            config.NUMASocketParamName,
 			faultyKeyValue: "-1",
 			expectedError:  config.ErrInvalidNUMASocket,
+		},
+		{
+			description:    "Traffic Generator Runtimeclass Name is invalid",
+			key:            config.TrafficGeneratorRuntimeClassNameParamName,
+			faultyKeyValue: "",
+			expectedError:  config.ErrInvalidTrafficGeneratorRuntimeClassName,
 		},
 		{
 			description:    "NetworkAttachmentDefinitionName is invalid",
@@ -204,6 +214,7 @@ func TestNewShouldFailWhen(t *testing.T) {
 func getValidUserParameters() map[string]string {
 	return map[string]string{
 		config.NUMASocketParamName:                                 fmt.Sprintf("%d", numaSocket),
+		config.TrafficGeneratorRuntimeClassNameParamName:           trafficGeneratorRuntimeClassName,
 		config.NetworkAttachmentDefinitionNameParamName:            networkAttachmentDefinitionName,
 		config.PortBandwidthGBParamName:                            fmt.Sprintf("%d", portBandwidthGB),
 		config.TrafficGeneratorNodeLabelSelectorParamName:          trafficGeneratorNodeLabelSelector,

@@ -159,6 +159,12 @@ func WithNodeSelector(nodeName string) PodOption {
 	}
 }
 
+func WithRuntimeClassName(runtimeClassName string) PodOption {
+	return func(pod *corev1.Pod) {
+		pod.Spec.RuntimeClassName = pointer(runtimeClassName)
+	}
+}
+
 func WithPodContainer(container *corev1.Container) PodOption {
 	return func(pod *corev1.Pod) {
 		pod.Spec.Containers = append(pod.Spec.Containers, *container)

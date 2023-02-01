@@ -38,12 +38,14 @@ const (
 	namespaceEnvVarName                    = "TEST_NAMESPACE"
 	imageEnvVarName                        = "TEST_IMAGE"
 	networkAttachmentDefinitionNameVarName = "NETWORK_ATTACHMENT_DEFINITION_NAME"
+	runtimeClassNameVarName                = "RUNTIME_CLASS_NAME"
 )
 
 const (
 	defaultNamespace                       = "kiagnose-demo"
 	defaultImageName                       = "quay.io/kiagnose/kubevirt-dpdk-checkup:latest"
 	defaultNetworkAttachmentDefinitionName = "intel-dpdk-network-1"
+	defaultRuntimeClassName                = "performance-performance-zeus10"
 )
 
 var (
@@ -51,6 +53,7 @@ var (
 	testNamespace                   string
 	testImageName                   string
 	networkAttachmentDefinitionName string
+	runtimeClassName                string
 )
 
 var _ = BeforeSuite(func() {
@@ -71,5 +74,9 @@ var _ = BeforeSuite(func() {
 
 	if networkAttachmentDefinitionName = os.Getenv(networkAttachmentDefinitionNameVarName); networkAttachmentDefinitionName == "" {
 		networkAttachmentDefinitionName = defaultNetworkAttachmentDefinitionName
+	}
+
+	if runtimeClassName = os.Getenv(runtimeClassNameVarName); runtimeClassName == "" {
+		runtimeClassName = defaultRuntimeClassName
 	}
 })

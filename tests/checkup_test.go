@@ -257,9 +257,10 @@ func newConfigMap() *corev1.ConfigMap {
 			Name: testConfigMapName,
 		},
 		Data: map[string]string{
-			"spec.timeout":                               "10m",
-			"spec.param.NUMASocket":                      paramNUMASocket,
-			"spec.param.networkAttachmentDefinitionName": networkAttachmentDefinitionName,
+			"spec.timeout":                                "10m",
+			"spec.param.NUMASocket":                       paramNUMASocket,
+			"spec.param.networkAttachmentDefinitionName":  networkAttachmentDefinitionName,
+			"spec.param.trafficGeneratorRuntimeClassName": runtimeClassName,
 		},
 	}
 }
