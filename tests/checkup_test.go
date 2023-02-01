@@ -261,6 +261,7 @@ func newConfigMap() *corev1.ConfigMap {
 			"spec.param.NUMASocket":                       paramNUMASocket,
 			"spec.param.networkAttachmentDefinitionName":  networkAttachmentDefinitionName,
 			"spec.param.trafficGeneratorRuntimeClassName": runtimeClassName,
+			"spec.param.trafficGeneratorImage":            trafficGeneratorImage,
 		},
 	}
 }

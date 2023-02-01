@@ -27,8 +27,6 @@ import (
 // ContainerOption represents a container action that enables an option.
 type ContainerOption func(pod *corev1.Container)
 
-const ContainerImage = "quay.io/schseba/trex:2.87"
-
 func NewPodContainer(name string, opts ...ContainerOption) *corev1.Container {
 	container := &corev1.Container{
 		Name: name,
