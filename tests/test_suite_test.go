@@ -39,6 +39,7 @@ const (
 	imageEnvVarName                        = "TEST_IMAGE"
 	networkAttachmentDefinitionNameVarName = "NETWORK_ATTACHMENT_DEFINITION_NAME"
 	runtimeClassNameVarName                = "RUNTIME_CLASS_NAME"
+	trafficGeneratorImageVarName           = "TRAFFIC_GEN_IMAGE_URL"
 )
 
 const (
@@ -54,6 +55,7 @@ var (
 	testImageName                   string
 	networkAttachmentDefinitionName string
 	runtimeClassName                string
+	trafficGeneratorImage           string
 )
 
 var _ = BeforeSuite(func() {
@@ -79,4 +81,6 @@ var _ = BeforeSuite(func() {
 	if runtimeClassName = os.Getenv(runtimeClassNameVarName); runtimeClassName == "" {
 		runtimeClassName = defaultRuntimeClassName
 	}
+
+	trafficGeneratorImage = os.Getenv(trafficGeneratorImageVarName)
 })
