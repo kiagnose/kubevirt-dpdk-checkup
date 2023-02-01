@@ -212,7 +212,7 @@ func newContainer(name string) k8scorev1.Container {
 	falseBool := false
 	return k8scorev1.Container{
 		Name:            name,
-		Image:           pod.ContainerDiskImage,
+		Image:           pod.ContainerImage,
 		ImagePullPolicy: k8scorev1.PullAlways,
 		Command:         []string{"/bin/bash", "-c", "sleep INF"},
 		VolumeMounts: []k8scorev1.VolumeMount{
