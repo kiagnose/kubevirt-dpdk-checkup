@@ -292,6 +292,7 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		trafficGeneratorPodCPUCount            = 8
 		trafficGeneratorPodNumOfNonTrafficCPUs = 2
 		trafficGeneratorPodHugepagesCount      = "8Gi"
+		terminationGracePeriodSeconds          = int64(0)
 
 		portBandwidthParamName     = "PORT_BANDWIDTH_GB"
 		numaSocketParamName        = "NUMA_SOCKET"
@@ -340,6 +341,7 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		pod.WithNetworkRequestAnnotation(secondaryNetworkRequest),
 		pod.WithHugepagesVolume(),
 		pod.WithLibModulesVolume(),
+		pod.WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds),
 	)
 }
 

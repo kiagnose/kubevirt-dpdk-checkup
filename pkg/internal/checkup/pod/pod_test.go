@@ -143,6 +143,16 @@ func TestNewPodWithLibModulesVolume(t *testing.T) {
 	assert.Equal(t, expectedPod, actualPod)
 }
 
+func TestWithTerminationGracePeriodSeconds(t *testing.T) {
+	terminationGracePeriodSeconds := int64(1024)
+	actualPod := pod.NewPod(testPodName, pod.WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds))
+
+	expectedPod := newBasePod(actualPod.Name)
+	expectedPod.Spec.TerminationGracePeriodSeconds = &terminationGracePeriodSeconds
+
+	assert.Equal(t, expectedPod, actualPod)
+}
+
 func TestNewPodWithoutCRIOCPULoadBalancing(t *testing.T) {
 	actualPod := pod.NewPod(testPodName, pod.WithoutCRIOCPULoadBalancing())
 

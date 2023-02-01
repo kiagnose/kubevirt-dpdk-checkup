@@ -115,6 +115,12 @@ func WithLibModulesVolume() PodOption {
 	}
 }
 
+func WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds int64) PodOption {
+	return func(pod *corev1.Pod) {
+		pod.Spec.TerminationGracePeriodSeconds = &terminationGracePeriodSeconds
+	}
+}
+
 func WithoutCRIOCPULoadBalancing() PodOption {
 	return func(pod *corev1.Pod) {
 		if pod.ObjectMeta.Annotations == nil {
