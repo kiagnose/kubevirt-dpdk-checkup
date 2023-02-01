@@ -40,6 +40,7 @@ const (
 	TrafficGeneratorWestMacAddressParamName             = "trafficGeneratorWestMacAddress"
 	DPDKEastMacAddressParamName                         = "DPDKEastMacAddress"
 	DPDKWestMacAddressParamName                         = "DPDKWestMacAddress"
+	TrafficGeneratorImageParamName                      = "trafficGeneratorImage"
 	TestDurationParamName                               = "testDuration"
 )
 
@@ -50,6 +51,7 @@ const (
 	TrafficGeneratorWestMacAddressDefault             = "50:00:00:00:00:02"
 	DPDKEastMacAddressDefault                         = "60:00:00:00:00:01"
 	DPDKWestMacAddressDefault                         = "60:00:00:00:00:02"
+	TrafficGeneratorImageDefault                      = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:latest"
 	TestDurationDefault                               = 5 * time.Minute
 )
 
@@ -82,6 +84,7 @@ type Config struct {
 	TrafficGeneratorWestMacAddress             net.HardwareAddr
 	DPDKEastMacAddress                         net.HardwareAddr
 	DPDKWestMacAddress                         net.HardwareAddr
+	TrafficGeneratorImage                      string
 	TestDuration                               time.Duration
 }
 
@@ -103,6 +106,7 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		TrafficGeneratorWestMacAddress:             trafficGeneratorWestMacAddressDefault,
 		DPDKEastMacAddress:                         dpdkEastMacAddressDefault,
 		DPDKWestMacAddress:                         dpdkWestMacAddressDefault,
+		TrafficGeneratorImage:                      TrafficGeneratorImageDefault,
 		TestDuration:                               TestDurationDefault,
 	}
 
@@ -170,6 +174,10 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 		if err != nil {
 			return Config{}, ErrInvalidDPDKWestMacAddress
 		}
+	}
+
+	if rawVal := baseConfig.Params[TrafficGeneratorImageParamName]; rawVal != "" {
+		newConfig.TrafficGeneratorImage = rawVal
 	}
 
 	if rawVal := baseConfig.Params[TestDurationParamName]; rawVal != "" {
