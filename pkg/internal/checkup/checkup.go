@@ -219,7 +219,7 @@ chpasswd:
 		westNetworkName   = "nic-west"
 		westNICPCIAddress = "0000:07:00.0"
 
-		terminationGracePeriodSeconds = 180
+		terminationGracePeriodSeconds = 0
 	)
 
 	return vmi.New(randomizeName(VMINamePrefix),
