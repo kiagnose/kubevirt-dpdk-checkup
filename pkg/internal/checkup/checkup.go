@@ -300,7 +300,7 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		[]k8scorev1.Capability{"IPC_LOCK", "SYS_RESOURCE", "NET_RAW", "NET_ADMIN"})
 
 	trafficGeneratorContainer := pod.NewPodContainer(TrafficGeneratorPodNamePrefix,
-		pod.WithContainerImage(pod.ContainerImage),
+		pod.WithContainerImage(checkupConfig.TrafficGeneratorImage),
 		pod.WithContainerCommand([]string{"/bin/bash", "-c", "sleep INF"}),
 		pod.WithContainerSecurityContext(securityContext),
 		pod.WithContainerEnvVars(envVars),
