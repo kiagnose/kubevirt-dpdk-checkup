@@ -295,7 +295,7 @@ func (cs *clientStub) GetPod(_ context.Context, namespace, name string) (*k8scor
 
 func (cs *clientStub) TrafficGeneratorPodName() string {
 	for _, pod := range cs.createdPods {
-		if strings.Contains(pod.Name, checkup.TrexPodNamePrefix) {
+		if strings.Contains(pod.Name, checkup.TrafficGeneratorPodNamePrefix) {
 			return pod.Name
 		}
 	}

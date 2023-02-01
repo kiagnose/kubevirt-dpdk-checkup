@@ -60,8 +60,8 @@ type Checkup struct {
 }
 
 const (
-	VMINamePrefix     = "dpdk-vmi"
-	TrexPodNamePrefix = "trex"
+	VMINamePrefix                 = "dpdk-vmi"
+	TrafficGeneratorPodNamePrefix = "kubevirt-dpdk-checkup-traffic-gen"
 )
 
 func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config) *Checkup {
@@ -258,10 +258,10 @@ func (c *Checkup) createTrafficGeneratorPod(ctx context.Context) (*k8scorev1.Pod
 	if err != nil {
 		return nil, err
 	}
-	trexPod := newTrafficGeneratorPod(c.params, secondaryNetworksRequest)
+	trafficGeneratorPod := newTrafficGeneratorPod(c.params, secondaryNetworksRequest)
 
-	log.Printf("Creating Pod %s..", ObjectFullName(c.namespace, trexPod.Name))
-	return c.client.CreatePod(ctx, c.namespace, trexPod)
+	log.Printf("Creating traffic generator Pod %s..", ObjectFullName(c.namespace, trafficGeneratorPod.Name))
+	return c.client.CreatePod(ctx, c.namespace, trafficGeneratorPod)
 }
 
 func (c *Checkup) waitForPodRunningStatus(ctx context.Context, namespace, name string) (*k8scorev1.Pod, error) {
@@ -288,8 +288,8 @@ func (c *Checkup) waitForPodRunningStatus(ctx context.Context, namespace, name s
 
 func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest string) *k8scorev1.Pod {
 	const (
-		TrexPodNumCPUs      = "8"
-		TrexPodNumHugepages = "8Gi"
+		trafficGeneratorPodCPUCount       = "8"
+		trafficGeneratorPodHugepagesCount = "8Gi"
 	)
 
 	envVars := map[string]string{
@@ -298,19 +298,19 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 	securityContext := pod.NewSecurityContext(int64(0), false,
 		[]k8scorev1.Capability{"IPC_LOCK", "SYS_RESOURCE", "NET_RAW", "NET_ADMIN"})
 
-	trexContainer := pod.NewPodContainer(TrexPodNamePrefix,
+	trafficGeneratorContainer := pod.NewPodContainer(TrafficGeneratorPodNamePrefix,
 		pod.WithContainerImage(pod.ContainerDiskImage),
 		pod.WithContainerCommand([]string{"/bin/bash", "-c", "sleep INF"}),
 		pod.WithContainerSecurityContext(securityContext),
 		pod.WithContainerEnvVars(envVars),
-		pod.WithContainerCPUsStrict(TrexPodNumCPUs),
-		pod.WithContainerHugepagesResources(TrexPodNumHugepages),
+		pod.WithContainerCPUsStrict(trafficGeneratorPodCPUCount),
+		pod.WithContainerHugepagesResources(trafficGeneratorPodHugepagesCount),
 		pod.WithContainerHugepagesVolumeMount(),
 		pod.WithContainerLibModulesVolumeMount(),
 	)
 
-	return pod.NewPod(randomizeName(TrexPodNamePrefix),
-		pod.WithPodContainer(trexContainer),
+	return pod.NewPod(randomizeName(TrafficGeneratorPodNamePrefix),
+		pod.WithPodContainer(trafficGeneratorContainer),
 		pod.WithRuntimeClassName(checkupConfig.TrafficGeneratorRuntimeClassName),
 		pod.WithoutCRIOCPULoadBalancing(),
 		pod.WithoutCRIOCPUQuota(),
