@@ -89,8 +89,7 @@ func (c *Checkup) Setup(ctx context.Context) error {
 		return fmt.Errorf("%s: %w", errMessagePrefix, err)
 	}
 
-	c.trafficGeneratorPod, err = c.createTrafficGeneratorPod(ctx)
-	if err != nil {
+	if err = c.createTrafficGeneratorPod(ctx); err != nil {
 		return fmt.Errorf("%s: %w", errMessagePrefix, err)
 	}
 
@@ -268,18 +267,23 @@ func randomizeName(prefix string) string {
 	return fmt.Sprintf("%s-%s", prefix, k8srand.String(randomStringLen))
 }
 
-func (c *Checkup) createTrafficGeneratorPod(ctx context.Context) (*k8scorev1.Pod, error) {
+func (c *Checkup) createTrafficGeneratorPod(ctx context.Context) error {
 	secondaryNetworksRequest, err := pod.CreateNetworksRequest([]networkv1.NetworkSelectionElement{
 		{Name: c.params.NetworkAttachmentDefinitionName, Namespace: c.namespace, MacRequest: c.params.TrafficGeneratorEastMacAddress.String()},
 		{Name: c.params.NetworkAttachmentDefinitionName, Namespace: c.namespace, MacRequest: c.params.TrafficGeneratorWestMacAddress.String()},
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	trafficGeneratorPod := newTrafficGeneratorPod(c.params, secondaryNetworksRequest)
 
 	log.Printf("Creating traffic generator Pod %s..", ObjectFullName(c.namespace, trafficGeneratorPod.Name))
-	return c.client.CreatePod(ctx, c.namespace, trafficGeneratorPod)
+	c.trafficGeneratorPod, err = c.client.CreatePod(ctx, c.namespace, trafficGeneratorPod)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *Checkup) waitForPodRunningStatus(ctx context.Context, namespace, name string) (*k8scorev1.Pod, error) {
