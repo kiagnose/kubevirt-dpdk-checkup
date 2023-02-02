@@ -71,11 +71,6 @@ const (
 	TrafficGeneratorPodNamePrefix = "kubevirt-dpdk-checkup-traffic-gen"
 )
 
-const (
-	VMIUsername = "cloud-user"
-	VMIPassword = "0tli-pxem-xknu" // #nosec
-)
-
 func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config, executor testExecutor) *Checkup {
 	return &Checkup{
 		client:    client,
@@ -229,9 +224,7 @@ func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 		rootDiskName      = "rootdisk"
 		cloudInitDiskName = "cloudinitdisk"
 		eastNetworkName   = "nic-east"
-		eastNICPCIAddress = "0000:06:00.0"
 		westNetworkName   = "nic-west"
-		westNICPCIAddress = "0000:07:00.0"
 
 		terminationGracePeriodSeconds = 0
 	)
@@ -242,9 +235,9 @@ func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 		vmi.WithoutCRIOCPUQuota(),
 		vmi.WithoutCRIOIRQLoadBalancing(),
 		vmi.WithDedicatedCPU(CPUSocketsCount, CPUCoresCount, CPUTreadsCount),
-		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.DPDKEastMacAddress.String(), eastNICPCIAddress),
+		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.DPDKEastMacAddress.String(), config.VMIEastNICPCIAddress),
 		vmi.WithMultusNetwork(eastNetworkName, checkupConfig.NetworkAttachmentDefinitionName),
-		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.DPDKWestMacAddress.String(), westNICPCIAddress),
+		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.DPDKWestMacAddress.String(), config.VMIWestNICPCIAddress),
 		vmi.WithMultusNetwork(westNetworkName, checkupConfig.NetworkAttachmentDefinitionName),
 		vmi.WithNetworkInterfaceMultiQueue(),
 		vmi.WithRandomNumberGenerator(),
@@ -254,7 +247,7 @@ func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 		vmi.WithNodeSelector(checkupConfig.DPDKNodeLabelSelector),
 		vmi.WithPVCVolume(rootDiskName, "rhel8-yummy-gorilla"),
 		vmi.WithVirtIODisk(rootDiskName),
-		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(VMIUsername, VMIPassword)),
+		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword)),
 		vmi.WithVirtIODisk(cloudInitDiskName),
 	)
 }

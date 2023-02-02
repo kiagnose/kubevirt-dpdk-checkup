@@ -55,6 +55,14 @@ const (
 	TestDurationDefault                               = 5 * time.Minute
 )
 
+const (
+	VMIUsername = "cloud-user"
+	VMIPassword = "0tli-pxem-xknu" // #nosec
+
+	VMIEastNICPCIAddress = "0000:06:00.0"
+	VMIWestNICPCIAddress = "0000:07:00.0"
+)
+
 var (
 	ErrInvalidNUMASocket                                 = errors.New("invalid NUMA Socket")
 	ErrInvalidNetworkAttachmentDefinitionName            = errors.New("invalid Network-Attachment-Definition Name")
