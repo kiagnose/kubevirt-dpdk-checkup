@@ -27,6 +27,7 @@ import (
 	"kubevirt.io/client-go/kubecli"
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/console"
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/status"
 )
 
@@ -35,18 +36,26 @@ type vmiSerialConsoleClient interface {
 }
 
 type Executor struct {
-	client      vmiSerialConsoleClient
-	namespace   string
-	vmiUsername string
-	vmiPassword string
+	client               vmiSerialConsoleClient
+	namespace            string
+	vmiUsername          string
+	vmiPassword          string
+	vmiEastNICPCIAddress string
+	vmiEastMACAddress    string
+	vmiWestNICPCIAddress string
+	vmiWestMACAddress    string
 }
 
-func New(client vmiSerialConsoleClient, namespace, vmiUsername, vmiPassword string) Executor {
+func New(client vmiSerialConsoleClient, namespace string, cfg config.Config) Executor {
 	return Executor{
-		client:      client,
-		namespace:   namespace,
-		vmiUsername: vmiUsername,
-		vmiPassword: vmiPassword,
+		client:               client,
+		namespace:            namespace,
+		vmiUsername:          config.VMIUsername,
+		vmiPassword:          config.VMIPassword,
+		vmiEastNICPCIAddress: config.VMIEastNICPCIAddress,
+		vmiEastMACAddress:    cfg.DPDKEastMacAddress.String(),
+		vmiWestNICPCIAddress: config.VMIWestNICPCIAddress,
+		vmiWestMACAddress:    cfg.DPDKWestMacAddress.String(),
 	}
 }
 
