@@ -262,6 +262,22 @@ func (c *Checkup) waitForPodRunningStatus(ctx context.Context, namespace, name s
 	return updatedPod, nil
 }
 
+func (c *Checkup) deletePod(ctx context.Context) error {
+	if c.trafficGeneratorPod == nil {
+		return fmt.Errorf("failed to delete traffic generator Pod, object doesn't exist")
+	}
+
+	vmiFullName := ObjectFullName(c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
+
+	log.Printf("Trying to delete traffic generator Pod: %q", vmiFullName)
+	if err := c.client.DeletePod(ctx, c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name); err != nil {
+		log.Printf("Failed to delete traffic generator Pod: %q", vmiFullName)
+		return err
+	}
+
+	return nil
+}
+
 func ObjectFullName(namespace, name string) string {
 	return fmt.Sprintf("%s/%s", namespace, name)
 }
@@ -384,22 +400,6 @@ func (c *Checkup) waitForPodDeletion(ctx context.Context) error {
 	}
 
 	log.Printf("Pod %q is deleted", podFullName)
-	return nil
-}
-
-func (c *Checkup) deletePod(ctx context.Context) error {
-	if c.trafficGeneratorPod == nil {
-		return fmt.Errorf("failed to delete traffic generator Pod, object doesn't exist")
-	}
-
-	vmiFullName := ObjectFullName(c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
-
-	log.Printf("Trying to delete traffic generator Pod: %q", vmiFullName)
-	if err := c.client.DeletePod(ctx, c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name); err != nil {
-		log.Printf("Failed to delete traffic generator Pod: %q", vmiFullName)
-		return err
-	}
-
 	return nil
 }
 
