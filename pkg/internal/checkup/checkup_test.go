@@ -182,6 +182,17 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 	}
 }
 
+func TestCloudInitString(t *testing.T) {
+	actualString := checkup.CloudInit("user", "password")
+	expectedString := `#cloud-config
+user: user
+password: password
+chpasswd:
+  expire: false`
+
+	assert.Equal(t, expectedString, actualString)
+}
+
 type clientStub struct {
 	createdVMIs        map[string]*kvcorev1.VirtualMachineInstance
 	createdPods        map[string]*k8scorev1.Pod
