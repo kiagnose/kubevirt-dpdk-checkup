@@ -278,6 +278,27 @@ func (c *Checkup) deletePod(ctx context.Context) error {
 	return nil
 }
 
+func (c *Checkup) waitForPodDeletion(ctx context.Context) error {
+	podFullName := ObjectFullName(c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
+	log.Printf("Waiting for Pod %q to be deleted..", podFullName)
+
+	conditionFn := func(ctx context.Context) (bool, error) {
+		var err error
+		_, err = c.client.GetPod(ctx, c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
+		if k8serrors.IsNotFound(err) {
+			return true, nil
+		}
+		return false, err
+	}
+	const interval = 5 * time.Second
+	if err := wait.PollImmediateUntilWithContext(ctx, interval, conditionFn); err != nil {
+		return fmt.Errorf("failed to wait for POD %q to be in deleted: %v", podFullName, err)
+	}
+
+	log.Printf("Pod %q is deleted", podFullName)
+	return nil
+}
+
 func ObjectFullName(namespace, name string) string {
 	return fmt.Sprintf("%s/%s", namespace, name)
 }
@@ -380,27 +401,6 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		pod.WithLibModulesVolume(),
 		pod.WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds),
 	)
-}
-
-func (c *Checkup) waitForPodDeletion(ctx context.Context) error {
-	podFullName := ObjectFullName(c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
-	log.Printf("Waiting for Pod %q to be deleted..", podFullName)
-
-	conditionFn := func(ctx context.Context) (bool, error) {
-		var err error
-		_, err = c.client.GetPod(ctx, c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
-		if k8serrors.IsNotFound(err) {
-			return true, nil
-		}
-		return false, err
-	}
-	const interval = 5 * time.Second
-	if err := wait.PollImmediateUntilWithContext(ctx, interval, conditionFn); err != nil {
-		return fmt.Errorf("failed to wait for POD %q to be in deleted: %v", podFullName, err)
-	}
-
-	log.Printf("Pod %q is deleted", podFullName)
-	return nil
 }
 
 func CloudInit(username, password string) string {
