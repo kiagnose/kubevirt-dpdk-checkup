@@ -303,6 +303,12 @@ func ObjectFullName(namespace, name string) string {
 	return fmt.Sprintf("%s/%s", namespace, name)
 }
 
+func randomizeName(prefix string) string {
+	const randomStringLen = 5
+
+	return fmt.Sprintf("%s-%s", prefix, k8srand.String(randomStringLen))
+}
+
 func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 	const (
 		CPUSocketsCount   = 1
@@ -337,12 +343,6 @@ func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword)),
 		vmi.WithVirtIODisk(cloudInitDiskName),
 	)
-}
-
-func randomizeName(prefix string) string {
-	const randomStringLen = 5
-
-	return fmt.Sprintf("%s-%s", prefix, k8srand.String(randomStringLen))
 }
 
 func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest string) *k8scorev1.Pod {
