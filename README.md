@@ -99,3 +99,39 @@ data:
   spec.param.trafficGeneratorRuntimeClassName: <runtimeclass-name>
   spec.param.trafficGeneratorImage: quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:latest
 ```
+
+## Execution
+In order to execute the checkup, fill in the required data and apply this manifest:
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dpdk-checkup
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      serviceAccountName: dpdk-checkup-sa
+      restartPolicy: Never
+      containers:
+        - name: dpdk-checkup
+          image: quay.io/kiagnose/kubevirt-dpdk-checkup:latest
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            runAsNonRoot: true
+            seccompProfile:
+              type: "RuntimeDefault"
+          env:
+            - name: CONFIGMAP_NAMESPACE
+              value: <target-namespace>
+            - name: CONFIGMAP_NAME
+              value: dpdk-checkup-config
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+```
