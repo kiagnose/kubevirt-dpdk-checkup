@@ -221,6 +221,47 @@ func (c *Checkup) waitForVMIDeletion(ctx context.Context) error {
 	return nil
 }
 
+func (c *Checkup) createTrafficGeneratorPod(ctx context.Context) error {
+	secondaryNetworksRequest, err := pod.CreateNetworksRequest([]networkv1.NetworkSelectionElement{
+		{Name: c.params.NetworkAttachmentDefinitionName, Namespace: c.namespace, MacRequest: c.params.TrafficGeneratorEastMacAddress.String()},
+		{Name: c.params.NetworkAttachmentDefinitionName, Namespace: c.namespace, MacRequest: c.params.TrafficGeneratorWestMacAddress.String()},
+	})
+	if err != nil {
+		return err
+	}
+	trafficGeneratorPod := newTrafficGeneratorPod(c.params, secondaryNetworksRequest)
+
+	log.Printf("Creating traffic generator Pod %s..", ObjectFullName(c.namespace, trafficGeneratorPod.Name))
+	c.trafficGeneratorPod, err = c.client.CreatePod(ctx, c.namespace, trafficGeneratorPod)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Checkup) waitForPodRunningStatus(ctx context.Context, namespace, name string) (*k8scorev1.Pod, error) {
+	podFullName := ObjectFullName(c.namespace, name)
+	log.Printf("Waiting for Pod %s..", podFullName)
+	var updatedPod *k8scorev1.Pod
+
+	conditionFn := func(ctx context.Context) (bool, error) {
+		var err error
+		updatedPod, err = c.client.GetPod(ctx, namespace, name)
+		if err != nil {
+			return false, err
+		}
+		return pod.PodInRunningPhase(updatedPod), nil
+	}
+	const interval = time.Second * 5
+	if err := wait.PollImmediateUntilWithContext(ctx, interval, conditionFn); err != nil {
+		return nil, fmt.Errorf("failed to wait for Pod '%s' to be in Running Phase: %v", podFullName, err)
+	}
+
+	log.Printf("Pod %s is Running", podFullName)
+	return updatedPod, nil
+}
+
 func ObjectFullName(namespace, name string) string {
 	return fmt.Sprintf("%s/%s", namespace, name)
 }
@@ -265,47 +306,6 @@ func randomizeName(prefix string) string {
 	const randomStringLen = 5
 
 	return fmt.Sprintf("%s-%s", prefix, k8srand.String(randomStringLen))
-}
-
-func (c *Checkup) createTrafficGeneratorPod(ctx context.Context) error {
-	secondaryNetworksRequest, err := pod.CreateNetworksRequest([]networkv1.NetworkSelectionElement{
-		{Name: c.params.NetworkAttachmentDefinitionName, Namespace: c.namespace, MacRequest: c.params.TrafficGeneratorEastMacAddress.String()},
-		{Name: c.params.NetworkAttachmentDefinitionName, Namespace: c.namespace, MacRequest: c.params.TrafficGeneratorWestMacAddress.String()},
-	})
-	if err != nil {
-		return err
-	}
-	trafficGeneratorPod := newTrafficGeneratorPod(c.params, secondaryNetworksRequest)
-
-	log.Printf("Creating traffic generator Pod %s..", ObjectFullName(c.namespace, trafficGeneratorPod.Name))
-	c.trafficGeneratorPod, err = c.client.CreatePod(ctx, c.namespace, trafficGeneratorPod)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *Checkup) waitForPodRunningStatus(ctx context.Context, namespace, name string) (*k8scorev1.Pod, error) {
-	podFullName := ObjectFullName(c.namespace, name)
-	log.Printf("Waiting for Pod %s..", podFullName)
-	var updatedPod *k8scorev1.Pod
-
-	conditionFn := func(ctx context.Context) (bool, error) {
-		var err error
-		updatedPod, err = c.client.GetPod(ctx, namespace, name)
-		if err != nil {
-			return false, err
-		}
-		return pod.PodInRunningPhase(updatedPod), nil
-	}
-	const interval = time.Second * 5
-	if err := wait.PollImmediateUntilWithContext(ctx, interval, conditionFn); err != nil {
-		return nil, fmt.Errorf("failed to wait for Pod '%s' to be in Running Phase: %v", podFullName, err)
-	}
-
-	log.Printf("Pod %s is Running", podFullName)
-	return updatedPod, nil
 }
 
 func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest string) *k8scorev1.Pod {
