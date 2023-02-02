@@ -85,11 +85,9 @@ func (c *Checkup) Setup(ctx context.Context) error {
 	const errMessagePrefix = "setup"
 	var err error
 
-	createdVMI, err := c.client.CreateVirtualMachineInstance(ctx, c.namespace, c.vmi)
-	if err != nil {
-		return err
+	if err = c.createVMI(ctx); err != nil {
+		return fmt.Errorf("%s: %w", errMessagePrefix, err)
 	}
-	c.vmi = createdVMI
 
 	c.trafficGeneratorPod, err = c.createTrafficGeneratorPod(ctx)
 	if err != nil {
@@ -145,6 +143,18 @@ func (c *Checkup) Teardown(ctx context.Context) error {
 
 func (c *Checkup) Results() status.Results {
 	return c.results
+}
+
+func (c *Checkup) createVMI(ctx context.Context) error {
+	log.Printf("Creating VMI %q...", ObjectFullName(c.namespace, c.vmi.Name))
+
+	var err error
+	c.vmi, err = c.client.CreateVirtualMachineInstance(ctx, c.namespace, c.vmi)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *Checkup) waitForVMIToBoot(ctx context.Context) error {
