@@ -303,6 +303,17 @@ func ObjectFullName(namespace, name string) string {
 	return fmt.Sprintf("%s/%s", namespace, name)
 }
 
+func CloudInit(username, password string) string {
+	sb := strings.Builder{}
+	sb.WriteString("#cloud-config\n")
+	sb.WriteString(fmt.Sprintf("user: %s\n", username))
+	sb.WriteString(fmt.Sprintf("password: %s\n", password))
+	sb.WriteString("chpasswd:\n")
+	sb.WriteString("  expire: false")
+
+	return sb.String()
+}
+
 func randomizeName(prefix string) string {
 	const randomStringLen = 5
 
@@ -401,15 +412,4 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		pod.WithLibModulesVolume(),
 		pod.WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds),
 	)
-}
-
-func CloudInit(username, password string) string {
-	sb := strings.Builder{}
-	sb.WriteString("#cloud-config\n")
-	sb.WriteString(fmt.Sprintf("user: %s\n", username))
-	sb.WriteString(fmt.Sprintf("password: %s\n", password))
-	sb.WriteString("chpasswd:\n")
-	sb.WriteString("  expire: false")
-
-	return sb.String()
 }
