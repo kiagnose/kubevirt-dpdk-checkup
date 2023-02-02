@@ -289,22 +289,41 @@ func (c *Checkup) waitForPodRunningStatus(ctx context.Context, namespace, name s
 
 func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest string) *k8scorev1.Pod {
 	const (
-		trafficGeneratorPodCPUCount       = "8"
-		trafficGeneratorPodHugepagesCount = "8Gi"
+		trafficGeneratorPodCPUCount            = 8
+		trafficGeneratorPodNumOfNonTrafficCPUs = 2
+		trafficGeneratorPodHugepagesCount      = "8Gi"
+
+		portBandwidthParamName     = "PORT_BANDWIDTH_GB"
+		numaSocketParamName        = "NUMA_SOCKET"
+		verboseParamName           = "SET_VERBOSE"
+		numTrafficCpusParamName    = "NUM_OF_TRAFFIC_CPUS"
+		numCpusParamName           = "NUM_OF_CPUS"
+		srcWestMACAddressParamName = "SRC_WEST_MAC_ADDRESS"
+		srcEastMACAddressParamName = "SRC_EAST_MAC_ADDRESS"
+		dstWestMACAddressParamName = "DST_WEST_MAC_ADDRESS"
+		dstEastMACAddressParamName = "DST_EAST_MAC_ADDRESS"
 	)
 
 	envVars := map[string]string{
-		config.PortBandwidthGBParamName: fmt.Sprintf("%d", checkupConfig.PortBandwidthGB),
+		portBandwidthParamName:     fmt.Sprintf("%d", checkupConfig.PortBandwidthGB),
+		numaSocketParamName:        fmt.Sprintf("%d", checkupConfig.NUMASocket),
+		numTrafficCpusParamName:    fmt.Sprintf("%d", trafficGeneratorPodCPUCount-trafficGeneratorPodNumOfNonTrafficCPUs),
+		numCpusParamName:           fmt.Sprintf("%d", trafficGeneratorPodCPUCount),
+		srcWestMACAddressParamName: checkupConfig.TrafficGeneratorWestMacAddress.String(),
+		srcEastMACAddressParamName: checkupConfig.TrafficGeneratorEastMacAddress.String(),
+		dstWestMACAddressParamName: checkupConfig.DPDKWestMacAddress.String(),
+		dstEastMACAddressParamName: checkupConfig.DPDKEastMacAddress.String(),
+		verboseParamName:           "FALSE",
 	}
 	securityContext := pod.NewSecurityContext(int64(0), false,
 		[]k8scorev1.Capability{"IPC_LOCK", "SYS_RESOURCE", "NET_RAW", "NET_ADMIN"})
 
 	trafficGeneratorContainer := pod.NewPodContainer(TrafficGeneratorPodNamePrefix,
 		pod.WithContainerImage(checkupConfig.TrafficGeneratorImage),
-		pod.WithContainerCommand([]string{"/bin/bash", "-c", "sleep INF"}),
+		pod.WithContainerCommand([]string{"/bin/bash", "/opt/scripts/main.sh"}),
 		pod.WithContainerSecurityContext(securityContext),
 		pod.WithContainerEnvVars(envVars),
-		pod.WithContainerCPUsStrict(trafficGeneratorPodCPUCount),
+		pod.WithContainerCPUsStrict(fmt.Sprintf("%d", trafficGeneratorPodCPUCount)),
 		pod.WithContainerHugepagesResources(trafficGeneratorPodHugepagesCount),
 		pod.WithContainerHugepagesVolumeMount(),
 		pod.WithContainerLibModulesVolumeMount(),
