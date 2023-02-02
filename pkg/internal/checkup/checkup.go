@@ -113,11 +113,11 @@ func (c *Checkup) Teardown(ctx context.Context) error {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 
-	if err := c.waitForVMIDeletion(ctx); err != nil {
+	if err := c.deletePod(ctx); err != nil {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 
-	if err := c.deletePod(ctx); err != nil {
+	if err := c.waitForVMIDeletion(ctx); err != nil {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 
@@ -219,7 +219,7 @@ chpasswd:
 		westNetworkName   = "nic-west"
 		westNICPCIAddress = "0000:07:00.0"
 
-		terminationGracePeriodSeconds = 180
+		terminationGracePeriodSeconds = 0
 	)
 
 	return vmi.New(randomizeName(VMINamePrefix),
@@ -292,6 +292,7 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		trafficGeneratorPodCPUCount            = 8
 		trafficGeneratorPodNumOfNonTrafficCPUs = 2
 		trafficGeneratorPodHugepagesCount      = "8Gi"
+		terminationGracePeriodSeconds          = int64(0)
 
 		portBandwidthParamName     = "PORT_BANDWIDTH_GB"
 		numaSocketParamName        = "NUMA_SOCKET"
@@ -340,6 +341,7 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		pod.WithNetworkRequestAnnotation(secondaryNetworkRequest),
 		pod.WithHugepagesVolume(),
 		pod.WithLibModulesVolume(),
+		pod.WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds),
 	)
 }
 
