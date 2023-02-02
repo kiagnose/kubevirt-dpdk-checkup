@@ -52,7 +52,7 @@ func Run(rawEnv map[string]string, namespace string) error {
 
 	printConfig(cfg)
 
-	dpdkCheckupExecutor := executor.New(c, namespace, checkup.VMIUsername, checkup.VMIPassword)
+	dpdkCheckupExecutor := executor.New(c, namespace, config.VMIUsername, config.VMIPassword)
 	l := launcher.New(
 		checkup.New(c, namespace, cfg, dpdkCheckupExecutor),
 		reporter.New(c, baseConfig.ConfigMapNamespace, baseConfig.ConfigMapName),

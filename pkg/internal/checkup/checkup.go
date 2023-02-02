@@ -71,11 +71,6 @@ const (
 	TrafficGeneratorPodNamePrefix = "kubevirt-dpdk-checkup-traffic-gen"
 )
 
-const (
-	VMIUsername = "cloud-user"
-	VMIPassword = "0tli-pxem-xknu" // #nosec
-)
-
 func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config, executor testExecutor) *Checkup {
 	return &Checkup{
 		client:    client,
@@ -254,7 +249,7 @@ func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 		vmi.WithNodeSelector(checkupConfig.DPDKNodeLabelSelector),
 		vmi.WithPVCVolume(rootDiskName, "rhel8-yummy-gorilla"),
 		vmi.WithVirtIODisk(rootDiskName),
-		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(VMIUsername, VMIPassword)),
+		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword)),
 		vmi.WithVirtIODisk(cloudInitDiskName),
 	)
 }
