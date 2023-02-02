@@ -85,14 +85,11 @@ func (c *Checkup) Setup(ctx context.Context) error {
 	const errMessagePrefix = "setup"
 	var err error
 
-	createdVMI, err := c.client.CreateVirtualMachineInstance(ctx, c.namespace, c.vmi)
-	if err != nil {
-		return err
+	if err = c.createVMI(ctx); err != nil {
+		return fmt.Errorf("%s: %w", errMessagePrefix, err)
 	}
-	c.vmi = createdVMI
 
-	c.trafficGeneratorPod, err = c.createTrafficGeneratorPod(ctx)
-	if err != nil {
+	if err = c.createTrafficGeneratorPod(ctx); err != nil {
 		return fmt.Errorf("%s: %w", errMessagePrefix, err)
 	}
 
@@ -145,6 +142,18 @@ func (c *Checkup) Teardown(ctx context.Context) error {
 
 func (c *Checkup) Results() status.Results {
 	return c.results
+}
+
+func (c *Checkup) createVMI(ctx context.Context) error {
+	log.Printf("Creating VMI %q...", ObjectFullName(c.namespace, c.vmi.Name))
+
+	var err error
+	c.vmi, err = c.client.CreateVirtualMachineInstance(ctx, c.namespace, c.vmi)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *Checkup) waitForVMIToBoot(ctx context.Context) error {
@@ -212,8 +221,103 @@ func (c *Checkup) waitForVMIDeletion(ctx context.Context) error {
 	return nil
 }
 
+func (c *Checkup) createTrafficGeneratorPod(ctx context.Context) error {
+	secondaryNetworksRequest, err := pod.CreateNetworksRequest([]networkv1.NetworkSelectionElement{
+		{Name: c.params.NetworkAttachmentDefinitionName, Namespace: c.namespace, MacRequest: c.params.TrafficGeneratorEastMacAddress.String()},
+		{Name: c.params.NetworkAttachmentDefinitionName, Namespace: c.namespace, MacRequest: c.params.TrafficGeneratorWestMacAddress.String()},
+	})
+	if err != nil {
+		return err
+	}
+	trafficGeneratorPod := newTrafficGeneratorPod(c.params, secondaryNetworksRequest)
+
+	log.Printf("Creating traffic generator Pod %s..", ObjectFullName(c.namespace, trafficGeneratorPod.Name))
+	c.trafficGeneratorPod, err = c.client.CreatePod(ctx, c.namespace, trafficGeneratorPod)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Checkup) waitForPodRunningStatus(ctx context.Context, namespace, name string) (*k8scorev1.Pod, error) {
+	podFullName := ObjectFullName(c.namespace, name)
+	log.Printf("Waiting for Pod %s..", podFullName)
+	var updatedPod *k8scorev1.Pod
+
+	conditionFn := func(ctx context.Context) (bool, error) {
+		var err error
+		updatedPod, err = c.client.GetPod(ctx, namespace, name)
+		if err != nil {
+			return false, err
+		}
+		return pod.PodInRunningPhase(updatedPod), nil
+	}
+	const interval = time.Second * 5
+	if err := wait.PollImmediateUntilWithContext(ctx, interval, conditionFn); err != nil {
+		return nil, fmt.Errorf("failed to wait for Pod '%s' to be in Running Phase: %v", podFullName, err)
+	}
+
+	log.Printf("Pod %s is Running", podFullName)
+	return updatedPod, nil
+}
+
+func (c *Checkup) deletePod(ctx context.Context) error {
+	if c.trafficGeneratorPod == nil {
+		return fmt.Errorf("failed to delete traffic generator Pod, object doesn't exist")
+	}
+
+	vmiFullName := ObjectFullName(c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
+
+	log.Printf("Trying to delete traffic generator Pod: %q", vmiFullName)
+	if err := c.client.DeletePod(ctx, c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name); err != nil {
+		log.Printf("Failed to delete traffic generator Pod: %q", vmiFullName)
+		return err
+	}
+
+	return nil
+}
+
+func (c *Checkup) waitForPodDeletion(ctx context.Context) error {
+	podFullName := ObjectFullName(c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
+	log.Printf("Waiting for Pod %q to be deleted..", podFullName)
+
+	conditionFn := func(ctx context.Context) (bool, error) {
+		var err error
+		_, err = c.client.GetPod(ctx, c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
+		if k8serrors.IsNotFound(err) {
+			return true, nil
+		}
+		return false, err
+	}
+	const interval = 5 * time.Second
+	if err := wait.PollImmediateUntilWithContext(ctx, interval, conditionFn); err != nil {
+		return fmt.Errorf("failed to wait for POD %q to be in deleted: %v", podFullName, err)
+	}
+
+	log.Printf("Pod %q is deleted", podFullName)
+	return nil
+}
+
 func ObjectFullName(namespace, name string) string {
 	return fmt.Sprintf("%s/%s", namespace, name)
+}
+
+func CloudInit(username, password string) string {
+	sb := strings.Builder{}
+	sb.WriteString("#cloud-config\n")
+	sb.WriteString(fmt.Sprintf("user: %s\n", username))
+	sb.WriteString(fmt.Sprintf("password: %s\n", password))
+	sb.WriteString("chpasswd:\n")
+	sb.WriteString("  expire: false")
+
+	return sb.String()
+}
+
+func randomizeName(prefix string) string {
+	const randomStringLen = 5
+
+	return fmt.Sprintf("%s-%s", prefix, k8srand.String(randomStringLen))
 }
 
 func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
@@ -250,48 +354,6 @@ func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword)),
 		vmi.WithVirtIODisk(cloudInitDiskName),
 	)
-}
-
-func randomizeName(prefix string) string {
-	const randomStringLen = 5
-
-	return fmt.Sprintf("%s-%s", prefix, k8srand.String(randomStringLen))
-}
-
-func (c *Checkup) createTrafficGeneratorPod(ctx context.Context) (*k8scorev1.Pod, error) {
-	secondaryNetworksRequest, err := pod.CreateNetworksRequest([]networkv1.NetworkSelectionElement{
-		{Name: c.params.NetworkAttachmentDefinitionName, Namespace: c.namespace, MacRequest: c.params.TrafficGeneratorEastMacAddress.String()},
-		{Name: c.params.NetworkAttachmentDefinitionName, Namespace: c.namespace, MacRequest: c.params.TrafficGeneratorWestMacAddress.String()},
-	})
-	if err != nil {
-		return nil, err
-	}
-	trafficGeneratorPod := newTrafficGeneratorPod(c.params, secondaryNetworksRequest)
-
-	log.Printf("Creating traffic generator Pod %s..", ObjectFullName(c.namespace, trafficGeneratorPod.Name))
-	return c.client.CreatePod(ctx, c.namespace, trafficGeneratorPod)
-}
-
-func (c *Checkup) waitForPodRunningStatus(ctx context.Context, namespace, name string) (*k8scorev1.Pod, error) {
-	podFullName := ObjectFullName(c.namespace, name)
-	log.Printf("Waiting for Pod %s..", podFullName)
-	var updatedPod *k8scorev1.Pod
-
-	conditionFn := func(ctx context.Context) (bool, error) {
-		var err error
-		updatedPod, err = c.client.GetPod(ctx, namespace, name)
-		if err != nil {
-			return false, err
-		}
-		return pod.PodInRunningPhase(updatedPod), nil
-	}
-	const interval = time.Second * 5
-	if err := wait.PollImmediateUntilWithContext(ctx, interval, conditionFn); err != nil {
-		return nil, fmt.Errorf("failed to wait for Pod '%s' to be in Running Phase: %v", podFullName, err)
-	}
-
-	log.Printf("Pod %s is Running", podFullName)
-	return updatedPod, nil
 }
 
 func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest string) *k8scorev1.Pod {
@@ -350,52 +412,4 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		pod.WithLibModulesVolume(),
 		pod.WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds),
 	)
-}
-
-func (c *Checkup) waitForPodDeletion(ctx context.Context) error {
-	podFullName := ObjectFullName(c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
-	log.Printf("Waiting for Pod %q to be deleted..", podFullName)
-
-	conditionFn := func(ctx context.Context) (bool, error) {
-		var err error
-		_, err = c.client.GetPod(ctx, c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
-		if k8serrors.IsNotFound(err) {
-			return true, nil
-		}
-		return false, err
-	}
-	const interval = 5 * time.Second
-	if err := wait.PollImmediateUntilWithContext(ctx, interval, conditionFn); err != nil {
-		return fmt.Errorf("failed to wait for POD %q to be in deleted: %v", podFullName, err)
-	}
-
-	log.Printf("Pod %q is deleted", podFullName)
-	return nil
-}
-
-func (c *Checkup) deletePod(ctx context.Context) error {
-	if c.trafficGeneratorPod == nil {
-		return fmt.Errorf("failed to delete traffic generator Pod, object doesn't exist")
-	}
-
-	vmiFullName := ObjectFullName(c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
-
-	log.Printf("Trying to delete traffic generator Pod: %q", vmiFullName)
-	if err := c.client.DeletePod(ctx, c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name); err != nil {
-		log.Printf("Failed to delete traffic generator Pod: %q", vmiFullName)
-		return err
-	}
-
-	return nil
-}
-
-func CloudInit(username, password string) string {
-	sb := strings.Builder{}
-	sb.WriteString("#cloud-config\n")
-	sb.WriteString(fmt.Sprintf("user: %s\n", username))
-	sb.WriteString(fmt.Sprintf("password: %s\n", password))
-	sb.WriteString("chpasswd:\n")
-	sb.WriteString("  expire: false")
-
-	return sb.String()
 }
