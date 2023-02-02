@@ -27,6 +27,7 @@ import (
 	kconfig "github.com/kiagnose/kiagnose/kiagnose/config"
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup"
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/executor"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/client"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/launcher"
@@ -51,7 +52,11 @@ func Run(rawEnv map[string]string, namespace string) error {
 
 	printConfig(cfg)
 
-	l := launcher.New(checkup.New(c, namespace, cfg), reporter.New(c, baseConfig.ConfigMapNamespace, baseConfig.ConfigMapName))
+	dpdkCheckupExecutor := executor.New(c, namespace, checkup.VMIUsername, checkup.VMIPassword)
+	l := launcher.New(
+		checkup.New(c, namespace, cfg, dpdkCheckupExecutor),
+		reporter.New(c, baseConfig.ConfigMapNamespace, baseConfig.ConfigMapName),
+	)
 
 	ctx, cancel := context.WithTimeout(context.Background(), baseConfig.Timeout)
 	defer cancel()

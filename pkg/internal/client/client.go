@@ -21,6 +21,7 @@ package client
 
 import (
 	"context"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -113,4 +114,11 @@ func (c *Client) DeleteVirtualMachineInstance(ctx context.Context, namespace, na
 	case <-ctx.Done():
 		return ctx.Err()
 	}
+}
+
+func (c *Client) VMISerialConsole(namespace, name string, timeout time.Duration) (kubecli.StreamInterface, error) {
+	return c.KubevirtClient.VirtualMachineInstance(namespace).SerialConsole(
+		name,
+		&kubecli.SerialConsoleOptions{ConnectionTimeout: timeout},
+	)
 }

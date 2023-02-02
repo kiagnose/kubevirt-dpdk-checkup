@@ -3,11 +3,13 @@ module github.com/kiagnose/kubevirt-dpdk-checkup
 go 1.19
 
 require (
+	github.com/google/goexpect v0.0.0-20210430020637-ab937bf7fd6f
 	github.com/k8snetworkplumbingwg/network-attachment-definition-client v1.4.0
 	github.com/kiagnose/kiagnose v0.2.1-0.20221208132946-95d8c7995fab
 	github.com/onsi/ginkgo/v2 v2.7.0
 	github.com/onsi/gomega v1.24.2
 	github.com/stretchr/testify v1.7.1
+	google.golang.org/grpc v1.40.0
 	k8s.io/api v0.26.0
 	k8s.io/apimachinery v0.23.5
 	k8s.io/client-go v12.0.0+incompatible
@@ -28,6 +30,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
+	github.com/google/goterm v0.0.0-20190703233501-fc88cf888a3f // indirect
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/googleapis/gnostic v0.5.5 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
@@ -43,6 +46,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/net v0.4.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f // indirect
 	golang.org/x/sys v0.3.0 // indirect
@@ -50,6 +54,7 @@ require (
 	golang.org/x/text v0.5.0 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/genproto v0.0.0-20210831024726-fe130286e0e2 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

@@ -224,6 +224,11 @@ func newKubeVirtDPDKCheckerRole() *rbacv1.Role {
 				Verbs:     []string{"create", "get", "delete"},
 			},
 			{
+				APIGroups: []string{"subresources.kubevirt.io"},
+				Resources: []string{"virtualmachineinstances/console"},
+				Verbs:     []string{"get"},
+			},
+			{
 				APIGroups: []string{""},
 				Resources: []string{"pods"},
 				Verbs:     []string{"create", "get", "delete"},
