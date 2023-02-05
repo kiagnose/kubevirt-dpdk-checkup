@@ -53,7 +53,7 @@ type kubeVirtVMIClient interface {
 }
 
 type testExecutor interface {
-	Execute(ctx context.Context, vmiName string) (status.Results, error)
+	Execute(ctx context.Context, vmiName, podName, podContainerName string) (status.Results, error)
 }
 
 type Checkup struct {
@@ -110,7 +110,7 @@ func (c *Checkup) Setup(ctx context.Context) error {
 func (c *Checkup) Run(ctx context.Context) error {
 	var err error
 
-	c.results, err = c.executor.Execute(ctx, c.vmi.Name)
+	c.results, err = c.executor.Execute(ctx, c.vmi.Name, c.trafficGeneratorPod.Name, c.trafficGeneratorPod.Spec.Containers[0].Name)
 	if err != nil {
 		return err
 	}

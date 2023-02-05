@@ -233,6 +233,11 @@ func newKubeVirtDPDKCheckerRole() *rbacv1.Role {
 				Resources: []string{"pods"},
 				Verbs:     []string{"create", "get", "delete"},
 			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"pods/exec"},
+				Verbs:     []string{"create"},
+			},
 		},
 	}
 }
