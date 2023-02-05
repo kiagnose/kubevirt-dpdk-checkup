@@ -44,15 +44,17 @@ type podExecuteClient interface {
 }
 
 type Executor struct {
-	client               vmiSerialConsoleClient
-	podClient            podExecuteClient
-	namespace            string
-	vmiUsername          string
-	vmiPassword          string
-	vmiEastNICPCIAddress string
-	vmiEastMACAddress    string
-	vmiWestNICPCIAddress string
-	vmiWestMACAddress    string
+	client                                     vmiSerialConsoleClient
+	podClient                                  podExecuteClient
+	namespace                                  string
+	vmiUsername                                string
+	vmiPassword                                string
+	vmiEastNICPCIAddress                       string
+	vmiEastMACAddress                          string
+	vmiWestNICPCIAddress                       string
+	vmiWestMACAddress                          string
+	testDuration                               time.Duration
+	trafficGeneratorPacketsPerSecondInMillions int
 }
 
 func New(client vmiSerialConsoleClient, podClient podExecuteClient, namespace string, cfg config.Config) Executor {
@@ -66,6 +68,8 @@ func New(client vmiSerialConsoleClient, podClient podExecuteClient, namespace st
 		vmiEastMACAddress:    cfg.DPDKEastMacAddress.String(),
 		vmiWestNICPCIAddress: config.VMIWestNICPCIAddress,
 		vmiWestMACAddress:    cfg.DPDKWestMacAddress.String(),
+		testDuration:         cfg.TestDuration,
+		trafficGeneratorPacketsPerSecondInMillions: cfg.TrafficGeneratorPacketsPerSecondInMillions,
 	}
 }
 
@@ -81,13 +85,26 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 		return status.Results{}, err
 	}
 
+	log.Printf("Clearing testpmd stats in VMI...")
+	if err := e.clearStatsTestpmd(vmiName); err != nil {
+		return status.Results{}, err
+	}
+
 	log.Printf("Clearing Trex console stats before test...")
 	_, err := trexClient.ClearStats(ctx)
 	if err != nil {
 		return status.Results{}, fmt.Errorf("failed to clear trex stats on pod \"%s/%s\" side: %w", e.namespace, podName, err)
 	}
 
-	return status.Results{}, nil
+	const trafficSourcePort = 0
+	log.Printf("Running traffic for %s...", e.testDuration.String())
+	_, err = trexClient.StartTraffic(ctx, e.trafficGeneratorPacketsPerSecondInMillions, trafficSourcePort, e.testDuration)
+	if err != nil {
+		return status.Results{}, fmt.Errorf("failed to run traffic from trex-console on pod \"%s/%s\" side: %w",
+			e.namespace, podName, err)
+	}
+	time.Sleep(e.testDuration)
+	return status.Results{}, err
 }
 
 func (e Executor) runTestpmd(vmiName string) error {
@@ -112,6 +129,28 @@ func (e Executor) runTestpmd(vmiName string) error {
 	}
 
 	log.Printf("%v", resp)
+
+	return nil
+}
+
+func (e Executor) clearStatsTestpmd(vmiName string) error {
+	const batchTimeout = 30 * time.Second
+
+	const testpmdPromt = "testpmd> "
+
+	const testpmdCmd = "clear fwd stats all"
+
+	_, err := console.SafeExpectBatchWithResponse(e.client, e.namespace, vmiName,
+		[]expect.Batcher{
+			&expect.BSnd{S: testpmdCmd + "\n"},
+			&expect.BExp{R: testpmdPromt},
+		},
+		batchTimeout,
+	)
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
