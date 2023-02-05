@@ -81,6 +81,11 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 		return status.Results{}, err
 	}
 
+	log.Printf("Clearing testpmd stats in VMI...")
+	if err := e.clearStatsTestpmd(vmiName); err != nil {
+		return status.Results{}, err
+	}
+
 	log.Printf("Clearing Trex console stats before test...")
 	_, err := trexClient.ClearStats(ctx)
 	if err != nil {
@@ -112,6 +117,28 @@ func (e Executor) runTestpmd(vmiName string) error {
 	}
 
 	log.Printf("%v", resp)
+
+	return nil
+}
+
+func (e Executor) clearStatsTestpmd(vmiName string) error {
+	const batchTimeout = 30 * time.Second
+
+	const testpmdPromt = "testpmd> "
+
+	const testpmdCmd = "clear fwd stats all"
+
+	_, err := console.SafeExpectBatchWithResponse(e.client, e.namespace, vmiName,
+		[]expect.Batcher{
+			&expect.BSnd{S: testpmdCmd + "\n"},
+			&expect.BExp{R: testpmdPromt},
+		},
+		batchTimeout,
+	)
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
