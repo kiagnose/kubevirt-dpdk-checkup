@@ -22,6 +22,7 @@ package tests
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -285,6 +286,7 @@ func newConfigMap() *corev1.ConfigMap {
 			"spec.param.networkAttachmentDefinitionName":  networkAttachmentDefinitionName,
 			"spec.param.trafficGeneratorRuntimeClassName": runtimeClassName,
 			"spec.param.trafficGeneratorImage":            trafficGeneratorImage,
+			"spec.param.testDuration":                     "1m",
 		},
 	}
 }
