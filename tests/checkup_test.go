@@ -21,6 +21,7 @@ package tests
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -91,8 +92,16 @@ var _ = Describe("Execute the checkup Job", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(configMap.Data).NotTo(BeNil())
+		Expect(configMap.Data["status.succeeded"]).To(Equal("true"), fmt.Sprintf("should succeed %+v", prettifyData(configMap.Data)))
+		Expect(configMap.Data["status.failureReason"]).To(BeEmpty(), fmt.Sprintf("should be empty %+v", prettifyData(configMap.Data)))
 	})
 })
+
+func prettifyData(data map[string]string) string {
+	dataPrettyJSON, err := json.MarshalIndent(data, "", "\t")
+	Expect(err).NotTo(HaveOccurred())
+	return string(dataPrettyJSON)
+}
 
 func setupCheckupPermissions() {
 	var (
