@@ -3,9 +3,13 @@ package executor
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
+
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 type trexConsole struct {
@@ -50,6 +54,31 @@ func (t trexConsole) GetGlobalStats(ctx context.Context) (globalStats, error) {
 		return globalStats{}, fmt.Errorf("failed to unmarshal global stats json: %w", err)
 	}
 	return gs, nil
+}
+
+func (t trexConsole) MonitorDropRates(ctx context.Context, duration time.Duration) (float64, error) {
+	const interval = 10 * time.Second
+	log.Printf("Monitoring traffic generator side drop rates every %ss during the test duration...", interval)
+	maxDropRateBps := float64(0)
+
+	ctxWithNewDeadline, cancel := context.WithDeadline(ctx, time.Now().Add(duration))
+	defer cancel()
+	conditionFn := func(ctx context.Context) (bool, error) {
+		statsGlobal, err := t.GetGlobalStats(ctx)
+		if statsGlobal.Result.MRxDropBps > maxDropRateBps {
+			maxDropRateBps = statsGlobal.Result.MRxDropBps
+		}
+		return false, err
+	}
+	if err := wait.PollImmediateUntilWithContext(ctxWithNewDeadline, interval, conditionFn); err != nil {
+		if errors.Is(err, wait.ErrWaitTimeout) {
+			log.Printf("finished polling for drop rates")
+		} else {
+			return 0, fmt.Errorf("failed to poll global stats in trex-console: %w", err)
+		}
+	}
+
+	return maxDropRateBps, nil
 }
 
 func (t trexConsole) ClearStats(ctx context.Context) (string, error) {

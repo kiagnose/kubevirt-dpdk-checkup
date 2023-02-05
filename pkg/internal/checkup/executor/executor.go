@@ -103,7 +103,12 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 		return status.Results{}, fmt.Errorf("failed to run traffic from trex-console on pod \"%s/%s\" side: %w",
 			e.namespace, podName, err)
 	}
-	time.Sleep(e.testDuration)
+
+	trafficGeneratorMaxDropRate, err := trexClient.MonitorDropRates(ctx, e.testDuration)
+	log.Printf("traffic Generator Max Drop Rate: %fBps", trafficGeneratorMaxDropRate)
+	if err != nil {
+		return status.Results{}, err
+	}
 	return status.Results{}, err
 }
 
