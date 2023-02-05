@@ -96,7 +96,15 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 		return status.Results{}, fmt.Errorf("failed to clear trex stats on pod \"%s/%s\" side: %w", e.namespace, podName, err)
 	}
 
-	return status.Results{}, nil
+	const trafficSourcePort = 0
+	log.Printf("Running traffic for %s...", e.testDuration.String())
+	_, err = trexClient.StartTraffic(ctx, e.trafficGeneratorPacketsPerSecondInMillions, trafficSourcePort, e.testDuration)
+	if err != nil {
+		return status.Results{}, fmt.Errorf("failed to run traffic from trex-console on pod \"%s/%s\" side: %w",
+			e.namespace, podName, err)
+	}
+	time.Sleep(e.testDuration)
+	return status.Results{}, err
 }
 
 func (e Executor) runTestpmd(vmiName string) error {

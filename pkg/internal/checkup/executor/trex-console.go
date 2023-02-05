@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 )
 
 type trexConsole struct {
@@ -34,8 +35,10 @@ func (t trexConsole) ClearStats(ctx context.Context) (string, error) {
 	return t.runCommand(ctx, "clear")
 }
 
-func (t trexConsole) StartTraffic(ctx context.Context, packetPerSecondMillion, port int) (string, error) {
-	return t.runCommand(ctx, fmt.Sprintf("start -f /opt/tests/testpmd.py -m %dmpps -p %d", packetPerSecondMillion, port))
+func (t trexConsole) StartTraffic(ctx context.Context, packetPerSecondMillion, port int, testDuration time.Duration) (string, error) {
+	testDurationMinutes := int(testDuration.Minutes())
+	return t.runCommand(ctx, fmt.Sprintf("start -f /opt/tests/testpmd.py -m %dmpps -p %d -d %dm",
+		packetPerSecondMillion, port, testDurationMinutes))
 }
 
 func (t trexConsole) StopTraffic(ctx context.Context) (string, error) {
