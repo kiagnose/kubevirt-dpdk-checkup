@@ -77,7 +77,11 @@ var _ = Describe("Execute the checkup Job", func() {
 	})
 
 	It("should complete successfully", func() {
-		Eventually(getJobConditions, 15*time.Minute, 5*time.Second).Should(
+		Eventually(func() []batchv1.JobCondition {
+			jobConditions, err := getJobConditions()
+			Expect(err).ToNot(HaveOccurred())
+			return jobConditions
+		}, 15*time.Minute, 5*time.Second).Should(
 			ContainElement(MatchFields(IgnoreExtras, Fields{
 				"Type":   Equal(batchv1.JobComplete),
 				"Status": Equal(corev1.ConditionTrue),
@@ -276,13 +280,13 @@ func newConfigMap() *corev1.ConfigMap {
 	}
 }
 
-func getJobConditions() []batchv1.JobCondition {
+func getJobConditions() ([]batchv1.JobCondition, error) {
 	checkupJob, err := virtClient.BatchV1().Jobs(testNamespace).Get(context.Background(), testCheckupJobName, metav1.GetOptions{})
 	if err != nil {
-		return []batchv1.JobCondition{}
+		return nil, err
 	}
 
-	return checkupJob.Status.Conditions
+	return checkupJob.Status.Conditions, nil
 }
 
 func newCheckupJob() *batchv1.Job {
