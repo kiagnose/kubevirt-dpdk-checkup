@@ -21,6 +21,8 @@ package tests
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -77,7 +79,11 @@ var _ = Describe("Execute the checkup Job", func() {
 	})
 
 	It("should complete successfully", func() {
-		Eventually(getJobConditions, 15*time.Minute, 5*time.Second).Should(
+		Eventually(func() []batchv1.JobCondition {
+			jobConditions, err := getJobConditions()
+			Expect(err).ToNot(HaveOccurred())
+			return jobConditions
+		}, 15*time.Minute, 5*time.Second).Should(
 			ContainElement(MatchFields(IgnoreExtras, Fields{
 				"Type":   Equal(batchv1.JobComplete),
 				"Status": Equal(corev1.ConditionTrue),
@@ -87,8 +93,16 @@ var _ = Describe("Execute the checkup Job", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(configMap.Data).NotTo(BeNil())
+		Expect(configMap.Data["status.succeeded"]).To(Equal("true"), fmt.Sprintf("should succeed %+v", prettifyData(configMap.Data)))
+		Expect(configMap.Data["status.failureReason"]).To(BeEmpty(), fmt.Sprintf("should be empty %+v", prettifyData(configMap.Data)))
 	})
 })
+
+func prettifyData(data map[string]string) string {
+	dataPrettyJSON, err := json.MarshalIndent(data, "", "\t")
+	Expect(err).NotTo(HaveOccurred())
+	return string(dataPrettyJSON)
+}
 
 func setupCheckupPermissions() {
 	var (
@@ -272,17 +286,18 @@ func newConfigMap() *corev1.ConfigMap {
 			"spec.param.networkAttachmentDefinitionName":  networkAttachmentDefinitionName,
 			"spec.param.trafficGeneratorRuntimeClassName": runtimeClassName,
 			"spec.param.trafficGeneratorImage":            trafficGeneratorImage,
+			"spec.param.testDuration":                     "1m",
 		},
 	}
 }
 
-func getJobConditions() []batchv1.JobCondition {
+func getJobConditions() ([]batchv1.JobCondition, error) {
 	checkupJob, err := virtClient.BatchV1().Jobs(testNamespace).Get(context.Background(), testCheckupJobName, metav1.GetOptions{})
 	if err != nil {
-		return []batchv1.JobCondition{}
+		return nil, err
 	}
 
-	return checkupJob.Status.Conditions
+	return checkupJob.Status.Conditions, nil
 }
 
 func newCheckupJob() *batchv1.Job {
