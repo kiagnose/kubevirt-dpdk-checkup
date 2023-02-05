@@ -44,15 +44,17 @@ type podExecuteClient interface {
 }
 
 type Executor struct {
-	client               vmiSerialConsoleClient
-	podClient            podExecuteClient
-	namespace            string
-	vmiUsername          string
-	vmiPassword          string
-	vmiEastNICPCIAddress string
-	vmiEastMACAddress    string
-	vmiWestNICPCIAddress string
-	vmiWestMACAddress    string
+	client                                     vmiSerialConsoleClient
+	podClient                                  podExecuteClient
+	namespace                                  string
+	vmiUsername                                string
+	vmiPassword                                string
+	vmiEastNICPCIAddress                       string
+	vmiEastMACAddress                          string
+	vmiWestNICPCIAddress                       string
+	vmiWestMACAddress                          string
+	testDuration                               time.Duration
+	trafficGeneratorPacketsPerSecondInMillions int
 }
 
 func New(client vmiSerialConsoleClient, podClient podExecuteClient, namespace string, cfg config.Config) Executor {
@@ -66,6 +68,8 @@ func New(client vmiSerialConsoleClient, podClient podExecuteClient, namespace st
 		vmiEastMACAddress:    cfg.DPDKEastMacAddress.String(),
 		vmiWestNICPCIAddress: config.VMIWestNICPCIAddress,
 		vmiWestMACAddress:    cfg.DPDKWestMacAddress.String(),
+		testDuration:         cfg.TestDuration,
+		trafficGeneratorPacketsPerSecondInMillions: cfg.TrafficGeneratorPacketsPerSecondInMillions,
 	}
 }
 
