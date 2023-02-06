@@ -22,6 +22,7 @@ package config_test
 import (
 	"fmt"
 	"net"
+	"strconv"
 	"testing"
 	"time"
 
@@ -81,6 +82,7 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		TrafficGeneratorImage:          config.TrafficGeneratorImageDefault,
 		VMContainerDiskImage:           config.VMContainerDiskImageDefault,
 		TestDuration:                   config.TestDurationDefault,
+		Verbose:                        config.VerboseDefault,
 	}
 	assert.Equal(t, expectedConfig, actualConfig)
 }
@@ -115,6 +117,7 @@ func TestNewShouldApplyUserConfig(t *testing.T) {
 		TrafficGeneratorImage:                      trafficGeneratorImage,
 		VMContainerDiskImage:                       vmContainerDiskImage,
 		TestDuration:                               30 * time.Minute,
+		Verbose:                                    true,
 	}
 	assert.Equal(t, expectedConfig, actualConfig)
 }
@@ -182,6 +185,12 @@ func TestNewShouldFailWhen(t *testing.T) {
 			faultyKeyValue: "invalid value",
 			expectedError:  config.ErrInvalidTestDuration,
 		},
+		{
+			description:    "Verbose is invalid",
+			key:            config.VerboseParamName,
+			faultyKeyValue: "maybe",
+			expectedError:  config.ErrInvalidVerbose,
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -216,5 +225,6 @@ func getValidUserParameters() map[string]string {
 		config.TrafficGeneratorImageParamName:                      trafficGeneratorImage,
 		config.VMContainerDiskImageParamName:                       vmContainerDiskImage,
 		config.TestDurationParamName:                               testDuration,
+		config.VerboseParamName:                                    strconv.FormatBool(true),
 	}
 }
