@@ -20,9 +20,11 @@
 package executor
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -103,7 +105,31 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 		return status.Results{}, fmt.Errorf("failed to run traffic from trex-console on pod \"%s/%s\" side: %w",
 			e.namespace, podName, err)
 	}
-	time.Sleep(e.testDuration)
+
+	trafficGeneratorMaxDropRate, err := trexClient.MonitorDropRates(ctx, e.testDuration)
+	log.Printf("traffic Generator Max Drop Rate: %fBps", trafficGeneratorMaxDropRate)
+	if err != nil {
+		return status.Results{}, err
+	}
+
+	var trafficGeneratorSrcPortStats portStats
+	trafficGeneratorSrcPortStats, err = trexClient.GetPortStats(ctx, trafficSourcePort)
+	if err != nil {
+		return status.Results{}, err
+	}
+	log.Printf("traffic Generator port %d Packet output errors: %d", trafficSourcePort, trafficGeneratorSrcPortStats.Result.Oerrors)
+
+	log.Printf("get testpmd stats in DPDK VMI...")
+	var testPmdStats map[string]int64
+	if testPmdStats, err = e.getStatsTestpmd(vmiName); err != nil {
+		return status.Results{}, err
+	}
+	const (
+		TXDropped = "TX-dropped"
+		RXDropped = "RX-dropped"
+	)
+	log.Printf("DPDK side packets Dropped: Rx: %d; TX: %d", testPmdStats[RXDropped], testPmdStats[TXDropped])
+
 	return status.Results{}, err
 }
 
@@ -153,6 +179,82 @@ func (e Executor) clearStatsTestpmd(vmiName string) error {
 	}
 
 	return nil
+}
+
+func (e Executor) getStatsTestpmd(vmiName string) (map[string]int64, error) {
+	const batchTimeout = 30 * time.Second
+
+	const testpmdPromt = "testpmd> "
+
+	testpmdCmd := "show fwd stats all"
+
+	resp, err := console.SafeExpectBatchWithResponse(e.client, e.namespace, vmiName,
+		[]expect.Batcher{
+			&expect.BSnd{S: testpmdCmd + "\n"},
+			&expect.BExp{R: testpmdPromt},
+		},
+		batchTimeout,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	log.Printf("testpmd stats: %v", resp)
+
+	StatisticsSummaryString, err := extractSummaryStatistics(resp[0].Output)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseTestpmdStats(StatisticsSummaryString)
+}
+
+func extractSummaryStatistics(input string) (string, error) {
+	const summaryStart = "+++++++++++++++ Accumulated forward statistics for all ports+++++++++++++++"
+	const summaryEnd = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+
+	startIndex := strings.Index(input, summaryStart) + len(summaryStart)
+	if startIndex == -1 {
+		return "", fmt.Errorf("could not find start of JSON string")
+	}
+
+	endIndex := strings.Index(input[startIndex:], summaryEnd) + startIndex
+	if endIndex == -1 {
+		return "", fmt.Errorf("could not find end of JSON string")
+	}
+
+	return input[startIndex:endIndex], nil
+}
+
+func parseTestpmdStats(input string) (map[string]int64, error) {
+	params := make(map[string]int64)
+	scanner := bufio.NewScanner(strings.NewReader(input))
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "" {
+			continue
+		}
+		keyValuePairs := strings.Split(line, "  ")
+		for _, pair := range keyValuePairs {
+			if pair == "" {
+				continue
+			}
+			fieldsWithoutDuplicateSpaces := strings.Fields(pair)
+			formattedKeyValuePairString := strings.Join(fieldsWithoutDuplicateSpaces, " ")
+			parts := strings.Split(formattedKeyValuePairString, ": ")
+
+			key := strings.TrimSpace(parts[0])
+			valueString := strings.TrimSpace(parts[1])
+
+			value, err := strconv.ParseInt(valueString, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			params[key] = value
+		}
+	}
+	return params, nil
 }
 
 func buildTestpmdCmd(vmiEastNICPCIAddress, vmiWestNICPCIAddress, vmiEastMACAddress, vmiWestMACAddress string) string {
