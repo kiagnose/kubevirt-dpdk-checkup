@@ -22,9 +22,12 @@ package status
 import kstatus "github.com/kiagnose/kiagnose/kiagnose/status"
 
 type Results struct {
-	DropRate             int
-	TrafficGeneratorNode string
-	DPDKVMNode           string
+	DropRate                        int
+	TrafficGeneratorOutErrorPackets int
+	DPDKPacketsRxDropped            int64
+	DPDKPacketsTxDropped            int64
+	TrafficGeneratorNode            string
+	DPDKVMNode                      string
 }
 
 type Status struct {
