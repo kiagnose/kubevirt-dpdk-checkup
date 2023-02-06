@@ -109,6 +109,14 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 	if err != nil {
 		return status.Results{}, err
 	}
+
+	var trafficGeneratorSrcPortStats portStats
+	trafficGeneratorSrcPortStats, err = trexClient.GetPortStats(ctx, trafficSourcePort)
+	if err != nil {
+		return status.Results{}, err
+	}
+	log.Printf("traffic Generator port %d Packet output errors: %d", trafficSourcePort, trafficGeneratorSrcPortStats.Result.Oerrors)
+
 	return status.Results{}, err
 }
 
