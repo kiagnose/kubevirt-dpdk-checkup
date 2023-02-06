@@ -47,6 +47,7 @@ const (
 	dpdkEastMacAddress                         = "DE:AD:BE:EF:00:02"
 	dpdkWestMacAddress                         = "DE:AD:BE:EF:02:00"
 	trafficGeneratorImage                      = "quay.io/ramlavi/kubevirt-dpdk-checkup-traffic-gen:latest"
+	vmContainerDiskImage                       = "quay.io/ramlavi/kubevirt-dpdk-checkup-vm:latest"
 	testDuration                               = "30m"
 )
 
@@ -81,6 +82,7 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		DPDKEastMacAddress:             dpdkEastMacAddressDefault,
 		DPDKWestMacAddress:             dpdkWestMacAddressDefault,
 		TrafficGeneratorImage:          config.TrafficGeneratorImageDefault,
+		VMContainerDiskImage:           config.VMContainerDiskImageDefault,
 		TestDuration:                   config.TestDurationDefault,
 	}
 	assert.Equal(t, expectedConfig, actualConfig)
@@ -115,6 +117,7 @@ func TestNewShouldApplyUserConfig(t *testing.T) {
 		DPDKEastMacAddress:                         dpdkEastHWAddress,
 		DPDKWestMacAddress:                         dpdkWestHWAddress,
 		TrafficGeneratorImage:                      trafficGeneratorImage,
+		VMContainerDiskImage:                       vmContainerDiskImage,
 		TestDuration:                               30 * time.Minute,
 	}
 	assert.Equal(t, expectedConfig, actualConfig)
@@ -228,6 +231,7 @@ func getValidUserParameters() map[string]string {
 		config.DPDKEastMacAddressParamName:                         dpdkEastMacAddress,
 		config.DPDKWestMacAddressParamName:                         dpdkWestMacAddress,
 		config.TrafficGeneratorImageParamName:                      trafficGeneratorImage,
+		config.VMContainerDiskImageParamName:                       vmContainerDiskImage,
 		config.TestDurationParamName:                               testDuration,
 	}
 }
