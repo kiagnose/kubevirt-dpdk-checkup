@@ -73,9 +73,9 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 		checkupStatus.FailureReason = []string{}
 		checkupStatus.CompletionTimestamp = time.Now()
 		checkupStatus.Results = status.Results{
-			DropRate:             expectedDropRate,
-			DPDKVMNode:           expectedDPDKVMNode,
-			TrafficGeneratorNode: expectedTrafficGeneratorNode,
+			TrafficGeneratorMaxDropRate: expectedDropRate,
+			DPDKVMNode:                  expectedDPDKVMNode,
+			TrafficGeneratorNode:        expectedTrafficGeneratorNode,
 		}
 
 		assert.NoError(t, testReporter.Report(checkupStatus))
@@ -85,7 +85,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 			"status.failureReason":               "",
 			"status.startTimestamp":              timestamp(checkupStatus.StartTimestamp),
 			"status.completionTimestamp":         timestamp(checkupStatus.CompletionTimestamp),
-			"status.result.dropRate":             fmt.Sprintf("%d", checkupStatus.Results.DropRate),
+			"status.result.dropRate":             fmt.Sprintf("%f", checkupStatus.Results.TrafficGeneratorMaxDropRate),
 			"status.result.trafficGeneratorNode": checkupStatus.Results.TrafficGeneratorNode,
 			"status.result.DPDKVMNodeKey":        checkupStatus.Results.DPDKVMNode,
 		}

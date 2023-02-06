@@ -63,7 +63,7 @@ func formatResults(checkupStatus status.Status) map[string]string {
 	}
 
 	formattedResults := map[string]string{
-		DropRateKey:             fmt.Sprintf("%d", checkupStatus.Results.DropRate),
+		DropRateKey:             fmt.Sprintf("%f", checkupStatus.Results.TrafficGeneratorMaxDropRate),
 		TrafficGeneratorNodeKey: checkupStatus.Results.TrafficGeneratorNode,
 		DPDKVMNodeKey:           checkupStatus.Results.DPDKVMNode,
 	}
