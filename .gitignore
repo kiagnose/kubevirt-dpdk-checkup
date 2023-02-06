@@ -18,3 +18,4 @@ _output
 # Cache
 _linter-cache
 _go-cache
+_virt_builder
