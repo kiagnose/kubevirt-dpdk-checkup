@@ -30,9 +30,12 @@ import (
 )
 
 const (
-	DropRateKey             = "dropRate"
-	TrafficGeneratorNodeKey = "trafficGeneratorNode"
-	DPDKVMNodeKey           = "DPDKVMNodeKey"
+	TrafficGeneratorMaxDropRateKey     = "trafficGeneratorMaxDropRate"
+	TrafficGeneratorOutErrorPacketsKey = "trafficGeneratorOutputErrorPackets"
+	DPDKRxDropsKey                     = "DPDKRxPacketDrops"
+	DPDKTxDropsKey                     = "DPDKTxPacketDrops"
+	TrafficGeneratorNodeKey            = "trafficGeneratorNode"
+	DPDKVMNodeKey                      = "DPDKVMNodeKey"
 )
 
 type Reporter struct {
@@ -63,9 +66,12 @@ func formatResults(checkupStatus status.Status) map[string]string {
 	}
 
 	formattedResults := map[string]string{
-		DropRateKey:             fmt.Sprintf("%d", checkupStatus.Results.DropRate),
-		TrafficGeneratorNodeKey: checkupStatus.Results.TrafficGeneratorNode,
-		DPDKVMNodeKey:           checkupStatus.Results.DPDKVMNode,
+		TrafficGeneratorMaxDropRateKey:     fmt.Sprintf("%f", checkupStatus.Results.TrafficGeneratorMaxDropRate),
+		TrafficGeneratorOutErrorPacketsKey: fmt.Sprintf("%d", checkupStatus.Results.TrafficGeneratorOutErrorPackets),
+		DPDKRxDropsKey:                     fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsRxDropped),
+		DPDKTxDropsKey:                     fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsTxDropped),
+		TrafficGeneratorNodeKey:            checkupStatus.Results.TrafficGeneratorNode,
+		DPDKVMNodeKey:                      checkupStatus.Results.DPDKVMNode,
 	}
 
 	return formattedResults

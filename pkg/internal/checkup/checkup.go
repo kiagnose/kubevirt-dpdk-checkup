@@ -114,6 +114,24 @@ func (c *Checkup) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	c.results.TrafficGeneratorNode = c.trafficGeneratorPod.Spec.NodeName
+	c.results.DPDKVMNode = c.vmi.Status.NodeName
+
+	if c.results.TrafficGeneratorMaxDropRate != 0 {
+		return fmt.Errorf("detected %f Bps Drop Rate on the traffic generator's side", c.results.TrafficGeneratorMaxDropRate)
+	}
+
+	if c.results.TrafficGeneratorOutErrorPackets != 0 {
+		return fmt.Errorf("detected %d Output Error Packets on the traffic generator's side", c.results.TrafficGeneratorOutErrorPackets)
+	}
+
+	if c.results.DPDKPacketsRxDropped != 0 {
+		return fmt.Errorf("detected %d Rx packets dropped on the DPDK VM's side", c.results.DPDKPacketsRxDropped)
+	}
+
+	if c.results.DPDKPacketsTxDropped != 0 {
+		return fmt.Errorf("detected %d Tx packets dropped on the DPDK VM's side", c.results.DPDKPacketsTxDropped)
+	}
 
 	return nil
 }

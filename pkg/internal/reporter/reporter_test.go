@@ -52,9 +52,12 @@ func TestReportShouldSucceed(t *testing.T) {
 
 func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 	const (
-		expectedDropRate             = 0
-		expectedDPDKVMNode           = "dpdk-node01"
-		expectedTrafficGeneratorNode = "dpdk-node02"
+		expectedTrafficGeneratorMaxDropRate     = 0
+		expectedTrafficGeneratorOutErrorPackets = 0
+		expectedDPDKPacketsRxDropped            = 0
+		expectedDPDKPacketsTxDropped            = 0
+		expectedDPDKVMNode                      = "dpdk-node01"
+		expectedTrafficGeneratorNode            = "dpdk-node02"
 	)
 
 	const (
@@ -73,21 +76,27 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 		checkupStatus.FailureReason = []string{}
 		checkupStatus.CompletionTimestamp = time.Now()
 		checkupStatus.Results = status.Results{
-			DropRate:             expectedDropRate,
-			DPDKVMNode:           expectedDPDKVMNode,
-			TrafficGeneratorNode: expectedTrafficGeneratorNode,
+			TrafficGeneratorMaxDropRate:     expectedTrafficGeneratorMaxDropRate,
+			TrafficGeneratorOutErrorPackets: expectedTrafficGeneratorOutErrorPackets,
+			DPDKPacketsRxDropped:            expectedDPDKPacketsRxDropped,
+			DPDKPacketsTxDropped:            expectedDPDKPacketsTxDropped,
+			DPDKVMNode:                      expectedDPDKVMNode,
+			TrafficGeneratorNode:            expectedTrafficGeneratorNode,
 		}
 
 		assert.NoError(t, testReporter.Report(checkupStatus))
 
 		expectedReportData := map[string]string{
-			"status.succeeded":                   strconv.FormatBool(true),
-			"status.failureReason":               "",
-			"status.startTimestamp":              timestamp(checkupStatus.StartTimestamp),
-			"status.completionTimestamp":         timestamp(checkupStatus.CompletionTimestamp),
-			"status.result.dropRate":             fmt.Sprintf("%d", checkupStatus.Results.DropRate),
-			"status.result.trafficGeneratorNode": checkupStatus.Results.TrafficGeneratorNode,
-			"status.result.DPDKVMNodeKey":        checkupStatus.Results.DPDKVMNode,
+			"status.succeeded":                                 strconv.FormatBool(true),
+			"status.failureReason":                             "",
+			"status.startTimestamp":                            timestamp(checkupStatus.StartTimestamp),
+			"status.completionTimestamp":                       timestamp(checkupStatus.CompletionTimestamp),
+			"status.result.trafficGeneratorMaxDropRate":        fmt.Sprintf("%f", checkupStatus.Results.TrafficGeneratorMaxDropRate),
+			"status.result.trafficGeneratorOutputErrorPackets": fmt.Sprintf("%d", checkupStatus.Results.TrafficGeneratorOutErrorPackets),
+			"status.result.DPDKRxPacketDrops":                  fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsRxDropped),
+			"status.result.DPDKTxPacketDrops":                  fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsTxDropped),
+			"status.result.trafficGeneratorNode":               checkupStatus.Results.TrafficGeneratorNode,
+			"status.result.DPDKVMNodeKey":                      checkupStatus.Results.DPDKVMNode,
 		}
 
 		assert.Equal(t, expectedReportData, getCheckupData(t, fakeClient, testNamespace, testConfigMapName))
