@@ -177,14 +177,16 @@ func (c *Checkup) createVMI(ctx context.Context) error {
 func (c *Checkup) waitForVMIToBoot(ctx context.Context) error {
 	vmiFullName := ObjectFullName(c.vmi.Namespace, c.vmi.Name)
 	log.Printf("Waiting for VMI %q to boot...", vmiFullName)
+	var updatedVMI *kvcorev1.VirtualMachineInstance
 
 	conditionFn := func(ctx context.Context) (bool, error) {
-		fetchedVMI, err := c.client.GetVirtualMachineInstance(ctx, c.vmi.Namespace, c.vmi.Name)
+		var err error
+		updatedVMI, err = c.client.GetVirtualMachineInstance(ctx, c.vmi.Namespace, c.vmi.Name)
 		if err != nil {
 			return false, err
 		}
 
-		for _, condition := range fetchedVMI.Status.Conditions {
+		for _, condition := range updatedVMI.Status.Conditions {
 			if condition.Type == kvcorev1.VirtualMachineInstanceAgentConnected && condition.Status == k8scorev1.ConditionTrue {
 				return true, nil
 			}
@@ -198,7 +200,7 @@ func (c *Checkup) waitForVMIToBoot(ctx context.Context) error {
 	}
 
 	log.Printf("VMI %q had successfully booted", vmiFullName)
-
+	c.vmi = updatedVMI
 	return nil
 }
 
