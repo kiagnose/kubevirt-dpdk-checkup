@@ -84,7 +84,7 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, vmiName, err)
 	}
 
-	trexClient := NewTrexConsole(e.podClient, e.namespace, podName, podContainerName)
+	trexClient := NewTrexConsole(e.podClient, e.namespace, podName, podContainerName, e.verbosePrintsEnabled)
 
 	log.Printf("Starting testpmd in VMI...")
 	if err := e.runTestpmd(vmiName); err != nil {
