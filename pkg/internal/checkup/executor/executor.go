@@ -56,6 +56,7 @@ type Executor struct {
 	vmiWestNICPCIAddress                       string
 	vmiWestMACAddress                          string
 	testDuration                               time.Duration
+	verbosePrintsEnabled                       bool
 	trafficGeneratorPacketsPerSecondInMillions int
 }
 
@@ -73,6 +74,7 @@ func New(client vmiSerialConsoleClient, podClient podExecuteClient, namespace st
 		vmiWestNICPCIAddress: config.VMIWestNICPCIAddress,
 		vmiWestMACAddress:    cfg.DPDKWestMacAddress.String(),
 		testDuration:         cfg.TestDuration,
+		verbosePrintsEnabled: cfg.Verbose,
 		trafficGeneratorPacketsPerSecondInMillions: cfg.TrafficGeneratorPacketsPerSecondInMillions,
 	}
 }
