@@ -6,6 +6,8 @@ CHECKUP_GIT_TAG ?= $(shell git describe --always --abbrev=8 --tags)
 TRAFFIC_GEN_IMAGE_NAME ?= kubevirt-dpdk-checkup-traffic-gen
 TRAFFIC_GEN_IMAGE_TAG ?= latest
 TRAFFIC_GEN_GIT_TAG ?= $(CHECKUP_GIT_TAG)
+VM_IMAGE_BUILDER_IMAGE_NAME := kubevirt-dpdk-checkup-vm-image-builder
+VM_IMAGE_BUILDER_IMAGE_TAG ?= latest
 GO_IMAGE_NAME := docker.io/library/golang
 GO_IMAGE_TAG := 1.19
 BIN_DIR = $(CURDIR)/_output/bin
@@ -99,3 +101,7 @@ vendor:
 	           --workdir $(CURDIR) \
 	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go mod tidy -compat=$(GO_MOD_VERSION) && go mod vendor
 .PHONY: vendor
+
+build-vm-image-builder:
+	$(CRI_BIN) build $(CURDIR)/vm/image-builder -f $(CURDIR)/vm/image-builder/Dockerfile -t $(REG)/$(ORG)/$(VM_IMAGE_BUILDER_IMAGE_NAME):$(VM_IMAGE_BUILDER_IMAGE_TAG)
+.PHONY: build-vm-image-builder
