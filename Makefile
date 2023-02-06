@@ -125,3 +125,7 @@ build-vm-image: build-vm-image-builder
 build-vm-container-disk: build-vm-image
 	$(CRI_BIN) build $(CURDIR) -f $(CURDIR)/vm/Dockerfile -t $(REG)/$(ORG)/$(VM_CONTAINER_DISK_IMAGE_NAME):$(VM_CONTAINER_DISK_IMAGE_TAG)
 .PHONY: build-vm-container-disk
+
+push-vm-container-disk:
+	$(CRI_BIN) push $(REG)/$(ORG)/$(VM_CONTAINER_DISK_IMAGE_NAME):$(VM_CONTAINER_DISK_IMAGE_TAG)
+.PHONY: push-vm-container-disk
