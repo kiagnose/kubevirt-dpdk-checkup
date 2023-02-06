@@ -204,7 +204,9 @@ func (e Executor) getStatsTestpmd(vmiName string) (map[string]int64, error) {
 		return nil, err
 	}
 
-	log.Printf("testpmd stats: %v", resp)
+	if e.verbosePrintsEnabled {
+		log.Printf("testpmd stats: %v", resp)
+	}
 
 	StatisticsSummaryString, err := extractSummaryStatistics(resp[0].Output)
 	if err != nil {
