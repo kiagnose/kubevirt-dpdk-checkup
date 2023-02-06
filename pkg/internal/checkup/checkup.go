@@ -114,6 +114,8 @@ func (c *Checkup) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	c.results.TrafficGeneratorNode = c.trafficGeneratorPod.Spec.NodeName
+	c.results.DPDKVMNode = c.vmi.Status.NodeName
 
 	if c.results.TrafficGeneratorMaxDropRate != 0 {
 		return fmt.Errorf("detected %f Bps Drop Rate on the traffic generator's side", c.results.TrafficGeneratorMaxDropRate)
