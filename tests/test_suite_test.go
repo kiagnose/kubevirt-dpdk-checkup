@@ -40,6 +40,7 @@ const (
 	networkAttachmentDefinitionNameVarName = "NETWORK_ATTACHMENT_DEFINITION_NAME"
 	runtimeClassNameVarName                = "RUNTIME_CLASS_NAME"
 	trafficGeneratorImageVarName           = "TRAFFIC_GEN_IMAGE_URL"
+	vmContainerDiskImageEnvVarName         = "VM_CONTAINER_DISK_IMAGE_URL"
 )
 
 const (
@@ -56,6 +57,7 @@ var (
 	networkAttachmentDefinitionName string
 	runtimeClassName                string
 	trafficGeneratorImage           string
+	vmContainerDiskImage            string
 )
 
 var _ = BeforeSuite(func() {
@@ -83,4 +85,6 @@ var _ = BeforeSuite(func() {
 	}
 
 	trafficGeneratorImage = os.Getenv(trafficGeneratorImageVarName)
+
+	vmContainerDiskImage = os.Getenv(vmContainerDiskImageEnvVarName)
 })
