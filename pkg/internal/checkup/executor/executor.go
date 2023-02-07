@@ -59,6 +59,8 @@ type Executor struct {
 	trafficGeneratorPacketsPerSecondInMillions int
 }
 
+const testpmdPrompt = "testpmd> "
+
 func New(client vmiSerialConsoleClient, podClient podExecuteClient, namespace string, cfg config.Config) Executor {
 	return Executor{
 		client:               client,
@@ -140,16 +142,14 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 func (e Executor) runTestpmd(vmiName string) error {
 	const batchTimeout = 30 * time.Second
 
-	const testpmdPromt = "testpmd> "
-
 	testpmdCmd := buildTestpmdCmd(e.vmiEastNICPCIAddress, e.vmiWestNICPCIAddress, e.vmiEastMACAddress, e.vmiWestMACAddress)
 
 	resp, err := console.SafeExpectBatchWithResponse(e.client, e.namespace, vmiName,
 		[]expect.Batcher{
 			&expect.BSnd{S: testpmdCmd + "\n"},
-			&expect.BExp{R: testpmdPromt},
+			&expect.BExp{R: testpmdPrompt},
 			&expect.BSnd{S: "start" + "\n"},
-			&expect.BExp{R: testpmdPromt},
+			&expect.BExp{R: testpmdPrompt},
 		},
 		batchTimeout,
 	)
@@ -166,14 +166,12 @@ func (e Executor) runTestpmd(vmiName string) error {
 func (e Executor) clearStatsTestpmd(vmiName string) error {
 	const batchTimeout = 30 * time.Second
 
-	const testpmdPromt = "testpmd> "
-
 	const testpmdCmd = "clear fwd stats all"
 
 	_, err := console.SafeExpectBatchWithResponse(e.client, e.namespace, vmiName,
 		[]expect.Batcher{
 			&expect.BSnd{S: testpmdCmd + "\n"},
-			&expect.BExp{R: testpmdPromt},
+			&expect.BExp{R: testpmdPrompt},
 		},
 		batchTimeout,
 	)
