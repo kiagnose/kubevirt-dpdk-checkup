@@ -299,6 +299,7 @@ func newConfigMap() *corev1.ConfigMap {
 			"spec.param.trafficGeneratorImage":            trafficGeneratorImage,
 			"spec.param.vmContainerDiskImage":             vmContainerDiskImage,
 			"spec.param.testDuration":                     "1m",
+			"spec.param.verbose":                          "true",
 		},
 	}
 }
