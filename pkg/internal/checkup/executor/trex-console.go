@@ -61,7 +61,7 @@ func (t trexConsole) MonitorDropRates(ctx context.Context, duration time.Duratio
 	log.Printf("Monitoring traffic generator side drop rates every %ss during the test duration...", interval)
 	maxDropRateBps := float64(0)
 
-	ctxWithNewDeadline, cancel := context.WithDeadline(ctx, time.Now().Add(duration))
+	ctxWithNewDeadline, cancel := context.WithTimeout(ctx, duration)
 	defer cancel()
 	conditionFn := func(ctx context.Context) (bool, error) {
 		statsGlobal, err := t.GetGlobalStats(ctx)
