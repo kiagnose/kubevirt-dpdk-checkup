@@ -6,6 +6,12 @@ CHECKUP_GIT_TAG ?= $(shell git describe --always --abbrev=8 --tags)
 TRAFFIC_GEN_IMAGE_NAME ?= kubevirt-dpdk-checkup-traffic-gen
 TRAFFIC_GEN_IMAGE_TAG ?= latest
 TRAFFIC_GEN_GIT_TAG ?= $(CHECKUP_GIT_TAG)
+VM_IMAGE_BUILDER_IMAGE_NAME := kubevirt-dpdk-checkup-vm-image-builder
+VM_IMAGE_BUILDER_IMAGE_TAG ?= latest
+VIRT_BUILDER_CACHE_DIR := $(CURDIR)/_virt_builder/cache
+VIRT_BUILDER_OUTPUT_DIR := $(CURDIR)/_virt_builder/output
+VM_CONTAINER_DISK_IMAGE_NAME := kubevirt-dpdk-checkup-vm
+VM_CONTAINER_DISK_IMAGE_TAG ?= latest
 GO_IMAGE_NAME := docker.io/library/golang
 GO_IMAGE_TAG := 1.19
 BIN_DIR = $(CURDIR)/_output/bin
@@ -99,3 +105,27 @@ vendor:
 	           --workdir $(CURDIR) \
 	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go mod tidy -compat=$(GO_MOD_VERSION) && go mod vendor
 .PHONY: vendor
+
+build-vm-image-builder:
+	$(CRI_BIN) build $(CURDIR)/vm/image-builder -f $(CURDIR)/vm/image-builder/Dockerfile -t $(REG)/$(ORG)/$(VM_IMAGE_BUILDER_IMAGE_NAME):$(VM_IMAGE_BUILDER_IMAGE_TAG)
+.PHONY: build-vm-image-builder
+
+build-vm-image: build-vm-image-builder
+	mkdir -vp $(VIRT_BUILDER_CACHE_DIR)
+	mkdir -vp $(VIRT_BUILDER_OUTPUT_DIR)
+
+	$(CRI_BIN) container run --rm \
+      --volume=$(VIRT_BUILDER_CACHE_DIR):/root/.cache/virt-builder:Z \
+      --volume=$(VIRT_BUILDER_OUTPUT_DIR):/output:Z \
+      --volume=$(CURDIR)/vm/scripts:/root/scripts:Z \
+      $(REG)/$(ORG)/$(VM_IMAGE_BUILDER_IMAGE_NAME):$(VM_IMAGE_BUILDER_IMAGE_TAG) \
+      /root/scripts/build-vm-image
+.PHONY: build-vm-image
+
+build-vm-container-disk: build-vm-image
+	$(CRI_BIN) build $(CURDIR) -f $(CURDIR)/vm/Dockerfile -t $(REG)/$(ORG)/$(VM_CONTAINER_DISK_IMAGE_NAME):$(VM_CONTAINER_DISK_IMAGE_TAG)
+.PHONY: build-vm-container-disk
+
+push-vm-container-disk:
+	$(CRI_BIN) push $(REG)/$(ORG)/$(VM_CONTAINER_DISK_IMAGE_NAME):$(VM_CONTAINER_DISK_IMAGE_TAG)
+.PHONY: push-vm-container-disk
