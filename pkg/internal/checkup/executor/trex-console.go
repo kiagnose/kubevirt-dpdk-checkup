@@ -29,7 +29,7 @@ func NewTrexConsole(client podExecuteClient, namespace, name, containerName stri
 }
 
 func (t trexConsole) GetPortStats(ctx context.Context, port int) (portStats, error) {
-	portStatsJSONString, err := t.runCommand(ctx, fmt.Sprintf("stats --port %d -p", port), true)
+	portStatsJSONString, err := t.runCommandWithJSONResponse(ctx, fmt.Sprintf("stats --port %d -p", port))
 	if err != nil {
 		return portStats{}, fmt.Errorf("failed to get global stats json: %w", err)
 	}
@@ -43,7 +43,7 @@ func (t trexConsole) GetPortStats(ctx context.Context, port int) (portStats, err
 }
 
 func (t trexConsole) GetGlobalStats(ctx context.Context) (globalStats, error) {
-	globalStatsJSONString, err := t.runCommand(ctx, "stats -g", true)
+	globalStatsJSONString, err := t.runCommandWithJSONResponse(ctx, "stats -g")
 	if err != nil {
 		return globalStats{}, fmt.Errorf("failed to get global stats json: %w", err)
 	}
@@ -116,6 +116,26 @@ func (t trexConsole) runCommand(ctx context.Context, command string, returnJSONS
 		return extractJSONString(stdout)
 	}
 	return cleanStdout(stdout), nil
+}
+
+func (t trexConsole) runCommandWithJSONResponse(ctx context.Context, command string) (string, error) {
+	var (
+		err            error
+		stdout, stderr string
+	)
+
+	const verboseOn = "verbose on;"
+	command = verboseOn + command
+	if stdout, stderr, err = t.podClient.ExecuteCommandOnPod(ctx, t.namespace, t.name, t.containerName,
+		[]string{
+			"/bin/sh",
+			"-c",
+			fmt.Sprintf("echo %q | ./trex-console -q", command),
+		}); err != nil {
+		return "", fmt.Errorf("failed to get pod stats \"%s/%s\": err %w, stderr: %s", t.namespace, t.name, err, stderr)
+	}
+
+	return extractJSONString(stdout)
 }
 
 func cleanStdout(rawStdout string) string {
