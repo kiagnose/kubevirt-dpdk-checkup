@@ -86,9 +86,9 @@ func (t trexConsole) ClearStats(ctx context.Context) (string, error) {
 }
 
 func (t trexConsole) StartTraffic(ctx context.Context, packetPerSecondMillion, port int, testDuration time.Duration) (string, error) {
-	testDurationMinutes := int(testDuration.Minutes())
-	return t.runCommand(ctx, fmt.Sprintf("start -f /opt/tests/testpmd.py -m %dmpps -p %d -d %dm",
-		packetPerSecondMillion, port, testDurationMinutes))
+	testDurationSeconds := int(testDuration.Seconds())
+	return t.runCommand(ctx, fmt.Sprintf("start -f /opt/tests/testpmd.py -m %dmpps -p %d -d %d",
+		packetPerSecondMillion, port, testDurationSeconds))
 }
 
 func (t trexConsole) StopTraffic(ctx context.Context) (string, error) {
