@@ -82,12 +82,22 @@ var _ = Describe("Execute the checkup Job", func() {
 		Eventually(func() []batchv1.JobCondition {
 			jobConditions, err := getJobConditions()
 			Expect(err).ToNot(HaveOccurred())
+
+			for _, jobCondition := range jobConditions {
+				if jobCondition.Type == batchv1.JobFailed && jobCondition.Status == corev1.ConditionTrue {
+					configMap, err := virtClient.CoreV1().ConfigMaps(testNamespace).Get(context.Background(), testConfigMapName, metav1.GetOptions{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Fail(fmt.Sprintf("checkup failed: %+v", prettifyData(configMap.Data)))
+				}
+			}
+
 			return jobConditions
 		}, 15*time.Minute, 5*time.Second).Should(
 			ContainElement(MatchFields(IgnoreExtras, Fields{
 				"Type":   Equal(batchv1.JobComplete),
 				"Status": Equal(corev1.ConditionTrue),
-			})))
+			})), "checkup timed out")
 
 		configMap, err := virtClient.CoreV1().ConfigMaps(testNamespace).Get(context.Background(), testConfigMapName, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
