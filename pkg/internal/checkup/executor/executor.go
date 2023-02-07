@@ -102,7 +102,11 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 		return status.Results{}, fmt.Errorf("failed to clear trex stats on pod \"%s/%s\" side: %w", e.namespace, podName, err)
 	}
 
-	const trafficSourcePort = 0
+	const (
+		trafficSourcePort = 0
+		trafficDestPort   = 1
+	)
+
 	log.Printf("Running traffic for %s...", e.testDuration.String())
 	_, err = trexClient.StartTraffic(ctx, e.trafficGeneratorPacketsPerSecondInMillions, trafficSourcePort, e.testDuration)
 	if err != nil {
@@ -116,12 +120,17 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 	if err != nil {
 		return status.Results{}, err
 	}
-
 	var trafficGeneratorSrcPortStats portStats
 	trafficGeneratorSrcPortStats, err = trexClient.GetPortStats(ctx, trafficSourcePort)
 	if err != nil {
 		return status.Results{}, err
 	}
+
+	_, err = trexClient.GetPortStats(ctx, trafficDestPort)
+	if err != nil {
+		return status.Results{}, err
+	}
+
 	results.TrafficGeneratorOutErrorPackets = trafficGeneratorSrcPortStats.Result.Oerrors
 	log.Printf("traffic Generator port %d Packet output errors: %d", trafficSourcePort, results.TrafficGeneratorOutErrorPackets)
 
