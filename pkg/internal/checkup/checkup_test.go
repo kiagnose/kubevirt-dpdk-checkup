@@ -335,6 +335,10 @@ func (cs *clientStub) GetPod(_ context.Context, namespace, name string) (*k8scor
 	return pod, nil
 }
 
+func (cs *clientStub) GetPodLogsByLabel(_ context.Context, _, _ string) (string, error) {
+	return "", nil
+}
+
 func (cs *clientStub) TrafficGeneratorPodName() string {
 	for _, pod := range cs.createdPods {
 		if strings.Contains(pod.Name, checkup.TrafficGeneratorPodNamePrefix) {

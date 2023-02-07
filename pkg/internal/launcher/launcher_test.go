@@ -123,6 +123,10 @@ func (cs checkupStub) Teardown(_ context.Context) error {
 	return cs.failTeardown
 }
 
+func (cs checkupStub) LogArtifacts(_ context.Context) error {
+	return cs.failTeardown
+}
+
 func (cs checkupStub) Results() status.Results {
 	return status.Results{}
 }

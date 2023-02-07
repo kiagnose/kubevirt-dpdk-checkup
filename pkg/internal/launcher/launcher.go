@@ -32,6 +32,7 @@ type checkup interface {
 	Setup(ctx context.Context) error
 	Run(ctx context.Context) error
 	Teardown(ctx context.Context) error
+	LogArtifacts(ctx context.Context) error
 	Results() status.Results
 }
 
@@ -74,6 +75,10 @@ func (l Launcher) Run(ctx context.Context) (runErr error) {
 	}
 
 	defer func() {
+		if err := l.checkup.LogArtifacts(ctx); err != nil {
+			runStatus.FailureReason = append(runStatus.FailureReason, err.Error())
+		}
+
 		if err := l.checkup.Teardown(ctx); err != nil {
 			runStatus.FailureReason = append(runStatus.FailureReason, err.Error())
 		}

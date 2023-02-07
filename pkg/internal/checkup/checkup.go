@@ -51,6 +51,7 @@ type kubeVirtVMIClient interface {
 	CreatePod(ctx context.Context, namespace string, pod *k8scorev1.Pod) (*k8scorev1.Pod, error)
 	DeletePod(ctx context.Context, namespace, name string) error
 	GetPod(ctx context.Context, namespace, name string) (*k8scorev1.Pod, error)
+	GetPodLogsByLabel(ctx context.Context, namespace, labelSelector string) (string, error)
 }
 
 type testExecutor interface {
@@ -70,6 +71,9 @@ type Checkup struct {
 const (
 	VMINamePrefix                 = "dpdk-vmi"
 	TrafficGeneratorPodNamePrefix = "kubevirt-dpdk-checkup-traffic-gen"
+	AppLabelKey                   = "app"
+	TrafficGeneratorAppLabelValue = "trex"
+	VMIAppLabelValue              = "testpmd"
 )
 
 func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config, executor testExecutor) *Checkup {
@@ -158,6 +162,28 @@ func (c *Checkup) Teardown(ctx context.Context) error {
 
 func (c *Checkup) Results() status.Results {
 	return c.results
+}
+
+func (c *Checkup) LogArtifacts(ctx context.Context) error {
+	if !c.params.Verbose {
+		return nil
+	}
+
+	trafficGenLabelSelector := fmt.Sprintf("%s:%s", AppLabelKey, TrafficGeneratorAppLabelValue)
+	trafficGeneratorPodLog, err := c.client.GetPodLogsByLabel(ctx, c.namespace, trafficGenLabelSelector)
+	if err != nil {
+		return err
+	}
+	log.Printf("%s", trafficGeneratorPodLog)
+
+	DPDKLabelSelector := fmt.Sprintf("%s:%s", AppLabelKey, VMIAppLabelValue)
+	DPDKVirtLauncherLog, err := c.client.GetPodLogsByLabel(ctx, c.namespace, DPDKLabelSelector)
+	if err != nil {
+		return err
+	}
+	log.Printf("%s", DPDKVirtLauncherLog)
+
+	return nil
 }
 
 func (c *Checkup) createVMI(ctx context.Context) error {
@@ -352,8 +378,13 @@ func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 		terminationGracePeriodSeconds = 0
 	)
 
+	labels := map[string]string{
+		AppLabelKey: VMIAppLabelValue,
+	}
+
 	return vmi.New(randomizeName(VMINamePrefix),
 		vmi.WithOwnerReference(checkupConfig.PodName, checkupConfig.PodUID),
+		vmi.WithLabels(labels),
 		vmi.WithoutCRIOCPULoadBalancing(),
 		vmi.WithoutCRIOCPUQuota(),
 		vmi.WithoutCRIOIRQLoadBalancing(),
@@ -416,8 +447,12 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		pod.WithContainerLibModulesVolumeMount(),
 	)
 
+	labels := map[string]string{
+		AppLabelKey: TrafficGeneratorAppLabelValue,
+	}
 	return pod.NewPod(randomizeName(TrafficGeneratorPodNamePrefix),
 		pod.WithPodContainer(trafficGeneratorContainer),
+		pod.WithLabels(labels),
 		pod.WithRuntimeClassName(checkupConfig.TrafficGeneratorRuntimeClassName),
 		pod.WithoutCRIOCPULoadBalancing(),
 		pod.WithoutCRIOCPUQuota(),
