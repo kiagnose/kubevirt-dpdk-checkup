@@ -41,6 +41,7 @@ const (
 	DPDKEastMacAddressParamName                         = "DPDKEastMacAddress"
 	DPDKWestMacAddressParamName                         = "DPDKWestMacAddress"
 	TrafficGeneratorImageParamName                      = "trafficGeneratorImage"
+	VMContainerDiskImageParamName                       = "vmContainerDiskImage"
 	TestDurationParamName                               = "testDuration"
 )
 
@@ -52,6 +53,7 @@ const (
 	DPDKEastMacAddressDefault                         = "60:00:00:00:00:01"
 	DPDKWestMacAddressDefault                         = "60:00:00:00:00:02"
 	TrafficGeneratorImageDefault                      = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:latest"
+	VMContainerDiskImageDefault                       = "quay.io/kiagnose/kubevirt-dpdk-checkup-vm:latest"
 	TestDurationDefault                               = 5 * time.Minute
 )
 
@@ -93,6 +95,7 @@ type Config struct {
 	DPDKEastMacAddress                         net.HardwareAddr
 	DPDKWestMacAddress                         net.HardwareAddr
 	TrafficGeneratorImage                      string
+	VMContainerDiskImage                       string
 	TestDuration                               time.Duration
 }
 
@@ -115,6 +118,7 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		DPDKEastMacAddress:                         dpdkEastMacAddressDefault,
 		DPDKWestMacAddress:                         dpdkWestMacAddressDefault,
 		TrafficGeneratorImage:                      TrafficGeneratorImageDefault,
+		VMContainerDiskImage:                       VMContainerDiskImageDefault,
 		TestDuration:                               TestDurationDefault,
 	}
 
@@ -163,6 +167,10 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 
 	if rawVal := baseConfig.Params[TrafficGeneratorImageParamName]; rawVal != "" {
 		newConfig.TrafficGeneratorImage = rawVal
+	}
+
+	if rawVal := baseConfig.Params[VMContainerDiskImageParamName]; rawVal != "" {
+		newConfig.VMContainerDiskImage = rawVal
 	}
 
 	if rawVal := baseConfig.Params[TestDurationParamName]; rawVal != "" {

@@ -286,6 +286,7 @@ func newConfigMap() *corev1.ConfigMap {
 			"spec.param.networkAttachmentDefinitionName":  networkAttachmentDefinitionName,
 			"spec.param.trafficGeneratorRuntimeClassName": runtimeClassName,
 			"spec.param.trafficGeneratorImage":            trafficGeneratorImage,
+			"spec.param.vmContainerDiskImage":             vmContainerDiskImage,
 			"spec.param.testDuration":                     "1m",
 		},
 	}

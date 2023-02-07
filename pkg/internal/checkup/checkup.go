@@ -367,7 +367,7 @@ func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 		vmi.WithMemoryRequest("8Gi"),
 		vmi.WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds),
 		vmi.WithNodeSelector(checkupConfig.DPDKNodeLabelSelector),
-		vmi.WithPVCVolume(rootDiskName, "rhel8-yummy-gorilla"),
+		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMContainerDiskImage),
 		vmi.WithVirtIODisk(rootDiskName),
 		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword)),
 		vmi.WithVirtIODisk(cloudInitDiskName),
