@@ -104,7 +104,7 @@ build-traffic-gen:
 push-traffic-gen:
 	$(CRI_BIN) push $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_IMAGE_TAG)
 	$(CRI_BIN) tag $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_IMAGE_TAG) $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_GIT_TAG)
-	$(CRI_BIN) push $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_IMAGE_TAG)
+	$(CRI_BIN) push $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_GIT_TAG)
 .PHONY: push-traffic-gen
 
 build-vm-image-builder:
