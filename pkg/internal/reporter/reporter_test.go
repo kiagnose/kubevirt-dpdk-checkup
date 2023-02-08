@@ -96,7 +96,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 			"status.result.DPDKRxPacketDrops":                  fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsRxDropped),
 			"status.result.DPDKTxPacketDrops":                  fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsTxDropped),
 			"status.result.trafficGeneratorNode":               checkupStatus.Results.TrafficGeneratorNode,
-			"status.result.DPDKVMNodeKey":                      checkupStatus.Results.DPDKVMNode,
+			"status.result.DPDKVMNode":                         checkupStatus.Results.DPDKVMNode,
 		}
 
 		assert.Equal(t, expectedReportData, getCheckupData(t, fakeClient, testNamespace, testConfigMapName))

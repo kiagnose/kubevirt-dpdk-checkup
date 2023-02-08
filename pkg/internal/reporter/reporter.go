@@ -35,7 +35,7 @@ const (
 	DPDKRxDropsKey                     = "DPDKRxPacketDrops"
 	DPDKTxDropsKey                     = "DPDKTxPacketDrops"
 	TrafficGeneratorNodeKey            = "trafficGeneratorNode"
-	DPDKVMNodeKey                      = "DPDKVMNodeKey"
+	DPDKVMNodeKey                      = "DPDKVMNode"
 )
 
 type Reporter struct {

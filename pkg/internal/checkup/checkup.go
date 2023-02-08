@@ -98,11 +98,10 @@ func (c *Checkup) Setup(ctx context.Context) error {
 		return err
 	}
 
-	createdTrafficGeneratorPod, err := c.waitForPodRunningStatus(ctx, c.namespace, c.trafficGeneratorPod.Name)
+	err = c.waitForPodRunningStatus(ctx, c.namespace, c.trafficGeneratorPod.Name)
 	if err != nil {
 		return fmt.Errorf("%s: %w", errMessagePrefix, err)
 	}
-	c.trafficGeneratorPod = createdTrafficGeneratorPod
 
 	return nil
 }
@@ -177,14 +176,16 @@ func (c *Checkup) createVMI(ctx context.Context) error {
 func (c *Checkup) waitForVMIToBoot(ctx context.Context) error {
 	vmiFullName := ObjectFullName(c.vmi.Namespace, c.vmi.Name)
 	log.Printf("Waiting for VMI %q to boot...", vmiFullName)
+	var updatedVMI *kvcorev1.VirtualMachineInstance
 
 	conditionFn := func(ctx context.Context) (bool, error) {
-		fetchedVMI, err := c.client.GetVirtualMachineInstance(ctx, c.vmi.Namespace, c.vmi.Name)
+		var err error
+		updatedVMI, err = c.client.GetVirtualMachineInstance(ctx, c.vmi.Namespace, c.vmi.Name)
 		if err != nil {
 			return false, err
 		}
 
-		for _, condition := range fetchedVMI.Status.Conditions {
+		for _, condition := range updatedVMI.Status.Conditions {
 			if condition.Type == kvcorev1.VirtualMachineInstanceAgentConnected && condition.Status == k8scorev1.ConditionTrue {
 				return true, nil
 			}
@@ -198,7 +199,7 @@ func (c *Checkup) waitForVMIToBoot(ctx context.Context) error {
 	}
 
 	log.Printf("VMI %q had successfully booted", vmiFullName)
-
+	c.vmi = updatedVMI
 	return nil
 }
 
@@ -258,7 +259,7 @@ func (c *Checkup) createTrafficGeneratorPod(ctx context.Context) error {
 	return nil
 }
 
-func (c *Checkup) waitForPodRunningStatus(ctx context.Context, namespace, name string) (*k8scorev1.Pod, error) {
+func (c *Checkup) waitForPodRunningStatus(ctx context.Context, namespace, name string) error {
 	podFullName := ObjectFullName(c.namespace, name)
 	log.Printf("Waiting for Pod %s..", podFullName)
 	var updatedPod *k8scorev1.Pod
@@ -273,11 +274,12 @@ func (c *Checkup) waitForPodRunningStatus(ctx context.Context, namespace, name s
 	}
 	const interval = time.Second * 5
 	if err := wait.PollImmediateUntilWithContext(ctx, interval, conditionFn); err != nil {
-		return nil, fmt.Errorf("failed to wait for Pod '%s' to be in Running Phase: %v", podFullName, err)
+		return fmt.Errorf("failed to wait for Pod '%s' to be in Running Phase: %v", podFullName, err)
 	}
 
 	log.Printf("Pod %s is Running", podFullName)
-	return updatedPod, nil
+	c.trafficGeneratorPod = updatedPod
+	return nil
 }
 
 func (c *Checkup) deletePod(ctx context.Context) error {
