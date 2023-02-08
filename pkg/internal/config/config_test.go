@@ -88,39 +88,76 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 	assert.Equal(t, expectedConfig, actualConfig)
 }
 
-func TestNewShouldApplyUserConfig(t *testing.T) {
-	baseConfig := kconfig.Config{
-		PodName: testPodName,
-		PodUID:  testPodUID,
-		Params:  getValidUserParameters(),
-	}
+type SuccessTestCase struct {
+	description    string
+	params         map[string]string
+	expectedConfig config.Config
+}
 
-	actualConfig, err := config.New(baseConfig)
-	assert.NoError(t, err)
-
+func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 	trafficGeneratorEastHWAddress, _ := net.ParseMAC(trafficGeneratorEastMacAddress)
 	trafficGeneratorWestHWAddress, _ := net.ParseMAC(trafficGeneratorWestMacAddress)
 	dpdkEastHWAddress, _ := net.ParseMAC(dpdkEastMacAddress)
 	dpdkWestHWAddress, _ := net.ParseMAC(dpdkWestMacAddress)
-	expectedConfig := config.Config{
-		PodName:                           testPodName,
-		PodUID:                            testPodUID,
-		TrafficGeneratorRuntimeClassName:  trafficGeneratorRuntimeClassName,
-		PortBandwidthGB:                   portBandwidthGB,
-		NetworkAttachmentDefinitionName:   networkAttachmentDefinitionName,
-		TrafficGeneratorPacketsPerSecond:  trafficGeneratorPacketsPerSecond,
-		TrafficGeneratorNodeLabelSelector: trafficGeneratorNodeLabelSelector,
-		DPDKNodeLabelSelector:             dpdkNodeLabelSelector,
-		TrafficGeneratorEastMacAddress:    trafficGeneratorEastHWAddress,
-		TrafficGeneratorWestMacAddress:    trafficGeneratorWestHWAddress,
-		DPDKEastMacAddress:                dpdkEastHWAddress,
-		DPDKWestMacAddress:                dpdkWestHWAddress,
-		TrafficGeneratorImage:             trafficGeneratorImage,
-		VMContainerDiskImage:              vmContainerDiskImage,
-		TestDuration:                      30 * time.Minute,
-		Verbose:                           true,
+
+	testCases := []SuccessTestCase{
+		{
+			"config is valid and both Node Selectors are set",
+			getValidUserParametersWithNodeSelectors(),
+			config.Config{
+				PodName:                           testPodName,
+				PodUID:                            testPodUID,
+				TrafficGeneratorRuntimeClassName:  trafficGeneratorRuntimeClassName,
+				PortBandwidthGB:                   portBandwidthGB,
+				NetworkAttachmentDefinitionName:   networkAttachmentDefinitionName,
+				TrafficGeneratorPacketsPerSecond:  trafficGeneratorPacketsPerSecond,
+				TrafficGeneratorNodeLabelSelector: trafficGeneratorNodeLabelSelector,
+				DPDKNodeLabelSelector:             dpdkNodeLabelSelector,
+				TrafficGeneratorEastMacAddress:    trafficGeneratorEastHWAddress,
+				TrafficGeneratorWestMacAddress:    trafficGeneratorWestHWAddress,
+				DPDKEastMacAddress:                dpdkEastHWAddress,
+				DPDKWestMacAddress:                dpdkWestHWAddress,
+				TrafficGeneratorImage:             trafficGeneratorImage,
+				VMContainerDiskImage:              vmContainerDiskImage,
+				TestDuration:                      30 * time.Minute,
+				Verbose:                           true,
+			},
+		},
+		{
+			"config is valid and both Node Selectors are not set",
+			getValidUserParametersWithOutNodeSelectors(),
+			config.Config{
+				PodName:                          testPodName,
+				PodUID:                           testPodUID,
+				TrafficGeneratorRuntimeClassName: trafficGeneratorRuntimeClassName,
+				PortBandwidthGB:                  portBandwidthGB,
+				NetworkAttachmentDefinitionName:  networkAttachmentDefinitionName,
+				TrafficGeneratorPacketsPerSecond: trafficGeneratorPacketsPerSecond,
+				TrafficGeneratorEastMacAddress:   trafficGeneratorEastHWAddress,
+				TrafficGeneratorWestMacAddress:   trafficGeneratorWestHWAddress,
+				DPDKEastMacAddress:               dpdkEastHWAddress,
+				DPDKWestMacAddress:               dpdkWestHWAddress,
+				TrafficGeneratorImage:            trafficGeneratorImage,
+				VMContainerDiskImage:             vmContainerDiskImage,
+				TestDuration:                     30 * time.Minute,
+				Verbose:                          true,
+			},
+		},
 	}
-	assert.Equal(t, expectedConfig, actualConfig)
+
+	for _, testCase := range testCases {
+		t.Run(testCase.description, func(t *testing.T) {
+			baseConfig := kconfig.Config{
+				PodName: testPodName,
+				PodUID:  testPodUID,
+				Params:  testCase.params,
+			}
+
+			actualConfig, err := config.New(baseConfig)
+			assert.NoError(t, err)
+			assert.Equal(t, testCase.expectedConfig, actualConfig)
+		})
+	}
 }
 
 func TestNewShouldFailWhen(t *testing.T) {
@@ -143,6 +180,18 @@ func TestNewShouldFailWhen(t *testing.T) {
 			key:            config.NetworkAttachmentDefinitionNameParamName,
 			faultyKeyValue: "",
 			expectedError:  config.ErrInvalidNetworkAttachmentDefinitionName,
+		},
+		{
+			description:    "trafficGeneratorNodeLabelSelector is missing and DPDKNodeLabelSelector is set",
+			key:            config.TrafficGeneratorNodeLabelSelectorParamName,
+			faultyKeyValue: "",
+			expectedError:  config.ErrIllegalLabelSelectorCombination,
+		},
+		{
+			description:    "DPDKNodeLabelSelector is missing and trafficGeneratorNodeLabelSelector is set",
+			key:            config.DPDKNodeLabelSelectorParamName,
+			faultyKeyValue: "",
+			expectedError:  config.ErrIllegalLabelSelectorCombination,
 		},
 		{
 			description:    "TrafficGeneratorPacketsPerSecond is invalid",
@@ -215,6 +264,17 @@ func TestNewShouldFailWhen(t *testing.T) {
 			assert.ErrorIs(t, err, testCase.expectedError)
 		})
 	}
+}
+
+func getValidUserParametersWithNodeSelectors() map[string]string {
+	return getValidUserParameters()
+}
+
+func getValidUserParametersWithOutNodeSelectors() map[string]string {
+	paramsWithOutNodeSelectors := getValidUserParameters()
+	delete(paramsWithOutNodeSelectors, config.TrafficGeneratorNodeLabelSelectorParamName)
+	delete(paramsWithOutNodeSelectors, config.DPDKNodeLabelSelectorParamName)
+	return paramsWithOutNodeSelectors
 }
 
 func getValidUserParameters() map[string]string {

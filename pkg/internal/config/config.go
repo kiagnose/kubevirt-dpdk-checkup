@@ -70,16 +70,18 @@ const (
 )
 
 var (
-	ErrInvalidNetworkAttachmentDefinitionName   = errors.New("invalid Network-Attachment-Definition Name")
-	ErrInvalidTrafficGeneratorRuntimeClassName  = errors.New("invalid Traffic Generator Runtime class Name")
-	ErrInvalidTrafficGeneratorPacketsPerSecond  = errors.New("invalid Traffic Generator Packets Per Second")
-	ErrInvalidPortBandwidthGB                   = errors.New("invalid Port Bandwidth [GB]")
-	ErrInvalidTrafficGeneratorEastMacAddress    = errors.New("invalid Traffic Generator East MAC Address")
-	ErrInvalidTrafficGeneratorWestMacAddress    = errors.New("invalid Traffic Generator West MAC Address")
-	ErrInvalidDPDKEastMacAddress                = errors.New("invalid DPDK East MAC Address")
-	ErrInvalidDPDKWestMacAddress                = errors.New("invalid DPDK West MAC Address")
-	ErrInvalidTestDuration                      = errors.New("invalid Test Duration")
-	ErrInvalidVerbose                           = errors.New("invalid Verbose value [true|false]")
+	ErrInvalidNetworkAttachmentDefinitionName  = errors.New("invalid Network-Attachment-Definition Name")
+	ErrInvalidTrafficGeneratorRuntimeClassName = errors.New("invalid Traffic Generator Runtime class Name")
+	ErrIllegalLabelSelectorCombination         = errors.New("illegal Traffic Generator and DPDK Node " +
+		"Label Selector combination")
+	ErrInvalidTrafficGeneratorPacketsPerSecond = errors.New("invalid Traffic Generator Packets Per Second")
+	ErrInvalidPortBandwidthGB                  = errors.New("invalid Port Bandwidth [GB]")
+	ErrInvalidTrafficGeneratorEastMacAddress   = errors.New("invalid Traffic Generator East MAC Address")
+	ErrInvalidTrafficGeneratorWestMacAddress   = errors.New("invalid Traffic Generator West MAC Address")
+	ErrInvalidDPDKEastMacAddress               = errors.New("invalid DPDK East MAC Address")
+	ErrInvalidDPDKWestMacAddress               = errors.New("invalid DPDK West MAC Address")
+	ErrInvalidTestDuration                     = errors.New("invalid Test Duration")
+	ErrInvalidVerbose                          = errors.New("invalid Verbose value [true|false]")
 )
 
 type Config struct {
@@ -133,6 +135,11 @@ func New(baseConfig kconfig.Config) (Config, error) {
 
 	if newConfig.TrafficGeneratorRuntimeClassName == "" {
 		return Config{}, ErrInvalidTrafficGeneratorRuntimeClassName
+	}
+
+	if newConfig.TrafficGeneratorNodeLabelSelector == "" && newConfig.DPDKNodeLabelSelector != "" ||
+		newConfig.TrafficGeneratorNodeLabelSelector != "" && newConfig.DPDKNodeLabelSelector == "" {
+		return Config{}, ErrIllegalLabelSelectorCombination
 	}
 
 	return setOptionalParams(baseConfig, newConfig)
