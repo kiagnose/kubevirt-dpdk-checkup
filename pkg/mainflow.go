@@ -66,7 +66,6 @@ func Run(rawEnv map[string]string, namespace string) error {
 
 func printConfig(checkupConfig config.Config) {
 	log.Println("Using the following config:")
-	log.Printf("%q: %q", config.NUMASocketParamName, fmt.Sprintf("%d", checkupConfig.NUMASocket))
 	log.Printf("%q: %q", config.NetworkAttachmentDefinitionNameParamName, checkupConfig.NetworkAttachmentDefinitionName)
 	log.Printf("%q: %q", config.PortBandwidthGBParamName, fmt.Sprintf("%d", checkupConfig.PortBandwidthGB))
 	log.Printf("%q: %q", config.TrafficGeneratorNodeLabelSelectorParamName, checkupConfig.TrafficGeneratorNodeLabelSelector)

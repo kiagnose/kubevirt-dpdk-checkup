@@ -35,7 +35,6 @@ import (
 const (
 	testPodName                                = "my-pod"
 	testPodUID                                 = "0123456789-0123456789"
-	numaSocket                                 = 1
 	networkAttachmentDefinitionName            = "intel-dpdk-network1"
 	trafficGeneratorRuntimeClassName           = "dpdk-runtimeclass"
 	portBandwidthGB                            = 100
@@ -56,7 +55,6 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		PodName: testPodName,
 		PodUID:  testPodUID,
 		Params: map[string]string{
-			config.NUMASocketParamName:                       fmt.Sprintf("%d", numaSocket),
 			config.NetworkAttachmentDefinitionNameParamName:  networkAttachmentDefinitionName,
 			config.TrafficGeneratorRuntimeClassNameParamName: trafficGeneratorRuntimeClassName,
 		},
@@ -72,7 +70,6 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 	expectedConfig := config.Config{
 		PodName:                          testPodName,
 		PodUID:                           testPodUID,
-		NUMASocket:                       numaSocket,
 		TrafficGeneratorRuntimeClassName: trafficGeneratorRuntimeClassName,
 		NetworkAttachmentDefinitionName:  networkAttachmentDefinitionName,
 		TrafficGeneratorPacketsPerSecondInMillions: config.TrafficGeneratorPacketsPerSecondInMillionsDefault,
@@ -105,7 +102,6 @@ func TestNewShouldApplyUserConfig(t *testing.T) {
 	expectedConfig := config.Config{
 		PodName:                          testPodName,
 		PodUID:                           testPodUID,
-		NUMASocket:                       numaSocket,
 		TrafficGeneratorRuntimeClassName: trafficGeneratorRuntimeClassName,
 		PortBandwidthGB:                  portBandwidthGB,
 		NetworkAttachmentDefinitionName:  networkAttachmentDefinitionName,
@@ -132,18 +128,6 @@ func TestNewShouldFailWhen(t *testing.T) {
 	}
 
 	testCases := []failureTestCase{
-		{
-			description:    "NUMA Socket is empty string",
-			key:            config.NUMASocketParamName,
-			faultyKeyValue: "",
-			expectedError:  config.ErrInvalidNUMASocket,
-		},
-		{
-			description:    "NUMA Socket is invalid",
-			key:            config.NUMASocketParamName,
-			faultyKeyValue: "-1",
-			expectedError:  config.ErrInvalidNUMASocket,
-		},
 		{
 			description:    "Traffic Generator Runtimeclass Name is invalid",
 			key:            config.TrafficGeneratorRuntimeClassNameParamName,
@@ -219,7 +203,6 @@ func TestNewShouldFailWhen(t *testing.T) {
 
 func getValidUserParameters() map[string]string {
 	return map[string]string{
-		config.NUMASocketParamName:                                 fmt.Sprintf("%d", numaSocket),
 		config.TrafficGeneratorRuntimeClassNameParamName:           trafficGeneratorRuntimeClassName,
 		config.NetworkAttachmentDefinitionNameParamName:            networkAttachmentDefinitionName,
 		config.PortBandwidthGBParamName:                            fmt.Sprintf("%d", portBandwidthGB),

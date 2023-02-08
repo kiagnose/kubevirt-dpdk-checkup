@@ -41,8 +41,6 @@ const (
 	testKubeVirtDPDKCheckerRoleName     = "kubevirt-dpdk-checker"
 	testConfigMapName                   = "dpdk-checkup-config"
 	testCheckupJobName                  = "dpdk-checkup"
-
-	paramNUMASocket = "0"
 )
 
 var _ = Describe("Execute the checkup Job", func() {
@@ -295,8 +293,7 @@ func newConfigMap() *corev1.ConfigMap {
 			Name: testConfigMapName,
 		},
 		Data: map[string]string{
-			"spec.timeout":                                "10m",
-			"spec.param.NUMASocket":                       paramNUMASocket,
+			"spec.timeout": "10m",
 			"spec.param.networkAttachmentDefinitionName":  networkAttachmentDefinitionName,
 			"spec.param.trafficGeneratorRuntimeClassName": runtimeClassName,
 			"spec.param.trafficGeneratorImage":            trafficGeneratorImage,

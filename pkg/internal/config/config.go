@@ -29,7 +29,6 @@ import (
 )
 
 const (
-	NUMASocketParamName                                 = "NUMASocket"
 	NetworkAttachmentDefinitionNameParamName            = "networkAttachmentDefinitionName"
 	TrafficGeneratorRuntimeClassNameParamName           = "trafficGeneratorRuntimeClassName"
 	TrafficGeneratorNodeLabelSelectorParamName          = "trafficGeneratorNodeLabelSelector"
@@ -66,7 +65,6 @@ const (
 )
 
 var (
-	ErrInvalidNUMASocket                                 = errors.New("invalid NUMA Socket")
 	ErrInvalidNetworkAttachmentDefinitionName            = errors.New("invalid Network-Attachment-Definition Name")
 	ErrInvalidTrafficGeneratorRuntimeClassName           = errors.New("invalid Traffic Generator Runtime class Name")
 	ErrInvalidTrafficGeneratorNodeLabelSelector          = errors.New("invalid Traffic Generator Node Label Selector")
@@ -83,7 +81,6 @@ var (
 type Config struct {
 	PodName                                    string
 	PodUID                                     string
-	NUMASocket                                 int
 	TrafficGeneratorRuntimeClassName           string
 	NetworkAttachmentDefinitionName            string
 	TrafficGeneratorNodeLabelSelector          string
@@ -121,16 +118,6 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		VMContainerDiskImage:                       VMContainerDiskImageDefault,
 		TestDuration:                               TestDurationDefault,
 	}
-
-	var rawNUMASocket string
-	if rawNUMASocket = baseConfig.Params[NUMASocketParamName]; rawNUMASocket == "" {
-		return Config{}, ErrInvalidNUMASocket
-	}
-	numaSocket, err := parseNonNegativeInt(rawNUMASocket)
-	if err != nil {
-		return Config{}, ErrInvalidNUMASocket
-	}
-	newConfig.NUMASocket = numaSocket
 
 	if newConfig.NetworkAttachmentDefinitionName == "" {
 		return Config{}, ErrInvalidNetworkAttachmentDefinitionName
