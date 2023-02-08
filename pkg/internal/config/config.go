@@ -127,15 +127,17 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		Verbose:                           VerboseDefault,
 	}
 
-	if newConfig.NetworkAttachmentDefinitionName == "" {
-		return Config{}, ErrInvalidNetworkAttachmentDefinitionName
+	newConfig, err := setOptionalParams(baseConfig, newConfig)
+	if err != nil {
+		return Config{}, err
 	}
 
-	if newConfig.TrafficGeneratorRuntimeClassName == "" {
-		return Config{}, ErrInvalidTrafficGeneratorRuntimeClassName
+	err = newConfig.validate()
+	if err != nil {
+		return Config{}, err
 	}
 
-	return setOptionalParams(baseConfig, newConfig)
+	return newConfig, nil
 }
 
 func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, error) {
@@ -245,4 +247,16 @@ func generateMacAddressWithPresetPrefixAndSuffix(prefixOctet, suffixOctet byte) 
 	address[prefixOctetIdx] = prefixOctet
 	address[suffixOctetIdx] = suffixOctet
 	return address
+}
+
+func (c Config) validate() error {
+	if c.NetworkAttachmentDefinitionName == "" {
+		return ErrInvalidNetworkAttachmentDefinitionName
+	}
+
+	if c.TrafficGeneratorRuntimeClassName == "" {
+		return ErrInvalidTrafficGeneratorRuntimeClassName
+	}
+
+	return nil
 }
