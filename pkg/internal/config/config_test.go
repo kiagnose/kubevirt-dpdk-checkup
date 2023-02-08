@@ -160,14 +160,14 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 	}
 }
 
-func TestNewShouldFailWhen(t *testing.T) {
-	type failureTestCase struct {
-		description    string
-		key            string
-		faultyKeyValue string
-		expectedError  error
-	}
+type failureTestCase struct {
+	description    string
+	key            string
+	faultyKeyValue string
+	expectedError  error
+}
 
+func TestNewShouldFailWhen(t *testing.T) {
 	testCases := []failureTestCase{
 		{
 			description:    "Traffic Generator Runtimeclass Name is invalid",
@@ -251,19 +251,23 @@ func TestNewShouldFailWhen(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.description, func(t *testing.T) {
-			faultyUserParams := getValidUserParameters()
-			faultyUserParams[testCase.key] = testCase.faultyKeyValue
-
-			baseConfig := kconfig.Config{
-				PodName: testPodName,
-				PodUID:  testPodUID,
-				Params:  faultyUserParams,
-			}
-
-			_, err := config.New(baseConfig)
-			assert.ErrorIs(t, err, testCase.expectedError)
+			runFailureTest(t, testCase)
 		})
 	}
+}
+
+func runFailureTest(t *testing.T, testCase failureTestCase) {
+	faultyUserParams := getValidUserParameters()
+	faultyUserParams[testCase.key] = testCase.faultyKeyValue
+
+	baseConfig := kconfig.Config{
+		PodName: testPodName,
+		PodUID:  testPodUID,
+		Params:  faultyUserParams,
+	}
+
+	_, err := config.New(baseConfig)
+	assert.ErrorIs(t, err, testCase.expectedError)
 }
 
 func getValidUserParametersWithNodeSelectors() map[string]string {
