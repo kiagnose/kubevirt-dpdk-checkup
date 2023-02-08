@@ -75,6 +75,25 @@ set_pci_addresses() {
 	export PCIDEVICE_NIC_2="\"${nics_array[1]}\""
 }
 
+get_numa_socket_by_nic() {
+	local nic_without_quotes="${1//\"/}"
+	local lspci_output=$(lspci -v -nn -mm -k -s "${nic_without_quotes}")
+	local numa_socket=$(echo "$lspci_output" | grep NUMANode | awk '{print $2}')
+	echo "${numa_socket}"
+}
+
+set_numa_socket() {
+	local nic1_numa_socket=$(get_numa_socket_by_nic "${PCIDEVICE_NIC_1}")
+	local nic2_numa_socket=$(get_numa_socket_by_nic "${PCIDEVICE_NIC_2}")
+
+	if [[ "${nic1_numa_socket}" != "${nic2_numa_socket}" ]]; then
+		echo "error - NUMA socket of NICs ${PCIDEVICE_NIC_1} (=${nic1_numa_socket}), ${PCIDEVICE_NIC_2} (=${nic2_numa_socket}) do not match"
+		exit 1
+	fi
+
+	export NUMA_SOCKET="${nic1_numa_socket}"
+}
+
 set_cpu_configs() {
 	# set master
 	CPUS=$(cat /sys/fs/cgroup/cpuset/cpuset.cpus)
@@ -105,6 +124,8 @@ print_params() {
 }
 
 set_pci_addresses
+
+set_numa_socket
 
 set_cpu_configs
 
