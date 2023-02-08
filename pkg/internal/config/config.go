@@ -72,8 +72,6 @@ const (
 var (
 	ErrInvalidNetworkAttachmentDefinitionName   = errors.New("invalid Network-Attachment-Definition Name")
 	ErrInvalidTrafficGeneratorRuntimeClassName  = errors.New("invalid Traffic Generator Runtime class Name")
-	ErrInvalidTrafficGeneratorNodeLabelSelector = errors.New("invalid Traffic Generator Node Label Selector")
-	ErrInvalidDPDKNodeLabelSelector             = errors.New("invalid DPDK Node Label Selector")
 	ErrInvalidTrafficGeneratorPacketsPerSecond  = errors.New("invalid Traffic Generator Packets Per Second")
 	ErrInvalidPortBandwidthGB                   = errors.New("invalid Port Bandwidth [GB]")
 	ErrInvalidTrafficGeneratorEastMacAddress    = errors.New("invalid Traffic Generator East MAC Address")
