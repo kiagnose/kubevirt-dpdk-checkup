@@ -71,7 +71,6 @@ roleRef:
 | Key                                         | Description                                                                                                       | Is Mandatory | Remarks                                                                                                |
 |---------------------------------------------|-------------------------------------------------------------------------------------------------------------------|--------------|--------------------------------------------------------------------------------------------------------|
 | spec.timeout                                | How much time before the checkup will try to close itself                                                         | True         |                                                                                                        |
-| spec.param.NUMASocket                       | The NUMA node where the workloads shall be scheduled to                                                           | True         |                                                                                                        |
 | spec.param.networkAttachmentDefinitionName  | NetworkAttachmentDefinition name of the SR-IOV NICs connected                                                     | True         | Assumed to be in the same namespace                                                                    |
 | spec.param.trafficGeneratorRuntimeClassName | [Runtime Class](https://kubernetes.io/docs/concepts/containers/runtime-class/) the traffic generator pod will use | True         |                                                                                                        |
 | spec.param.trafficGeneratorImage            | Traffic generator's container image                                                                               | False        | Defaults to the U/S image https://quay.io/repository/kiagnose/kubevirt-dpdk-checkup-traffic-gen:latest |
@@ -95,7 +94,6 @@ metadata:
   name: dpdk-checkup-config
 data:
   spec.timeout: 10m
-  spec.param.NUMASocket: 0
   spec.param.networkAttachmentDefinitionName: <network-name>
   spec.param.trafficGeneratorRuntimeClassName: <runtimeclass-name>
   spec.param.trafficGeneratorImage: quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:latest
