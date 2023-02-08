@@ -384,7 +384,6 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		terminationGracePeriodSeconds          = int64(0)
 
 		portBandwidthParamName     = "PORT_BANDWIDTH_GB"
-		numaSocketParamName        = "NUMA_SOCKET"
 		verboseParamName           = "SET_VERBOSE"
 		numTrafficCpusParamName    = "NUM_OF_TRAFFIC_CPUS"
 		numCpusParamName           = "NUM_OF_CPUS"
@@ -396,7 +395,6 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 
 	envVars := map[string]string{
 		portBandwidthParamName:     fmt.Sprintf("%d", checkupConfig.PortBandwidthGB),
-		numaSocketParamName:        fmt.Sprintf("%d", checkupConfig.NUMASocket),
 		numTrafficCpusParamName:    fmt.Sprintf("%d", trafficGeneratorPodCPUCount-trafficGeneratorPodNumOfNonTrafficCPUs),
 		numCpusParamName:           fmt.Sprintf("%d", trafficGeneratorPodCPUCount),
 		srcWestMACAddressParamName: checkupConfig.TrafficGeneratorWestMacAddress.String(),
