@@ -46,16 +46,6 @@ push: push-traffic-gen
 	$(CRI_BIN) push $(REG)/$(ORG)/$(CHECKUP_IMAGE_NAME):$(CHECKUP_GIT_TAG)
 .PHONY: push
 
-build-traffic-gen:
-	$(CRI_BIN) build -f traffic-gen/Dockerfile -t $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_IMAGE_TAG) traffic-gen
-.PHONY: build-traffic-gen
-
-push-traffic-gen:
-	$(CRI_BIN) push $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_IMAGE_TAG)
-	$(CRI_BIN) tag $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_IMAGE_TAG) $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_GIT_TAG)
-	$(CRI_BIN) push $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_IMAGE_TAG)
-.PHONY: push-traffic-gen
-
 test/unit:
 	mkdir -p $(CURDIR)/_go-cache
 	$(CRI_BIN) run --rm \
@@ -106,6 +96,16 @@ vendor:
 	           --workdir $(CURDIR) \
 	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go mod tidy -compat=$(GO_MOD_VERSION) && go mod vendor
 .PHONY: vendor
+
+build-traffic-gen:
+	$(CRI_BIN) build -f traffic-gen/Dockerfile -t $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_IMAGE_TAG) traffic-gen
+.PHONY: build-traffic-gen
+
+push-traffic-gen:
+	$(CRI_BIN) push $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_IMAGE_TAG)
+	$(CRI_BIN) tag $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_IMAGE_TAG) $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_GIT_TAG)
+	$(CRI_BIN) push $(REG)/$(ORG)/$(TRAFFIC_GEN_IMAGE_NAME):$(TRAFFIC_GEN_IMAGE_TAG)
+.PHONY: push-traffic-gen
 
 build-vm-image-builder:
 	$(CRI_BIN) build $(CURDIR)/vm/image-builder -f $(CURDIR)/vm/image-builder/Dockerfile -t $(REG)/$(ORG)/$(VM_IMAGE_BUILDER_IMAGE_NAME):$(VM_IMAGE_BUILDER_IMAGE_TAG)
