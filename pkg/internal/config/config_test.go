@@ -145,6 +145,18 @@ func TestNewShouldFailWhen(t *testing.T) {
 			expectedError:  config.ErrInvalidNetworkAttachmentDefinitionName,
 		},
 		{
+			description:    "trafficGeneratorNodeLabelSelector is missing and DPDKNodeLabelSelector is set",
+			key:            config.TrafficGeneratorNodeLabelSelectorParamName,
+			faultyKeyValue: "",
+			expectedError:  config.ErrIllegalLabelSelectorCombination,
+		},
+		{
+			description:    "DPDKNodeLabelSelector is missing and trafficGeneratorNodeLabelSelector is set",
+			key:            config.DPDKNodeLabelSelectorParamName,
+			faultyKeyValue: "",
+			expectedError:  config.ErrIllegalLabelSelectorCombination,
+		},
+		{
 			description:    "TrafficGeneratorPacketsPerSecond is invalid",
 			key:            config.TrafficGeneratorPacketsPerSecondParamName,
 			faultyKeyValue: "-14",
