@@ -375,7 +375,6 @@ func newTestConfig() config.Config {
 	return config.Config{
 		PodName:                           testPodName,
 		PodUID:                            testPodUID,
-		NUMASocket:                        0,
 		NetworkAttachmentDefinitionName:   testNetworkAttachmentDefinitionName,
 		TrafficGeneratorNodeLabelSelector: "",
 		DPDKNodeLabelSelector:             "",
