@@ -13,18 +13,20 @@ import (
 )
 
 type trexConsole struct {
-	podClient     podExecuteClient
-	namespace     string
-	name          string
-	containerName string
+	podClient            podExecuteClient
+	namespace            string
+	name                 string
+	containerName        string
+	verbosePrintsEnabled bool
 }
 
-func NewTrexConsole(client podExecuteClient, namespace, name, containerName string) trexConsole {
+func NewTrexConsole(client podExecuteClient, namespace, name, containerName string, verbosePrintsEnabled bool) trexConsole {
 	return trexConsole{
-		podClient:     client,
-		namespace:     namespace,
-		name:          name,
-		containerName: containerName,
+		podClient:            client,
+		namespace:            namespace,
+		name:                 name,
+		containerName:        containerName,
+		verbosePrintsEnabled: verbosePrintsEnabled,
 	}
 }
 
@@ -32,6 +34,10 @@ func (t trexConsole) GetPortStats(ctx context.Context, port int) (portStats, err
 	portStatsJSONString, err := t.runCommandWithJSONResponse(ctx, fmt.Sprintf("stats --port %d -p", port))
 	if err != nil {
 		return portStats{}, fmt.Errorf("failed to get global stats json: %w", err)
+	}
+
+	if t.verbosePrintsEnabled {
+		log.Printf("GetPortStats JSON: %s", portStatsJSONString)
 	}
 
 	var ps portStats
@@ -46,6 +52,10 @@ func (t trexConsole) GetGlobalStats(ctx context.Context) (globalStats, error) {
 	globalStatsJSONString, err := t.runCommandWithJSONResponse(ctx, "stats -g")
 	if err != nil {
 		return globalStats{}, fmt.Errorf("failed to get global stats json: %w", err)
+	}
+
+	if t.verbosePrintsEnabled {
+		log.Printf("GetGlobalStats JSON: %s", globalStatsJSONString)
 	}
 
 	var gs globalStats

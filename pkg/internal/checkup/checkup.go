@@ -23,6 +23,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -401,7 +402,7 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		srcEastMACAddressParamName: checkupConfig.TrafficGeneratorEastMacAddress.String(),
 		dstWestMACAddressParamName: checkupConfig.DPDKWestMacAddress.String(),
 		dstEastMACAddressParamName: checkupConfig.DPDKEastMacAddress.String(),
-		verboseParamName:           "FALSE",
+		verboseParamName:           strings.ToUpper(strconv.FormatBool(checkupConfig.Verbose)),
 	}
 	securityContext := pod.NewSecurityContext(int64(0), false,
 		[]k8scorev1.Capability{"IPC_LOCK", "SYS_RESOURCE", "NET_RAW", "NET_ADMIN"})

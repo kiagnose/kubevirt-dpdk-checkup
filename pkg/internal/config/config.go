@@ -42,6 +42,7 @@ const (
 	TrafficGeneratorImageParamName                      = "trafficGeneratorImage"
 	VMContainerDiskImageParamName                       = "vmContainerDiskImage"
 	TestDurationParamName                               = "testDuration"
+	VerboseParamName                                    = "verbose"
 )
 
 const (
@@ -54,6 +55,7 @@ const (
 	TrafficGeneratorImageDefault                      = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:latest"
 	VMContainerDiskImageDefault                       = "quay.io/kiagnose/kubevirt-dpdk-checkup-vm:latest"
 	TestDurationDefault                               = 5 * time.Minute
+	VerboseDefault                                    = false
 )
 
 const (
@@ -76,6 +78,7 @@ var (
 	ErrInvalidDPDKEastMacAddress                         = errors.New("invalid DPDK East MAC Address")
 	ErrInvalidDPDKWestMacAddress                         = errors.New("invalid DPDK West MAC Address")
 	ErrInvalidTestDuration                               = errors.New("invalid Test Duration")
+	ErrInvalidVerbose                                    = errors.New("invalid Verbose value [true|false]")
 )
 
 type Config struct {
@@ -94,6 +97,7 @@ type Config struct {
 	TrafficGeneratorImage                      string
 	VMContainerDiskImage                       string
 	TestDuration                               time.Duration
+	Verbose                                    bool
 }
 
 func New(baseConfig kconfig.Config) (Config, error) {
@@ -117,6 +121,7 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		TrafficGeneratorImage:                      TrafficGeneratorImageDefault,
 		VMContainerDiskImage:                       VMContainerDiskImageDefault,
 		TestDuration:                               TestDurationDefault,
+		Verbose:                                    VerboseDefault,
 	}
 
 	if newConfig.NetworkAttachmentDefinitionName == "" {
@@ -132,6 +137,13 @@ func New(baseConfig kconfig.Config) (Config, error) {
 
 func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, error) {
 	var err error
+
+	if rawVal := baseConfig.Params[VerboseParamName]; rawVal != "" {
+		newConfig.Verbose, err = strconv.ParseBool(rawVal)
+		if err != nil {
+			return Config{}, ErrInvalidVerbose
+		}
+	}
 
 	if rawVal := baseConfig.Params[TrafficGeneratorPacketsPerSecondInMillionsParamName]; rawVal != "" {
 		newConfig.TrafficGeneratorPacketsPerSecondInMillions, err = parseNonNegativeInt(rawVal)

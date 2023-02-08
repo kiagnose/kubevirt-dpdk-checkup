@@ -56,6 +56,7 @@ type Executor struct {
 	vmiWestNICPCIAddress                       string
 	vmiWestMACAddress                          string
 	testDuration                               time.Duration
+	verbosePrintsEnabled                       bool
 	trafficGeneratorPacketsPerSecondInMillions int
 }
 
@@ -73,6 +74,7 @@ func New(client vmiSerialConsoleClient, podClient podExecuteClient, namespace st
 		vmiWestNICPCIAddress: config.VMIWestNICPCIAddress,
 		vmiWestMACAddress:    cfg.DPDKWestMacAddress.String(),
 		testDuration:         cfg.TestDuration,
+		verbosePrintsEnabled: cfg.Verbose,
 		trafficGeneratorPacketsPerSecondInMillions: cfg.TrafficGeneratorPacketsPerSecondInMillions,
 	}
 }
@@ -82,7 +84,7 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, vmiName, err)
 	}
 
-	trexClient := NewTrexConsole(e.podClient, e.namespace, podName, podContainerName)
+	trexClient := NewTrexConsole(e.podClient, e.namespace, podName, podContainerName, e.verbosePrintsEnabled)
 
 	log.Printf("Starting testpmd in VMI...")
 	if err := e.runTestpmd(vmiName); err != nil {
@@ -100,7 +102,11 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 		return status.Results{}, fmt.Errorf("failed to clear trex stats on pod \"%s/%s\" side: %w", e.namespace, podName, err)
 	}
 
-	const trafficSourcePort = 0
+	const (
+		trafficSourcePort = 0
+		trafficDestPort   = 1
+	)
+
 	log.Printf("Running traffic for %s...", e.testDuration.String())
 	_, err = trexClient.StartTraffic(ctx, e.trafficGeneratorPacketsPerSecondInMillions, trafficSourcePort, e.testDuration)
 	if err != nil {
@@ -114,12 +120,17 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 	if err != nil {
 		return status.Results{}, err
 	}
-
 	var trafficGeneratorSrcPortStats portStats
 	trafficGeneratorSrcPortStats, err = trexClient.GetPortStats(ctx, trafficSourcePort)
 	if err != nil {
 		return status.Results{}, err
 	}
+
+	_, err = trexClient.GetPortStats(ctx, trafficDestPort)
+	if err != nil {
+		return status.Results{}, err
+	}
+
 	results.TrafficGeneratorOutErrorPackets = trafficGeneratorSrcPortStats.Result.Oerrors
 	log.Printf("traffic Generator port %d Packet output errors: %d", trafficSourcePort, results.TrafficGeneratorOutErrorPackets)
 
@@ -202,7 +213,9 @@ func (e Executor) getStatsTestpmd(vmiName string) (map[string]int64, error) {
 		return nil, err
 	}
 
-	log.Printf("testpmd stats: %v", resp)
+	if e.verbosePrintsEnabled {
+		log.Printf("testpmd stats: %v", resp)
+	}
 
 	StatisticsSummaryString, err := extractSummaryStatistics(resp[0].Output)
 	if err != nil {
