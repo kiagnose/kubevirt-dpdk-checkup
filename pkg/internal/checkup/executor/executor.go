@@ -52,9 +52,9 @@ type Executor struct {
 	vmiUsername                                string
 	vmiPassword                                string
 	vmiEastNICPCIAddress                       string
-	vmiEastMACAddress                          string
+	vmiEastEthPeerMACAddress                   string
 	vmiWestNICPCIAddress                       string
-	vmiWestMACAddress                          string
+	vmiWestEthPeerMACAddress                   string
 	testDuration                               time.Duration
 	verbosePrintsEnabled                       bool
 	trafficGeneratorPacketsPerSecondInMillions int
@@ -64,17 +64,17 @@ const testpmdPrompt = "testpmd> "
 
 func New(client vmiSerialConsoleClient, podClient podExecuteClient, namespace string, cfg config.Config) Executor {
 	return Executor{
-		client:               client,
-		podClient:            podClient,
-		namespace:            namespace,
-		vmiUsername:          config.VMIUsername,
-		vmiPassword:          config.VMIPassword,
-		vmiEastNICPCIAddress: config.VMIEastNICPCIAddress,
-		vmiEastMACAddress:    cfg.DPDKEastMacAddress.String(),
-		vmiWestNICPCIAddress: config.VMIWestNICPCIAddress,
-		vmiWestMACAddress:    cfg.DPDKWestMacAddress.String(),
-		testDuration:         cfg.TestDuration,
-		verbosePrintsEnabled: cfg.Verbose,
+		client:                   client,
+		podClient:                podClient,
+		namespace:                namespace,
+		vmiUsername:              config.VMIUsername,
+		vmiPassword:              config.VMIPassword,
+		vmiEastNICPCIAddress:     config.VMIEastNICPCIAddress,
+		vmiEastEthPeerMACAddress: cfg.DPDKEastMacAddress.String(),
+		vmiWestNICPCIAddress:     config.VMIWestNICPCIAddress,
+		vmiWestEthPeerMACAddress: cfg.DPDKWestMacAddress.String(),
+		testDuration:             cfg.TestDuration,
+		verbosePrintsEnabled:     cfg.Verbose,
 		trafficGeneratorPacketsPerSecondInMillions: cfg.TrafficGeneratorPacketsPerSecondInMillions,
 	}
 }
@@ -120,6 +120,7 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 	if err != nil {
 		return status.Results{}, err
 	}
+
 	var trafficGeneratorSrcPortStats portStats
 	trafficGeneratorSrcPortStats, err = trexClient.GetPortStats(ctx, trafficSourcePort)
 	if err != nil {
@@ -153,7 +154,7 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 func (e Executor) runTestpmd(vmiName string) error {
 	const batchTimeout = 30 * time.Second
 
-	testpmdCmd := buildTestpmdCmd(e.vmiEastNICPCIAddress, e.vmiWestNICPCIAddress, e.vmiEastMACAddress, e.vmiWestMACAddress)
+	testpmdCmd := buildTestpmdCmd(e.vmiEastNICPCIAddress, e.vmiWestNICPCIAddress, e.vmiEastEthPeerMACAddress, e.vmiWestEthPeerMACAddress)
 
 	resp, err := console.SafeExpectBatchWithResponse(e.client, e.namespace, vmiName,
 		[]expect.Batcher{
@@ -272,7 +273,7 @@ func parseTestpmdStats(input string) (map[string]int64, error) {
 	return params, nil
 }
 
-func buildTestpmdCmd(vmiEastNICPCIAddress, vmiWestNICPCIAddress, vmiEastMACAddress, vmiWestMACAddress string) string {
+func buildTestpmdCmd(vmiEastNICPCIAddress, vmiWestNICPCIAddress, eastEthPeerMACAddress, westEthPeerMACAddress string) string {
 	const (
 		cpuList       = "0-7"
 		numberOfCores = 7
@@ -289,8 +290,8 @@ func buildTestpmdCmd(vmiEastNICPCIAddress, vmiWestNICPCIAddress, vmiEastMACAddre
 	sb.WriteString("--rxd=2048 ")
 	sb.WriteString("--txd=2048 ")
 	sb.WriteString("--forward-mode=mac ")
-	sb.WriteString(fmt.Sprintf("--eth-peer=0,%s ", vmiEastMACAddress))
-	sb.WriteString(fmt.Sprintf("--eth-peer=1,%s", vmiWestMACAddress))
+	sb.WriteString(fmt.Sprintf("--eth-peer=0,%s ", eastEthPeerMACAddress))
+	sb.WriteString(fmt.Sprintf("--eth-peer=1,%s", westEthPeerMACAddress))
 
 	return sb.String()
 }
