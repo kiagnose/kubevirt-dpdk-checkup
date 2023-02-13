@@ -135,3 +135,25 @@ spec:
                 fieldRef:
                   fieldPath: metadata.uid
 ```
+
+## Checkup Results Retrieval
+
+After the checkup Job had completed, the results are made available at the user-supplied ConfigMap object:
+
+```bash
+kubectl get configmap dpdk-checkup-config -n <target-namespace> -o yaml
+```
+
+
+| Key                                              | Description                                                       | Remarks  |
+|--------------------------------------------------|-------------------------------------------------------------------|----------|
+| status.succeeded                                 | Has the checkup succeeded                                         |          |
+| status.failureReason                             | Failure reason in case of a failure                               |          |
+| status.startTimestamp                            | Checkup start timestamp                                           | RFC 3339 |
+| status.completionTimestamp                       | Checkup completion timestamp                                      | RFC 3339 |
+| status.result.trafficGeneratorMaxDropRate        | Max drop rate sampled out of traffic sent                         |          |
+| status.result.trafficGeneratorOutputErrorPackets | Indicates error sending packets from traffic generator            |          |
+| status.result.trafficGeneratorNode               | Node name on which the traffic generator Pod was scheduled        |          |
+| status.result.DPDKVMNode                         | Node name on which the DPDK VMI was scheduled                     |          |
+| status.result.DPDKRxPacketDrops                  | Indicates ingress packets that were dropped from DPDK application |          |
+| status.result.DPDKTxPacketDrops                  | Indicates egress packets were dropped from the DPDK application   |          |
