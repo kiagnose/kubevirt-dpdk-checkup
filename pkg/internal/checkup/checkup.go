@@ -469,15 +469,27 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		pod.WithContainerLibModulesVolumeMount(),
 	)
 
+	labels := map[string]string{
+		DPDKCheckupUIDLabelKey: checkupConfig.PodUID,
+	}
+	var affinity *k8scorev1.Affinity
+	if checkupConfig.DPDKNodeLabelSelector != "" {
+		affinity = &k8scorev1.Affinity{NodeAffinity: kaffinity.NewRequiredNodeAffinity(checkupConfig.TrafficGeneratorNodeLabelSelector)}
+	} else {
+		affinity = &k8scorev1.Affinity{PodAntiAffinity: kaffinity.NewPreferredPodAntiAffinity(DPDKCheckupUIDLabelKey,
+			checkupConfig.PodUID)}
+	}
+
 	return pod.NewPod(randomizeName(TrafficGeneratorPodNamePrefix),
 		pod.WithServiceAccountName(trafficGeneratorServiceAccountName),
 		pod.WithPodContainer(trafficGeneratorContainer),
+		pod.WithLabels(labels),
+		pod.WithAffinity(affinity),
 		pod.WithRuntimeClassName(checkupConfig.TrafficGeneratorRuntimeClassName),
 		pod.WithoutCRIOCPULoadBalancing(),
 		pod.WithoutCRIOCPUQuota(),
 		pod.WithoutCRIOIRQLoadBalancing(),
 		pod.WithOwnerReference(checkupConfig.PodName, checkupConfig.PodUID),
-		pod.WithNodeSelector(checkupConfig.TrafficGeneratorNodeLabelSelector),
 		pod.WithNetworkRequestAnnotation(secondaryNetworkRequest),
 		pod.WithHugepagesVolume(),
 		pod.WithLibModulesVolume(),
