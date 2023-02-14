@@ -178,20 +178,6 @@ func WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds int64) Opti
 	}
 }
 
-func WithNodeSelector(nodeName string) Option {
-	return func(vmi *kvcorev1.VirtualMachineInstance) {
-		if nodeName == "" {
-			return
-		}
-
-		if vmi.Spec.NodeSelector == nil {
-			vmi.Spec.NodeSelector = map[string]string{}
-		}
-
-		vmi.Spec.NodeSelector[corev1.LabelHostname] = nodeName
-	}
-}
-
 func WithMultusNetwork(name, networkAttachmentDefinitionName string) Option {
 	return func(vmi *kvcorev1.VirtualMachineInstance) {
 		vmi.Spec.Networks = append(vmi.Spec.Networks, kvcorev1.Network{
@@ -233,6 +219,28 @@ func WithCloudInitNoCloudVolume(name, userData string) Option {
 		}
 
 		vmi.Spec.Volumes = append(vmi.Spec.Volumes, newVolume)
+	}
+}
+
+// WithLabels adds the given labels.
+func WithLabels(labels map[string]string) Option {
+	return func(vmi *kvcorev1.VirtualMachineInstance) {
+		if vmi.ObjectMeta.Labels == nil {
+			vmi.ObjectMeta.Labels = map[string]string{}
+		}
+
+		for key, val := range labels {
+			vmi.ObjectMeta.Labels[key] = val
+		}
+	}
+}
+
+// WithAffinity adds the given affinity.
+func WithAffinity(affinity *corev1.Affinity) Option {
+	return func(vmi *kvcorev1.VirtualMachineInstance) {
+		if affinity != nil {
+			vmi.Spec.Affinity = affinity
+		}
 	}
 }
 
