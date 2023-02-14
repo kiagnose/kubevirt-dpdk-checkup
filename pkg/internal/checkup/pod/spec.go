@@ -86,6 +86,15 @@ func WithLabels(labels map[string]string) PodOption {
 	}
 }
 
+// WithAffinity adds the given affinity.
+func WithAffinity(affinity *corev1.Affinity) PodOption {
+	return func(pod *corev1.Pod) {
+		if affinity != nil {
+			pod.Spec.Affinity = affinity
+		}
+	}
+}
+
 func WithHugepagesVolume() PodOption {
 	return func(pod *corev1.Pod) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes,
