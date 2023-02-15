@@ -1,0 +1,24 @@
+name: Build VM ContainerDisk
+
+on:
+  pull_request:
+    branches:
+      - main
+      - 'release-**'
+    paths:
+      - 'vm/**'
+
+ # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build_containerDisk_image:
+    name: Build VM ContainerDisk Image
+    runs-on: ubuntu-latest
+    env:
+      CRI_BIN: podman
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Build the ContainerDisk image
+        run: make build-vm-container-disk
