@@ -46,8 +46,8 @@ const (
 	trafficGeneratorWestMacAddress             = "DE:AD:BE:EF:01:00"
 	dpdkEastMacAddress                         = "DE:AD:BE:EF:00:02"
 	dpdkWestMacAddress                         = "DE:AD:BE:EF:02:00"
-	trafficGeneratorImage                      = "quay.io/ramlavi/kubevirt-dpdk-checkup-traffic-gen:latest"
-	vmContainerDiskImage                       = "quay.io/ramlavi/kubevirt-dpdk-checkup-vm:latest"
+	trafficGeneratorImage                      = "quay.io/ramlavi/kubevirt-dpdk-checkup-traffic-gen:main"
+	vmContainerDiskImage                       = "quay.io/ramlavi/kubevirt-dpdk-checkup-vm:main"
 	testDuration                               = "30m"
 )
 
