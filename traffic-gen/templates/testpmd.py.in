@@ -31,9 +31,9 @@ class STLS1(object):
 
 
     def get_streams (self, direction = 0, **kwargs):
-        # create multiple streams, one stream per core...
+        # create multiple streams, one stream per core generating traffic...
         s = []
-        for i in range($NUM_OF_CPUS-1):
+        for i in range($NUM_OF_TRAFFIC_CPUS):
             s.append(self.create_stream(direction = direction))
         return s
 
