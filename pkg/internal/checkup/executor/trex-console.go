@@ -20,7 +20,7 @@ type trexClient struct {
 	verbosePrintsEnabled bool
 }
 
-func NewTrexConsole(client podExecuteClient, namespace, name, containerName string, verbosePrintsEnabled bool) trexClient {
+func NewTrexClient(client podExecuteClient, namespace, name, containerName string, verbosePrintsEnabled bool) trexClient {
 	return trexClient{
 		podClient:            client,
 		namespace:            namespace,
