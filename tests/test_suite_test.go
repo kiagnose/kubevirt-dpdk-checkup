@@ -45,7 +45,7 @@ const (
 
 const (
 	defaultNamespace                       = "kiagnose-demo"
-	defaultImageName                       = "quay.io/kiagnose/kubevirt-dpdk-checkup:latest"
+	defaultImageName                       = "quay.io/kiagnose/kubevirt-dpdk-checkup:main"
 	defaultNetworkAttachmentDefinitionName = "intel-dpdk-network-1"
 	defaultRuntimeClassName                = "performance-performance-zeus10"
 )
