@@ -40,10 +40,6 @@ type vmiSerialConsoleClient interface {
 	VMISerialConsole(namespace, name string, timeout time.Duration) (kubecli.StreamInterface, error)
 }
 
-type podExecuteClient interface {
-	ExecuteCommandOnPod(ctx context.Context, namespace, name, containerName string, command []string) (stdout, stderr string, err error)
-}
-
 type testPmdPortStats struct {
 	RXPackets int64
 	RXDropped int64
@@ -64,7 +60,7 @@ const (
 
 type Executor struct {
 	client                           vmiSerialConsoleClient
-	podClient                        podExecuteClient
+	podClient                        PodExecuteClient
 	namespace                        string
 	vmiUsername                      string
 	vmiPassword                      string
@@ -79,7 +75,7 @@ type Executor struct {
 
 const testpmdPrompt = "testpmd> "
 
-func New(client vmiSerialConsoleClient, podClient podExecuteClient, namespace string, cfg config.Config) Executor {
+func New(client vmiSerialConsoleClient, podClient PodExecuteClient, namespace string, cfg config.Config) Executor {
 	return Executor{
 		client:                           client,
 		podClient:                        podClient,
@@ -101,7 +97,7 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, vmiName, err)
 	}
 
-	trexClient := trexclient.NewTrexClient(e.podClient, e.namespace, podName, podContainerName, e.verbosePrintsEnabled)
+	trexClient := NewTrexClient(e.podClient, e.namespace, podName, podContainerName, e.verbosePrintsEnabled)
 
 	log.Printf("Starting testpmd in VMI...")
 	if err := e.runTestpmd(vmiName); err != nil {
@@ -138,13 +134,13 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 		return status.Results{}, err
 	}
 
-	var trafficGeneratorSrcPortStats portStats
+	var trafficGeneratorSrcPortStats PortStats
 	trafficGeneratorSrcPortStats, err = trexClient.GetPortStats(ctx, trafficSourcePort)
 	if err != nil {
 		return status.Results{}, err
 	}
 
-	var trafficGeneratorDstPortStats portStats
+	var trafficGeneratorDstPortStats PortStats
 	trafficGeneratorDstPortStats, err = trexClient.GetPortStats(ctx, trafficDestPort)
 	if err != nil {
 		return status.Results{}, err
