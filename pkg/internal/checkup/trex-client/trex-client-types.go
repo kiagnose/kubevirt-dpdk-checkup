@@ -1,4 +1,4 @@
-package executor
+package trexclient
 
 type GlobalStats struct {
 	ID      string `json:"id"`
