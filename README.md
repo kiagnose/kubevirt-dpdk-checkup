@@ -97,7 +97,6 @@ data:
   spec.timeout: 10m
   spec.param.networkAttachmentDefinitionName: <network-name>
   spec.param.trafficGeneratorRuntimeClassName: <runtimeclass-name>
-  spec.param.trafficGeneratorImage: quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main
 ```
 
 ## Execution
