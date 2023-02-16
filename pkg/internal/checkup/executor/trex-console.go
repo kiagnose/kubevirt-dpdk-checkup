@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-type trexConsole struct {
+type trexClient struct {
 	podClient            podExecuteClient
 	namespace            string
 	name                 string
@@ -20,8 +20,8 @@ type trexConsole struct {
 	verbosePrintsEnabled bool
 }
 
-func NewTrexConsole(client podExecuteClient, namespace, name, containerName string, verbosePrintsEnabled bool) trexConsole {
-	return trexConsole{
+func NewTrexClient(client podExecuteClient, namespace, name, containerName string, verbosePrintsEnabled bool) trexClient {
+	return trexClient{
 		podClient:            client,
 		namespace:            namespace,
 		name:                 name,
@@ -30,7 +30,7 @@ func NewTrexConsole(client podExecuteClient, namespace, name, containerName stri
 	}
 }
 
-func (t trexConsole) GetPortStats(ctx context.Context, port int) (portStats, error) {
+func (t trexClient) GetPortStats(ctx context.Context, port int) (portStats, error) {
 	portStatsJSONString, err := t.runCommandWithJSONResponse(ctx, fmt.Sprintf("stats --port %d -p", port))
 	if err != nil {
 		return portStats{}, fmt.Errorf("failed to get global stats json: %w", err)
@@ -48,7 +48,7 @@ func (t trexConsole) GetPortStats(ctx context.Context, port int) (portStats, err
 	return ps, nil
 }
 
-func (t trexConsole) GetGlobalStats(ctx context.Context) (globalStats, error) {
+func (t trexClient) GetGlobalStats(ctx context.Context) (globalStats, error) {
 	globalStatsJSONString, err := t.runCommandWithJSONResponse(ctx, "stats -g")
 	if err != nil {
 		return globalStats{}, fmt.Errorf("failed to get global stats json: %w", err)
@@ -66,7 +66,7 @@ func (t trexConsole) GetGlobalStats(ctx context.Context) (globalStats, error) {
 	return gs, nil
 }
 
-func (t trexConsole) MonitorDropRates(ctx context.Context, duration time.Duration) (float64, error) {
+func (t trexClient) MonitorDropRates(ctx context.Context, duration time.Duration) (float64, error) {
 	const interval = 10 * time.Second
 	log.Printf("Monitoring traffic generator side drop rates every %ss during the test duration...", interval)
 	maxDropRateBps := float64(0)
@@ -91,21 +91,21 @@ func (t trexConsole) MonitorDropRates(ctx context.Context, duration time.Duratio
 	return maxDropRateBps, nil
 }
 
-func (t trexConsole) ClearStats(ctx context.Context) (string, error) {
+func (t trexClient) ClearStats(ctx context.Context) (string, error) {
 	return t.runCommand(ctx, "clear")
 }
 
-func (t trexConsole) StartTraffic(ctx context.Context, packetPerSecond string, port int, testDuration time.Duration) (string, error) {
+func (t trexClient) StartTraffic(ctx context.Context, packetPerSecond string, port int, testDuration time.Duration) (string, error) {
 	testDurationSeconds := int(testDuration.Seconds())
 	return t.runCommand(ctx, fmt.Sprintf("start -f /opt/tests/testpmd.py -m %spps -p %d -d %d",
 		packetPerSecond, port, testDurationSeconds))
 }
 
-func (t trexConsole) StopTraffic(ctx context.Context) (string, error) {
+func (t trexClient) StopTraffic(ctx context.Context) (string, error) {
 	return t.runCommand(ctx, "stop -a")
 }
 
-func (t trexConsole) runCommand(ctx context.Context, command string) (string, error) {
+func (t trexClient) runCommand(ctx context.Context, command string) (string, error) {
 	var (
 		err            error
 		stdout, stderr string
@@ -123,7 +123,7 @@ func (t trexConsole) runCommand(ctx context.Context, command string) (string, er
 	return cleanStdout(stdout), nil
 }
 
-func (t trexConsole) runCommandWithJSONResponse(ctx context.Context, command string) (string, error) {
+func (t trexClient) runCommandWithJSONResponse(ctx context.Context, command string) (string, error) {
 	var (
 		err            error
 		stdout, stderr string
