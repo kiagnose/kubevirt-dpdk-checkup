@@ -52,8 +52,8 @@ const (
 	TrafficGeneratorWestMacAddressDefault             = "50:00:00:00:00:02"
 	DPDKEastMacAddressDefault                         = "60:00:00:00:00:01"
 	DPDKWestMacAddressDefault                         = "60:00:00:00:00:02"
-	TrafficGeneratorImageDefault                      = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:latest"
-	VMContainerDiskImageDefault                       = "quay.io/kiagnose/kubevirt-dpdk-checkup-vm:latest"
+	TrafficGeneratorImageDefault                      = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main"
+	VMContainerDiskImageDefault                       = "quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main"
 	TestDurationDefault                               = 5 * time.Minute
 	VerboseDefault                                    = false
 )
