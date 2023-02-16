@@ -138,13 +138,13 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 		return status.Results{}, err
 	}
 
-	var trafficGeneratorSrcPortStats portStats
+	var trafficGeneratorSrcPortStats PortStats
 	trafficGeneratorSrcPortStats, err = trexClient.GetPortStats(ctx, trafficSourcePort)
 	if err != nil {
 		return status.Results{}, err
 	}
 
-	var trafficGeneratorDstPortStats portStats
+	var trafficGeneratorDstPortStats PortStats
 	trafficGeneratorDstPortStats, err = trexClient.GetPortStats(ctx, trafficDestPort)
 	if err != nil {
 		return status.Results{}, err

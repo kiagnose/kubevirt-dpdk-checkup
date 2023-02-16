@@ -1,6 +1,6 @@
 package executor
 
-type globalStats struct {
+type GlobalStats struct {
 	ID      string `json:"id"`
 	Jsonrpc string `json:"jsonrpc"`
 	Result  struct {
@@ -42,7 +42,7 @@ type globalStats struct {
 	} `json:"result"`
 }
 
-type portStats struct {
+type PortStats struct {
 	ID      string `json:"id"`
 	Jsonrpc string `json:"jsonrpc"`
 	Result  struct {

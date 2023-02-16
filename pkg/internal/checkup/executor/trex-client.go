@@ -30,38 +30,38 @@ func NewTrexClient(client podExecuteClient, namespace, name, containerName strin
 	}
 }
 
-func (t trexClient) GetPortStats(ctx context.Context, port int) (portStats, error) {
+func (t trexClient) GetPortStats(ctx context.Context, port int) (PortStats, error) {
 	portStatsJSONString, err := t.runCommandWithJSONResponse(ctx, fmt.Sprintf("stats --port %d -p", port))
 	if err != nil {
-		return portStats{}, fmt.Errorf("failed to get global stats json: %w", err)
+		return PortStats{}, fmt.Errorf("failed to get global stats json: %w", err)
 	}
 
 	if t.verbosePrintsEnabled {
 		log.Printf("GetPortStats JSON: %s", portStatsJSONString)
 	}
 
-	var ps portStats
+	var ps PortStats
 	err = json.Unmarshal([]byte(portStatsJSONString), &ps)
 	if err != nil {
-		return portStats{}, fmt.Errorf("failed to unmarshal port %d stats json: %w", port, err)
+		return PortStats{}, fmt.Errorf("failed to unmarshal port %d stats json: %w", port, err)
 	}
 	return ps, nil
 }
 
-func (t trexClient) GetGlobalStats(ctx context.Context) (globalStats, error) {
+func (t trexClient) GetGlobalStats(ctx context.Context) (GlobalStats, error) {
 	globalStatsJSONString, err := t.runCommandWithJSONResponse(ctx, "stats -g")
 	if err != nil {
-		return globalStats{}, fmt.Errorf("failed to get global stats json: %w", err)
+		return GlobalStats{}, fmt.Errorf("failed to get global stats json: %w", err)
 	}
 
 	if t.verbosePrintsEnabled {
 		log.Printf("GetGlobalStats JSON: %s", globalStatsJSONString)
 	}
 
-	var gs globalStats
+	var gs GlobalStats
 	err = json.Unmarshal([]byte(globalStatsJSONString), &gs)
 	if err != nil {
-		return globalStats{}, fmt.Errorf("failed to unmarshal global stats json: %w", err)
+		return GlobalStats{}, fmt.Errorf("failed to unmarshal global stats json: %w", err)
 	}
 	return gs, nil
 }
