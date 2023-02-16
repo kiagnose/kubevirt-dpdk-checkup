@@ -40,10 +40,6 @@ type vmiSerialConsoleClient interface {
 	VMISerialConsole(namespace, name string, timeout time.Duration) (kubecli.StreamInterface, error)
 }
 
-type podExecuteClient interface {
-	ExecuteCommandOnPod(ctx context.Context, namespace, name, containerName string, command []string) (stdout, stderr string, err error)
-}
-
 type testPmdPortStats struct {
 	RXPackets int64
 	RXDropped int64
@@ -64,7 +60,7 @@ const (
 
 type Executor struct {
 	client                           vmiSerialConsoleClient
-	podClient                        podExecuteClient
+	podClient                        PodExecuteClient
 	namespace                        string
 	vmiUsername                      string
 	vmiPassword                      string
@@ -79,7 +75,7 @@ type Executor struct {
 
 const testpmdPrompt = "testpmd> "
 
-func New(client vmiSerialConsoleClient, podClient podExecuteClient, namespace string, cfg config.Config) Executor {
+func New(client vmiSerialConsoleClient, podClient PodExecuteClient, namespace string, cfg config.Config) Executor {
 	return Executor{
 		client:                           client,
 		podClient:                        podClient,
