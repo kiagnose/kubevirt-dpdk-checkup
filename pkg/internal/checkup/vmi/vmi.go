@@ -211,7 +211,8 @@ func WithContainerDisk(volumeName, imageName string) Option {
 			Name: volumeName,
 			VolumeSource: kvcorev1.VolumeSource{
 				ContainerDisk: &kvcorev1.ContainerDiskSource{
-					Image: imageName,
+					Image:           imageName,
+					ImagePullPolicy: corev1.PullAlways,
 				},
 			},
 		}
