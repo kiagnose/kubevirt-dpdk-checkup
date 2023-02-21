@@ -275,8 +275,8 @@ func parseTestpmdStats(input string) (map[string]int64, error) {
 
 func buildTestpmdCmd(vmiEastNICPCIAddress, vmiWestNICPCIAddress, eastEthPeerMACAddress, westEthPeerMACAddress string) string {
 	const (
-		cpuList       = "0-7"
-		numberOfCores = 7
+		cpuList       = "2-7"
+		numberOfCores = 5
 	)
 
 	sb := strings.Builder{}
