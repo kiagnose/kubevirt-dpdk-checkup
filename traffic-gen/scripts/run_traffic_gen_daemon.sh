@@ -29,4 +29,4 @@ print_params() {
 
 print_params
 
-./t-rex-64 --no-ofed-check --no-hw-flow-stat -i -c "${NUM_OF_TRAFFIC_CPUS}" --iom 0
+./t-rex-64 --no-ofed-check --no-hw-flow-stat -i -v 3 -c "${NUM_OF_TRAFFIC_CPUS}" --iom 0
