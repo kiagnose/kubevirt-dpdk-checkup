@@ -20,6 +20,7 @@
 package config
 
 import (
+	"crypto/rand"
 	"errors"
 	"net"
 	"strconv"
@@ -48,14 +49,15 @@ const (
 const (
 	TrafficGeneratorPacketsPerSecondInMillionsDefault = 14
 	PortBandwidthGBDefault                            = 10
-	TrafficGeneratorEastMacAddressDefault             = "50:00:00:00:00:01"
-	TrafficGeneratorWestMacAddressDefault             = "50:00:00:00:00:02"
-	DPDKEastMacAddressDefault                         = "60:00:00:00:00:01"
-	DPDKWestMacAddressDefault                         = "60:00:00:00:00:02"
 	TrafficGeneratorImageDefault                      = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main"
 	VMContainerDiskImageDefault                       = "quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main"
 	TestDurationDefault                               = 5 * time.Minute
 	VerboseDefault                                    = false
+
+	TrafficGeneratorMacAddressPrefixOctet = 0x50
+	DPDKMacAddressPrefixOctet             = 0x60
+	EastMacAddressSuffixOctet             = 0x01
+	WestMacAddressSuffixOctet             = 0x02
 )
 
 const (
@@ -101,10 +103,12 @@ type Config struct {
 }
 
 func New(baseConfig kconfig.Config) (Config, error) {
-	trafficGeneratorEastMacAddressDefault, _ := net.ParseMAC(TrafficGeneratorEastMacAddressDefault)
-	trafficGeneratorWestMacAddressDefault, _ := net.ParseMAC(TrafficGeneratorWestMacAddressDefault)
-	dpdkEastMacAddressDefault, _ := net.ParseMAC(DPDKEastMacAddressDefault)
-	dpdkWestMacAddressDefault, _ := net.ParseMAC(DPDKWestMacAddressDefault)
+	trafficGeneratorEastMacAddressDefault := generateMacAddressWithPresetPrefixAndSuffix(
+		TrafficGeneratorMacAddressPrefixOctet, EastMacAddressSuffixOctet)
+	trafficGeneratorWestMacAddressDefault := generateMacAddressWithPresetPrefixAndSuffix(
+		TrafficGeneratorMacAddressPrefixOctet, WestMacAddressSuffixOctet)
+	dpdkEastMacAddressDefault := generateMacAddressWithPresetPrefixAndSuffix(DPDKMacAddressPrefixOctet, EastMacAddressSuffixOctet)
+	dpdkWestMacAddressDefault := generateMacAddressWithPresetPrefixAndSuffix(DPDKMacAddressPrefixOctet, WestMacAddressSuffixOctet)
 	newConfig := Config{
 		PodName:                                    baseConfig.PodName,
 		PodUID:                                     baseConfig.PodUID,
@@ -229,4 +233,17 @@ func parseNonNegativeInt(rawVal string) (int, error) {
 		return 0, errors.New("parameter is negative")
 	}
 	return val, nil
+}
+
+func generateMacAddressWithPresetPrefixAndSuffix(prefixOctet, suffixOctet byte) net.HardwareAddr {
+	const (
+		MACOctetsCount = 6
+		prefixOctetIdx = 0
+		suffixOctetIdx = 5
+	)
+	address := make([]byte, MACOctetsCount)
+	_, _ = rand.Read(address)
+	address[prefixOctetIdx] = prefixOctet
+	address[suffixOctetIdx] = suffixOctet
+	return address
 }
