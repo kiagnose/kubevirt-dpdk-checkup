@@ -154,6 +154,8 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 	log.Printf("traffic Generator port %d Packet output errors: %d", trafficSourcePort, results.TrafficGeneratorOutErrorPackets)
 	results.TrafficGeneratorInErrorPackets = trafficGeneratorDstPortStats.Result.Ierrors
 	log.Printf("traffic Generator port %d Packet output errors: %d", trafficDestPort, results.TrafficGeneratorInErrorPackets)
+	results.TrafficGeneratorTxPackets = trafficGeneratorSrcPortStats.Result.Opackets
+	log.Printf("traffic Generator packet sent via port %d: %d", trafficSourcePort, results.TrafficGeneratorTxPackets)
 
 	log.Printf("get testpmd stats in DPDK VMI...")
 	var testPmdStats [testPmdPortStatsSize]testPmdPortStats
