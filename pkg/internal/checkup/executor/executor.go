@@ -127,13 +127,16 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 		return status.Results{}, err
 	}
 
-	_, err = trexClient.GetPortStats(ctx, trafficDestPort)
+	var trafficGeneratorDstPortStats portStats
+	trafficGeneratorDstPortStats, err = trexClient.GetPortStats(ctx, trafficDestPort)
 	if err != nil {
 		return status.Results{}, err
 	}
 
 	results.TrafficGeneratorOutErrorPackets = trafficGeneratorSrcPortStats.Result.Oerrors
 	log.Printf("traffic Generator port %d Packet output errors: %d", trafficSourcePort, results.TrafficGeneratorOutErrorPackets)
+	results.TrafficGeneratorInErrorPackets = trafficGeneratorDstPortStats.Result.Ierrors
+	log.Printf("traffic Generator port %d Packet output errors: %d", trafficDestPort, results.TrafficGeneratorInErrorPackets)
 
 	log.Printf("get testpmd stats in DPDK VMI...")
 	var testPmdStats map[string]int64
