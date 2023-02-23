@@ -55,6 +55,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 		expectedTrafficGeneratorTxPackets       = 0
 		expectedTrafficGeneratorOutErrorPackets = 0
 		expectedTrafficGeneratorInErrorPackets  = 0
+		expectedDPDKRxTestPackets               = 0
 		expectedDPDKPacketsRxDropped            = 0
 		expectedDPDKPacketsTxDropped            = 0
 		expectedDPDKVMNode                      = "dpdk-node01"
@@ -80,6 +81,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 			TrafficGeneratorTxPackets:       expectedTrafficGeneratorTxPackets,
 			TrafficGeneratorOutErrorPackets: expectedTrafficGeneratorOutErrorPackets,
 			TrafficGeneratorInErrorPackets:  expectedTrafficGeneratorInErrorPackets,
+			DPDKRxTestPackets:               expectedDPDKRxTestPackets,
 			DPDKPacketsRxDropped:            expectedDPDKPacketsRxDropped,
 			DPDKPacketsTxDropped:            expectedDPDKPacketsTxDropped,
 			DPDKVMNode:                      expectedDPDKVMNode,
@@ -96,6 +98,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 			"status.result.trafficGeneratorTxPackets":          fmt.Sprintf("%d", checkupStatus.Results.TrafficGeneratorTxPackets),
 			"status.result.trafficGeneratorOutputErrorPackets": fmt.Sprintf("%d", checkupStatus.Results.TrafficGeneratorOutErrorPackets),
 			"status.result.trafficGeneratorInErrorPackets":     fmt.Sprintf("%d", checkupStatus.Results.TrafficGeneratorOutErrorPackets),
+			"status.result.DPDKRxTestPackets":                  fmt.Sprintf("%d", checkupStatus.Results.DPDKRxTestPackets),
 			"status.result.DPDKRxPacketDrops":                  fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsRxDropped),
 			"status.result.DPDKTxPacketDrops":                  fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsTxDropped),
 			"status.result.trafficGeneratorNode":               checkupStatus.Results.TrafficGeneratorNode,

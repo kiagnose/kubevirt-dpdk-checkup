@@ -25,6 +25,7 @@ type Results struct {
 	TrafficGeneratorTxPackets       int64
 	TrafficGeneratorOutErrorPackets int64
 	TrafficGeneratorInErrorPackets  int64
+	DPDKRxTestPackets               int64
 	DPDKPacketsRxDropped            int64
 	DPDKPacketsTxDropped            int64
 	TrafficGeneratorNode            string
