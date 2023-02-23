@@ -54,6 +54,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 	const (
 		expectedTrafficGeneratorMaxDropRate     = 0
 		expectedTrafficGeneratorOutErrorPackets = 0
+		expectedTrafficGeneratorInErrorPackets  = 0
 		expectedDPDKPacketsRxDropped            = 0
 		expectedDPDKPacketsTxDropped            = 0
 		expectedDPDKVMNode                      = "dpdk-node01"
@@ -78,6 +79,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 		checkupStatus.Results = status.Results{
 			TrafficGeneratorMaxDropRate:     expectedTrafficGeneratorMaxDropRate,
 			TrafficGeneratorOutErrorPackets: expectedTrafficGeneratorOutErrorPackets,
+			TrafficGeneratorInErrorPackets:  expectedTrafficGeneratorInErrorPackets,
 			DPDKPacketsRxDropped:            expectedDPDKPacketsRxDropped,
 			DPDKPacketsTxDropped:            expectedDPDKPacketsTxDropped,
 			DPDKVMNode:                      expectedDPDKVMNode,
@@ -93,6 +95,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 			"status.completionTimestamp":                       timestamp(checkupStatus.CompletionTimestamp),
 			"status.result.trafficGeneratorMaxDropRate":        fmt.Sprintf("%f", checkupStatus.Results.TrafficGeneratorMaxDropRate),
 			"status.result.trafficGeneratorOutputErrorPackets": fmt.Sprintf("%d", checkupStatus.Results.TrafficGeneratorOutErrorPackets),
+			"status.result.trafficGeneratorInErrorPackets":     fmt.Sprintf("%d", checkupStatus.Results.TrafficGeneratorOutErrorPackets),
 			"status.result.DPDKRxPacketDrops":                  fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsRxDropped),
 			"status.result.DPDKTxPacketDrops":                  fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsTxDropped),
 			"status.result.trafficGeneratorNode":               checkupStatus.Results.TrafficGeneratorNode,

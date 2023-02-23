@@ -121,8 +121,9 @@ func (c *Checkup) Run(ctx context.Context) error {
 		return fmt.Errorf("detected %f Bps Drop Rate on the traffic generator's side", c.results.TrafficGeneratorMaxDropRate)
 	}
 
-	if c.results.TrafficGeneratorOutErrorPackets != 0 {
-		return fmt.Errorf("detected %d Output Error Packets on the traffic generator's side", c.results.TrafficGeneratorOutErrorPackets)
+	if c.results.TrafficGeneratorOutErrorPackets != 0 || c.results.TrafficGeneratorInErrorPackets != 0 {
+		return fmt.Errorf("detected Error Packets on the traffic generator's side: Oerrors %d Ierrors %d",
+			c.results.TrafficGeneratorOutErrorPackets, c.results.TrafficGeneratorInErrorPackets)
 	}
 
 	if c.results.DPDKPacketsRxDropped != 0 || c.results.DPDKPacketsTxDropped != 0 {
