@@ -221,7 +221,11 @@ func (e Executor) getStatsTestpmd(vmiName string) (map[string]int64, error) {
 		log.Printf("testpmd stats: %v", resp)
 	}
 
-	StatisticsSummaryString, err := extractSummaryStatistics(resp[0].Output)
+	const (
+		summaryStart = "Accumulated forward statistics for all ports"
+		summaryEnd   = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+	)
+	StatisticsSummaryString, err := extractSectionStatistics(resp[0].Output, summaryStart, summaryEnd)
 	if err != nil {
 		return nil, err
 	}
@@ -229,21 +233,27 @@ func (e Executor) getStatsTestpmd(vmiName string) (map[string]int64, error) {
 	return parseTestpmdStats(StatisticsSummaryString)
 }
 
-func extractSummaryStatistics(input string) (string, error) {
-	const summaryStart = "+++++++++++++++ Accumulated forward statistics for all ports+++++++++++++++"
-	const summaryEnd = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+func extractSectionStatistics(input, sectionStart, sectionEnd string) (string, error) {
+	lines := strings.Split(input, "\n")
+	var startLineIdx, endLineIdx int
 
-	startIndex := strings.Index(input, summaryStart) + len(summaryStart)
-	if startIndex == -1 {
-		return "", fmt.Errorf("could not find start of JSON string")
+	startLineIdx = findStringLineIndex(lines, sectionStart)
+	endLineIdx = startLineIdx + findStringLineIndex(lines[startLineIdx:], sectionEnd)
+
+	if l := len(lines); startLineIdx >= l || endLineIdx >= l {
+		return "", fmt.Errorf("could not extract statistics section. found start: %v; found end: %v", startLineIdx < l, endLineIdx < l)
 	}
 
-	endIndex := strings.Index(input[startIndex:], summaryEnd) + startIndex
-	if endIndex == -1 {
-		return "", fmt.Errorf("could not find end of JSON string")
-	}
+	return strings.Join(lines[startLineIdx+1:endLineIdx], "\n"), nil
+}
 
-	return input[startIndex:endIndex], nil
+func findStringLineIndex(lines []string, substring string) int {
+	for lineIdx := range lines {
+		if strings.Contains(lines[lineIdx], substring) {
+			return lineIdx
+		}
+	}
+	return len(lines)
 }
 
 func parseTestpmdStats(input string) (map[string]int64, error) {
