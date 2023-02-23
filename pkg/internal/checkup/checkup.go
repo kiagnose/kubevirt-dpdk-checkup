@@ -125,12 +125,9 @@ func (c *Checkup) Run(ctx context.Context) error {
 		return fmt.Errorf("detected %d Output Error Packets on the traffic generator's side", c.results.TrafficGeneratorOutErrorPackets)
 	}
 
-	if c.results.DPDKPacketsRxDropped != 0 {
-		return fmt.Errorf("detected %d Rx packets dropped on the DPDK VM's side", c.results.DPDKPacketsRxDropped)
-	}
-
-	if c.results.DPDKPacketsTxDropped != 0 {
-		return fmt.Errorf("detected %d Tx packets dropped on the DPDK VM's side", c.results.DPDKPacketsTxDropped)
+	if c.results.DPDKPacketsRxDropped != 0 || c.results.DPDKPacketsTxDropped != 0 {
+		return fmt.Errorf("detected packets dropped on the DPDK VM's side: RX: %d; TX: %d",
+			c.results.DPDKPacketsRxDropped, c.results.DPDKPacketsTxDropped)
 	}
 
 	return nil
