@@ -22,6 +22,7 @@ package status
 import kstatus "github.com/kiagnose/kiagnose/kiagnose/status"
 
 type Results struct {
+	TrafficGeneratorTxPackets       int64
 	TrafficGeneratorOutErrorPackets int64
 	TrafficGeneratorInErrorPackets  int64
 	DPDKPacketsRxDropped            int64
