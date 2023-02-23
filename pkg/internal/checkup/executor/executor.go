@@ -165,6 +165,9 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 	results.DPDKPacketsRxDropped = testPmdStats[testPmdPortStatsSummary].RXDropped
 	results.DPDKPacketsTxDropped = testPmdStats[testPmdPortStatsSummary].TXDropped
 	log.Printf("DPDK side packets Dropped: Rx: %d; TX: %d", results.DPDKPacketsRxDropped, results.DPDKPacketsTxDropped)
+	results.DPDKRxTestPackets =
+		testPmdStats[testPmdPortStatsSummary].RXTotal - testPmdStats[testPmdStatsPort0].RXPackets - testPmdStats[testPmdStatsPort1].TXPackets
+	log.Printf("DPDK side test packets received (including dropped, excluding non-related packets): %d", results.DPDKRxTestPackets)
 
 	return results, nil
 }
