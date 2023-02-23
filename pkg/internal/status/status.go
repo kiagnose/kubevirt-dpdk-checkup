@@ -22,7 +22,6 @@ package status
 import kstatus "github.com/kiagnose/kiagnose/kiagnose/status"
 
 type Results struct {
-	TrafficGeneratorMaxDropRate     float64
 	TrafficGeneratorOutErrorPackets int64
 	TrafficGeneratorInErrorPackets  int64
 	DPDKPacketsRxDropped            int64

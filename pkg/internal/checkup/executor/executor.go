@@ -132,8 +132,8 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 	}
 
 	results := status.Results{}
-	results.TrafficGeneratorMaxDropRate, err = trexClient.MonitorDropRates(ctx, e.testDuration)
-	log.Printf("traffic Generator Max Drop Rate: %fBps", results.TrafficGeneratorMaxDropRate)
+	trafficGeneratorMaxDropRate, err := trexClient.MonitorDropRates(ctx, e.testDuration)
+	log.Printf("traffic Generator Max Drop Rate: %fBps", trafficGeneratorMaxDropRate)
 	if err != nil {
 		return status.Results{}, err
 	}

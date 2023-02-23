@@ -52,7 +52,6 @@ func TestReportShouldSucceed(t *testing.T) {
 
 func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 	const (
-		expectedTrafficGeneratorMaxDropRate     = 0
 		expectedTrafficGeneratorOutErrorPackets = 0
 		expectedTrafficGeneratorInErrorPackets  = 0
 		expectedDPDKPacketsRxDropped            = 0
@@ -77,7 +76,6 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 		checkupStatus.FailureReason = []string{}
 		checkupStatus.CompletionTimestamp = time.Now()
 		checkupStatus.Results = status.Results{
-			TrafficGeneratorMaxDropRate:     expectedTrafficGeneratorMaxDropRate,
 			TrafficGeneratorOutErrorPackets: expectedTrafficGeneratorOutErrorPackets,
 			TrafficGeneratorInErrorPackets:  expectedTrafficGeneratorInErrorPackets,
 			DPDKPacketsRxDropped:            expectedDPDKPacketsRxDropped,
@@ -93,7 +91,6 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 			"status.failureReason":                             "",
 			"status.startTimestamp":                            timestamp(checkupStatus.StartTimestamp),
 			"status.completionTimestamp":                       timestamp(checkupStatus.CompletionTimestamp),
-			"status.result.trafficGeneratorMaxDropRate":        fmt.Sprintf("%f", checkupStatus.Results.TrafficGeneratorMaxDropRate),
 			"status.result.trafficGeneratorOutputErrorPackets": fmt.Sprintf("%d", checkupStatus.Results.TrafficGeneratorOutErrorPackets),
 			"status.result.trafficGeneratorInErrorPackets":     fmt.Sprintf("%d", checkupStatus.Results.TrafficGeneratorOutErrorPackets),
 			"status.result.DPDKRxPacketDrops":                  fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsRxDropped),
