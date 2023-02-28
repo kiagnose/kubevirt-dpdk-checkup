@@ -20,7 +20,6 @@
 package executor
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"log"
@@ -44,6 +43,24 @@ type vmiSerialConsoleClient interface {
 type podExecuteClient interface {
 	ExecuteCommandOnPod(ctx context.Context, namespace, name, containerName string, command []string) (stdout, stderr string, err error)
 }
+
+type testPmdPortStats struct {
+	RXPackets int64
+	RXDropped int64
+	RXTotal   int64
+	TXPackets int64
+	TXDropped int64
+	TXTotal   int64
+}
+
+type testPmdStatsIdx int
+
+const (
+	testPmdStatsPort0 testPmdStatsIdx = iota
+	testPmdStatsPort1
+	testPmdPortStatsSummary
+	testPmdPortStatsSize
+)
 
 type Executor struct {
 	client                                     vmiSerialConsoleClient
@@ -139,16 +156,12 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 	log.Printf("traffic Generator port %d Packet output errors: %d", trafficDestPort, results.TrafficGeneratorInErrorPackets)
 
 	log.Printf("get testpmd stats in DPDK VMI...")
-	var testPmdStats map[string]int64
+	var testPmdStats [testPmdPortStatsSize]testPmdPortStats
 	if testPmdStats, err = e.getStatsTestpmd(vmiName); err != nil {
 		return status.Results{}, err
 	}
-	const (
-		TXDropped = "TX-dropped"
-		RXDropped = "RX-dropped"
-	)
-	results.DPDKPacketsRxDropped = testPmdStats[RXDropped]
-	results.DPDKPacketsTxDropped = testPmdStats[TXDropped]
+	results.DPDKPacketsRxDropped = testPmdStats[testPmdPortStatsSummary].RXDropped
+	results.DPDKPacketsTxDropped = testPmdStats[testPmdPortStatsSummary].TXDropped
 	log.Printf("DPDK side packets Dropped: Rx: %d; TX: %d", results.DPDKPacketsRxDropped, results.DPDKPacketsTxDropped)
 
 	return results, nil
@@ -198,7 +211,7 @@ func (e Executor) clearStatsTestpmd(vmiName string) error {
 	return nil
 }
 
-func (e Executor) getStatsTestpmd(vmiName string) (map[string]int64, error) {
+func (e Executor) getStatsTestpmd(vmiName string) ([testPmdPortStatsSize]testPmdPortStats, error) {
 	const batchTimeout = 30 * time.Second
 
 	const testpmdPromt = "testpmd> "
@@ -214,66 +227,94 @@ func (e Executor) getStatsTestpmd(vmiName string) (map[string]int64, error) {
 	)
 
 	if err != nil {
-		return nil, err
+		return [testPmdPortStatsSize]testPmdPortStats{}, err
 	}
 
 	if e.verbosePrintsEnabled {
 		log.Printf("testpmd stats: %v", resp)
 	}
 
-	StatisticsSummaryString, err := extractSummaryStatistics(resp[0].Output)
-	if err != nil {
-		return nil, err
-	}
-
-	return parseTestpmdStats(StatisticsSummaryString)
+	return parseTestpmdStats(resp[0].Output)
 }
 
-func extractSummaryStatistics(input string) (string, error) {
-	const summaryStart = "+++++++++++++++ Accumulated forward statistics for all ports+++++++++++++++"
-	const summaryEnd = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+func extractSectionStatistics(input, sectionStart, sectionEnd string) (string, error) {
+	lines := strings.Split(input, "\n")
+	var startLineIdx, endLineIdx int
 
-	startIndex := strings.Index(input, summaryStart) + len(summaryStart)
-	if startIndex == -1 {
-		return "", fmt.Errorf("could not find start of JSON string")
+	startLineIdx = findStringLineIndex(lines, sectionStart)
+	endLineIdx = startLineIdx + findStringLineIndex(lines[startLineIdx:], sectionEnd)
+
+	if l := len(lines); startLineIdx >= l || endLineIdx >= l {
+		return "", fmt.Errorf("could not extract statistics section. found start: %v; found end: %v", startLineIdx < l, endLineIdx < l)
 	}
 
-	endIndex := strings.Index(input[startIndex:], summaryEnd) + startIndex
-	if endIndex == -1 {
-		return "", fmt.Errorf("could not find end of JSON string")
-	}
-
-	return input[startIndex:endIndex], nil
+	return strings.Join(lines[startLineIdx+1:endLineIdx], "\n"), nil
 }
 
-func parseTestpmdStats(input string) (map[string]int64, error) {
-	params := make(map[string]int64)
-	scanner := bufio.NewScanner(strings.NewReader(input))
-	for scanner.Scan() {
-		line := scanner.Text()
-		if line == "" {
+func findStringLineIndex(lines []string, substring string) int {
+	for lineIdx := range lines {
+		if strings.Contains(lines[lineIdx], substring) {
+			return lineIdx
+		}
+	}
+	return len(lines)
+}
+
+func parseTestpmdStats(input string) ([testPmdPortStatsSize]testPmdPortStats, error) {
+	var statistics [testPmdPortStatsSize]testPmdPortStats
+	const (
+		port0SectionStart   = "Forward statistics for port 0"
+		port0SectionEnd     = "----------------------------------------------------------------------------"
+		port1SectionStart   = "Forward statistics for port 1"
+		port1SectionEnd     = port0SectionEnd
+		SummarySectionStart = "Accumulated forward statistics for all ports"
+		SummarySectionEnd   = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+	)
+
+	startSections := [testPmdPortStatsSize]string{port0SectionStart, port1SectionStart, SummarySectionStart}
+	endSections := [testPmdPortStatsSize]string{port0SectionEnd, port1SectionEnd, SummarySectionEnd}
+	for statsIdx := range startSections {
+		sectionString, err := extractSectionStatistics(input, startSections[statsIdx], endSections[statsIdx])
+		if err != nil {
+			return [testPmdPortStatsSize]testPmdPortStats{}, fmt.Errorf("failed parsing section on port %d: %w", statsIdx, err)
+		}
+		err = parseTestpmdStatsSection(&statistics[statsIdx], sectionString)
+		if err != nil {
+			return [testPmdPortStatsSize]testPmdPortStats{}, err
+		}
+	}
+
+	return statistics, nil
+}
+
+func parseTestpmdStatsSection(stats *testPmdPortStats, section string) error {
+	const (
+		RXPacketsIndex = 1
+		RXDroppedIndex = 3
+		RXTotalIndex   = 5
+		TXPacketsIndex = 1
+		TXDroppedIndex = 3
+		TXTotalIndex   = 5
+	)
+	lines := strings.Split(section, "\n")
+	for i := range lines {
+		if lines[i] == "" {
 			continue
-		}
-		keyValuePairs := strings.Split(line, "  ")
-		for _, pair := range keyValuePairs {
-			if pair == "" {
-				continue
-			}
-			fieldsWithoutDuplicateSpaces := strings.Fields(pair)
-			formattedKeyValuePairString := strings.Join(fieldsWithoutDuplicateSpaces, " ")
-			parts := strings.Split(formattedKeyValuePairString, ": ")
-
-			key := strings.TrimSpace(parts[0])
-			valueString := strings.TrimSpace(parts[1])
-
-			value, err := strconv.ParseInt(valueString, 10, 64)
-			if err != nil {
-				return nil, err
-			}
-			params[key] = value
+		} else if strings.Contains(lines[i], "RX-packets") {
+			fields := strings.Fields(lines[i])
+			stats.RXPackets, _ = strconv.ParseInt(fields[RXPacketsIndex], 10, 64)
+			stats.RXDropped, _ = strconv.ParseInt(fields[RXDroppedIndex], 10, 64)
+			stats.RXTotal, _ = strconv.ParseInt(fields[RXTotalIndex], 10, 64)
+		} else if strings.Contains(lines[i], "TX-packets") {
+			fields := strings.Fields(lines[i])
+			stats.TXPackets, _ = strconv.ParseInt(fields[TXPacketsIndex], 10, 64)
+			stats.TXDropped, _ = strconv.ParseInt(fields[TXDroppedIndex], 10, 64)
+			stats.TXTotal, _ = strconv.ParseInt(fields[TXTotalIndex], 10, 64)
+		} else {
+			return fmt.Errorf("parse fail. Unknown line format %s", lines[i])
 		}
 	}
-	return params, nil
+	return nil
 }
 
 func buildTestpmdCmd(vmiEastNICPCIAddress, vmiWestNICPCIAddress, eastEthPeerMACAddress, westEthPeerMACAddress string) string {
