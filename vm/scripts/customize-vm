@@ -20,8 +20,13 @@
 systemctl disable NetworkManager-wait-online
 systemctl disable sshd
 
-grubby --update-kernel=ALL --args="default_hugepagesz=1GB hugepagesz=1G hugepages=8 isolcpus=2-7"
+grubby --update-kernel=ALL --args="default_hugepagesz=1GB hugepagesz=1G hugepages=8 isolcpus=2-7 nohz_full=2-7  rcu_nocbs=2-7 intel_iommu=on iommu=pt intel_pstate=disable idle=poll processor.max_cstate=0 intel_idle.max_cstate=0"
 
-echo  isolated_cores=2-7 > /etc/tuned/cpu-partitioning-variables.conf
+echo 1 > /sys/module/vfio/parameters/enable_unsafe_noiommu_mode
+echo -1 > /proc/sys/kernel/sched_rt_period_us
+echo -1 > /proc/sys/kernel/sched_rt_runtime_us
+echo 10 > /proc/sys/vm/stat_interval
+echo 0 > /proc/sys/kernel/watchdog_thresh
+echo isolated_cores=2-7 > /etc/tuned/cpu-partitioning-variables.conf
 tuned-adm profile cpu-partitioning
 echo "options vfio enable_unsafe_noiommu_mode=1" > /etc/modprobe.d/vfio-noiommu.conf
