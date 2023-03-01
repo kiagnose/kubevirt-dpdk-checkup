@@ -3,8 +3,8 @@ from trex_stl_lib.api import *
 from testpmd_addr import *
 
 # Wild local MACs
-mac_localport0="$SRC_WEST_MAC_ADDRESS"
-mac_localport1="$SRC_EAST_MAC_ADDRESS"
+mac_localport0="$SRC_EAST_MAC_ADDRESS"
+mac_localport1="$SRC_WEST_MAC_ADDRESS"
 
 class STLS1(object):
 
