@@ -63,36 +63,36 @@ const (
 )
 
 type Executor struct {
-	client                                     vmiSerialConsoleClient
-	podClient                                  podExecuteClient
-	namespace                                  string
-	vmiUsername                                string
-	vmiPassword                                string
-	vmiEastNICPCIAddress                       string
-	vmiEastEthPeerMACAddress                   string
-	vmiWestNICPCIAddress                       string
-	vmiWestEthPeerMACAddress                   string
-	testDuration                               time.Duration
-	verbosePrintsEnabled                       bool
-	trafficGeneratorPacketsPerSecondInMillions int
+	client                           vmiSerialConsoleClient
+	podClient                        podExecuteClient
+	namespace                        string
+	vmiUsername                      string
+	vmiPassword                      string
+	vmiEastNICPCIAddress             string
+	vmiEastEthPeerMACAddress         string
+	vmiWestNICPCIAddress             string
+	vmiWestEthPeerMACAddress         string
+	testDuration                     time.Duration
+	verbosePrintsEnabled             bool
+	trafficGeneratorPacketsPerSecond string
 }
 
 const testpmdPrompt = "testpmd> "
 
 func New(client vmiSerialConsoleClient, podClient podExecuteClient, namespace string, cfg config.Config) Executor {
 	return Executor{
-		client:                   client,
-		podClient:                podClient,
-		namespace:                namespace,
-		vmiUsername:              config.VMIUsername,
-		vmiPassword:              config.VMIPassword,
-		vmiEastNICPCIAddress:     config.VMIEastNICPCIAddress,
-		vmiEastEthPeerMACAddress: cfg.TrafficGeneratorEastMacAddress.String(),
-		vmiWestNICPCIAddress:     config.VMIWestNICPCIAddress,
-		vmiWestEthPeerMACAddress: cfg.TrafficGeneratorWestMacAddress.String(),
-		testDuration:             cfg.TestDuration,
-		verbosePrintsEnabled:     cfg.Verbose,
-		trafficGeneratorPacketsPerSecondInMillions: cfg.TrafficGeneratorPacketsPerSecondInMillions,
+		client:                           client,
+		podClient:                        podClient,
+		namespace:                        namespace,
+		vmiUsername:                      config.VMIUsername,
+		vmiPassword:                      config.VMIPassword,
+		vmiEastNICPCIAddress:             config.VMIEastNICPCIAddress,
+		vmiEastEthPeerMACAddress:         cfg.TrafficGeneratorEastMacAddress.String(),
+		vmiWestNICPCIAddress:             config.VMIWestNICPCIAddress,
+		vmiWestEthPeerMACAddress:         cfg.TrafficGeneratorWestMacAddress.String(),
+		testDuration:                     cfg.TestDuration,
+		verbosePrintsEnabled:             cfg.Verbose,
+		trafficGeneratorPacketsPerSecond: cfg.TrafficGeneratorPacketsPerSecond,
 	}
 }
 
@@ -125,7 +125,7 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 	)
 
 	log.Printf("Running traffic for %s...", e.testDuration.String())
-	_, err = trexClient.StartTraffic(ctx, e.trafficGeneratorPacketsPerSecondInMillions, trafficSourcePort, e.testDuration)
+	_, err = trexClient.StartTraffic(ctx, e.trafficGeneratorPacketsPerSecond, trafficSourcePort, e.testDuration)
 	if err != nil {
 		return status.Results{}, fmt.Errorf("failed to run traffic from trex-console on pod \"%s/%s\" side: %w",
 			e.namespace, podName, err)
