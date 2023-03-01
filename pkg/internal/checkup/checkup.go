@@ -117,10 +117,6 @@ func (c *Checkup) Run(ctx context.Context) error {
 	c.results.TrafficGeneratorNode = c.trafficGeneratorPod.Spec.NodeName
 	c.results.DPDKVMNode = c.vmi.Status.NodeName
 
-	if c.results.TrafficGeneratorMaxDropRate != 0 {
-		return fmt.Errorf("detected %f Bps Drop Rate on the traffic generator's side", c.results.TrafficGeneratorMaxDropRate)
-	}
-
 	if c.results.TrafficGeneratorOutErrorPackets != 0 || c.results.TrafficGeneratorInErrorPackets != 0 {
 		return fmt.Errorf("detected Error Packets on the traffic generator's side: Oerrors %d Ierrors %d",
 			c.results.TrafficGeneratorOutErrorPackets, c.results.TrafficGeneratorInErrorPackets)
@@ -129,6 +125,11 @@ func (c *Checkup) Run(ctx context.Context) error {
 	if c.results.DPDKPacketsRxDropped != 0 || c.results.DPDKPacketsTxDropped != 0 {
 		return fmt.Errorf("detected packets dropped on the DPDK VM's side: RX: %d; TX: %d",
 			c.results.DPDKPacketsRxDropped, c.results.DPDKPacketsTxDropped)
+	}
+
+	if c.results.TrafficGeneratorTxPackets != c.results.DPDKRxTestPackets {
+		return fmt.Errorf("not all generated packets had reached DPDK VM: Sent from traffic generator: %d; Received on DPDK VM: %d",
+			c.results.TrafficGeneratorTxPackets, c.results.DPDKRxTestPackets)
 	}
 
 	return nil

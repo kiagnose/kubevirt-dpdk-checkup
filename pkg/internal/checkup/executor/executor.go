@@ -132,8 +132,8 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 	}
 
 	results := status.Results{}
-	results.TrafficGeneratorMaxDropRate, err = trexClient.MonitorDropRates(ctx, e.testDuration)
-	log.Printf("traffic Generator Max Drop Rate: %fBps", results.TrafficGeneratorMaxDropRate)
+	trafficGeneratorMaxDropRate, err := trexClient.MonitorDropRates(ctx, e.testDuration)
+	log.Printf("traffic Generator Max Drop Rate: %fBps", trafficGeneratorMaxDropRate)
 	if err != nil {
 		return status.Results{}, err
 	}
@@ -154,6 +154,8 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 	log.Printf("traffic Generator port %d Packet output errors: %d", trafficSourcePort, results.TrafficGeneratorOutErrorPackets)
 	results.TrafficGeneratorInErrorPackets = trafficGeneratorDstPortStats.Result.Ierrors
 	log.Printf("traffic Generator port %d Packet output errors: %d", trafficDestPort, results.TrafficGeneratorInErrorPackets)
+	results.TrafficGeneratorTxPackets = trafficGeneratorSrcPortStats.Result.Opackets
+	log.Printf("traffic Generator packet sent via port %d: %d", trafficSourcePort, results.TrafficGeneratorTxPackets)
 
 	log.Printf("get testpmd stats in DPDK VMI...")
 	var testPmdStats [testPmdPortStatsSize]testPmdPortStats
@@ -163,6 +165,9 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 	results.DPDKPacketsRxDropped = testPmdStats[testPmdPortStatsSummary].RXDropped
 	results.DPDKPacketsTxDropped = testPmdStats[testPmdPortStatsSummary].TXDropped
 	log.Printf("DPDK side packets Dropped: Rx: %d; TX: %d", results.DPDKPacketsRxDropped, results.DPDKPacketsTxDropped)
+	results.DPDKRxTestPackets =
+		testPmdStats[testPmdPortStatsSummary].RXTotal - testPmdStats[testPmdStatsPort0].RXPackets - testPmdStats[testPmdStatsPort1].TXPackets
+	log.Printf("DPDK side test packets received (including dropped, excluding non-related packets): %d", results.DPDKRxTestPackets)
 
 	return results, nil
 }
