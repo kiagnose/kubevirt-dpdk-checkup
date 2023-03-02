@@ -87,12 +87,12 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 		e.vmiWestNICPCIAddress, e.vmiWestEthPeerMACAddress, e.verbosePrintsEnabled)
 
 	log.Printf("Starting testpmd in VMI...")
-	if err := testpmdConsole.RunTestpmd(vmiUnderTestName); err != nil {
+	if err := testpmdConsole.Run(vmiUnderTestName); err != nil {
 		return status.Results{}, err
 	}
 
 	log.Printf("Clearing testpmd stats in VMI...")
-	if err := testpmdConsole.ClearStatsTestpmd(vmiUnderTestName); err != nil {
+	if err := testpmdConsole.ClearStats(vmiUnderTestName); err != nil {
 		return status.Results{}, err
 	}
 
@@ -108,16 +108,16 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 	log.Printf("traffic Generator packet sent via port %d: %d", trafficSourcePort, results.TrafficGeneratorTxPackets)
 
 	log.Printf("get testpmd stats in DPDK VMI...")
-	var testPmdStats [testPmdPortStatsSize]TestPmdPortStats
+	var testPmdStats [StatsArraySize]PortStats
 	var err error
-	if testPmdStats, err = testpmdConsole.GetStatsTestpmd(vmiUnderTestName); err != nil {
+	if testPmdStats, err = testpmdConsole.GetStats(vmiUnderTestName); err != nil {
 		return status.Results{}, err
 	}
-	results.DPDKPacketsRxDropped = testPmdStats[testPmdPortStatsSummary].RXDropped
-	results.DPDKPacketsTxDropped = testPmdStats[testPmdPortStatsSummary].TXDropped
+	results.DPDKPacketsRxDropped = testPmdStats[StatsSummary].RXDropped
+	results.DPDKPacketsTxDropped = testPmdStats[StatsSummary].TXDropped
 	log.Printf("DPDK side packets Dropped: Rx: %d; TX: %d", results.DPDKPacketsRxDropped, results.DPDKPacketsTxDropped)
 	results.DPDKRxTestPackets =
-		testPmdStats[testPmdPortStatsSummary].RXTotal - testPmdStats[testPmdStatsPort0].TXPackets - testPmdStats[testPmdStatsPort1].RXPackets
+		testPmdStats[StatsSummary].RXTotal - testPmdStats[StatsPort0].TXPackets - testPmdStats[StatsPort1].RXPackets
 	log.Printf("DPDK side test packets received (including dropped, excluding non-related packets): %d", results.DPDKRxTestPackets)
 
 	return results, nil
