@@ -64,7 +64,7 @@ const (
 )
 
 type Executor struct {
-	client                           vmiSerialConsoleClient
+	vmiSerialClient                  vmiSerialConsoleClient
 	podClient                        podExecuteClient
 	namespace                        string
 	vmiUsername                      string
@@ -82,7 +82,7 @@ const testpmdPrompt = "testpmd> "
 
 func New(client vmiSerialConsoleClient, podClient podExecuteClient, namespace string, cfg config.Config) Executor {
 	return Executor{
-		client:                           client,
+		vmiSerialClient:                  client,
 		podClient:                        podClient,
 		namespace:                        namespace,
 		vmiUsername:                      config.VMIUsername,
@@ -98,7 +98,7 @@ func New(client vmiSerialConsoleClient, podClient podExecuteClient, namespace st
 }
 
 func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerName string) (status.Results, error) {
-	if err := console.LoginToCentOS(e.client, e.namespace, vmiName, e.vmiUsername, e.vmiPassword); err != nil {
+	if err := console.LoginToCentOS(e.vmiSerialClient, e.namespace, vmiName, e.vmiUsername, e.vmiPassword); err != nil {
 		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, vmiName, err)
 	}
 
@@ -178,7 +178,7 @@ func (e Executor) runTestpmd(vmiName string) error {
 
 	testpmdCmd := buildTestpmdCmd(e.vmiEastNICPCIAddress, e.vmiWestNICPCIAddress, e.vmiEastEthPeerMACAddress, e.vmiWestEthPeerMACAddress)
 
-	resp, err := console.SafeExpectBatchWithResponse(e.client, e.namespace, vmiName,
+	resp, err := console.SafeExpectBatchWithResponse(e.vmiSerialClient, e.namespace, vmiName,
 		[]expect.Batcher{
 			&expect.BSnd{S: testpmdCmd + "\n"},
 			&expect.BExp{R: testpmdPrompt},
@@ -202,7 +202,7 @@ func (e Executor) clearStatsTestpmd(vmiName string) error {
 
 	const testpmdCmd = "clear fwd stats all"
 
-	_, err := console.SafeExpectBatchWithResponse(e.client, e.namespace, vmiName,
+	_, err := console.SafeExpectBatchWithResponse(e.vmiSerialClient, e.namespace, vmiName,
 		[]expect.Batcher{
 			&expect.BSnd{S: testpmdCmd + "\n"},
 			&expect.BExp{R: testpmdPrompt},
@@ -224,7 +224,7 @@ func (e Executor) getStatsTestpmd(vmiName string) ([testPmdPortStatsSize]TestPmd
 
 	testpmdCmd := "show fwd stats all"
 
-	resp, err := console.SafeExpectBatchWithResponse(e.client, e.namespace, vmiName,
+	resp, err := console.SafeExpectBatchWithResponse(e.vmiSerialClient, e.namespace, vmiName,
 		[]expect.Batcher{
 			&expect.BSnd{S: testpmdCmd + "\n"},
 			&expect.BExp{R: testpmdPromt},
