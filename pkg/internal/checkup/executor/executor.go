@@ -80,13 +80,16 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 
 	trexClient := trex.NewClient(e.podClient, e.namespace, podName, podContainerName, e.verbosePrintsEnabled)
 
+	testpmdConsole := NewTestpmdConsole(e.vmiSerialClient, e.namespace, e.vmiEastNICPCIAddress, e.vmiEastEthPeerMACAddress,
+		e.vmiWestNICPCIAddress, e.vmiWestEthPeerMACAddress, e.verbosePrintsEnabled)
+
 	log.Printf("Starting testpmd in VMI...")
-	if err := e.runTestpmd(vmiName); err != nil {
+	if err := testpmdConsole.runTestpmd(vmiName); err != nil {
 		return status.Results{}, err
 	}
 
 	log.Printf("Clearing testpmd stats in VMI...")
-	if err := e.clearStatsTestpmd(vmiName); err != nil {
+	if err := testpmdConsole.clearStatsTestpmd(vmiName); err != nil {
 		return status.Results{}, err
 	}
 
@@ -136,7 +139,7 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 
 	log.Printf("get testpmd stats in DPDK VMI...")
 	var testPmdStats [testPmdPortStatsSize]TestPmdPortStats
-	if testPmdStats, err = e.getStatsTestpmd(vmiName); err != nil {
+	if testPmdStats, err = testpmdConsole.getStatsTestpmd(vmiName); err != nil {
 		return status.Results{}, err
 	}
 	results.DPDKPacketsRxDropped = testPmdStats[testPmdPortStatsSummary].RXDropped
