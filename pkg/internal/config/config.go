@@ -23,6 +23,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"net"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -30,29 +31,29 @@ import (
 )
 
 const (
-	NetworkAttachmentDefinitionNameParamName            = "networkAttachmentDefinitionName"
-	TrafficGeneratorRuntimeClassNameParamName           = "trafficGeneratorRuntimeClassName"
-	TrafficGeneratorNodeLabelSelectorParamName          = "trafficGeneratorNodeLabelSelector"
-	DPDKNodeLabelSelectorParamName                      = "DPDKNodeLabelSelector"
-	TrafficGeneratorPacketsPerSecondInMillionsParamName = "trafficGeneratorPacketsPerSecondInMillions"
-	PortBandwidthGBParamName                            = "portBandwidthGB"
-	TrafficGeneratorEastMacAddressParamName             = "trafficGeneratorEastMacAddress"
-	TrafficGeneratorWestMacAddressParamName             = "trafficGeneratorWestMacAddress"
-	DPDKEastMacAddressParamName                         = "DPDKEastMacAddress"
-	DPDKWestMacAddressParamName                         = "DPDKWestMacAddress"
-	TrafficGeneratorImageParamName                      = "trafficGeneratorImage"
-	VMContainerDiskImageParamName                       = "vmContainerDiskImage"
-	TestDurationParamName                               = "testDuration"
-	VerboseParamName                                    = "verbose"
+	NetworkAttachmentDefinitionNameParamName   = "networkAttachmentDefinitionName"
+	TrafficGeneratorRuntimeClassNameParamName  = "trafficGeneratorRuntimeClassName"
+	TrafficGeneratorNodeLabelSelectorParamName = "trafficGeneratorNodeLabelSelector"
+	DPDKNodeLabelSelectorParamName             = "DPDKNodeLabelSelector"
+	TrafficGeneratorPacketsPerSecondParamName  = "trafficGeneratorPacketsPerSecond"
+	PortBandwidthGBParamName                   = "portBandwidthGB"
+	TrafficGeneratorEastMacAddressParamName    = "trafficGeneratorEastMacAddress"
+	TrafficGeneratorWestMacAddressParamName    = "trafficGeneratorWestMacAddress"
+	DPDKEastMacAddressParamName                = "DPDKEastMacAddress"
+	DPDKWestMacAddressParamName                = "DPDKWestMacAddress"
+	TrafficGeneratorImageParamName             = "trafficGeneratorImage"
+	VMContainerDiskImageParamName              = "vmContainerDiskImage"
+	TestDurationParamName                      = "testDuration"
+	VerboseParamName                           = "verbose"
 )
 
 const (
-	TrafficGeneratorPacketsPerSecondInMillionsDefault = 14
-	PortBandwidthGBDefault                            = 10
-	TrafficGeneratorImageDefault                      = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main"
-	VMContainerDiskImageDefault                       = "quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main"
-	TestDurationDefault                               = 5 * time.Minute
-	VerboseDefault                                    = false
+	TrafficGeneratorPacketsPerSecondDefault = "14m"
+	PortBandwidthGBDefault                  = 10
+	TrafficGeneratorImageDefault            = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main"
+	VMContainerDiskImageDefault             = "quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main"
+	TestDurationDefault                     = 5 * time.Minute
+	VerboseDefault                          = false
 
 	TrafficGeneratorMacAddressPrefixOctet = 0x50
 	DPDKMacAddressPrefixOctet             = 0x60
@@ -69,37 +70,37 @@ const (
 )
 
 var (
-	ErrInvalidNetworkAttachmentDefinitionName            = errors.New("invalid Network-Attachment-Definition Name")
-	ErrInvalidTrafficGeneratorRuntimeClassName           = errors.New("invalid Traffic Generator Runtime class Name")
-	ErrInvalidTrafficGeneratorNodeLabelSelector          = errors.New("invalid Traffic Generator Node Label Selector")
-	ErrInvalidDPDKNodeLabelSelector                      = errors.New("invalid DPDK Node Label Selector")
-	ErrInvalidTrafficGeneratorPacketsPerSecondInMillions = errors.New("invalid Traffic Generator Packets Per Second In Millions")
-	ErrInvalidPortBandwidthGB                            = errors.New("invalid Port Bandwidth [GB]")
-	ErrInvalidTrafficGeneratorEastMacAddress             = errors.New("invalid Traffic Generator East MAC Address")
-	ErrInvalidTrafficGeneratorWestMacAddress             = errors.New("invalid Traffic Generator West MAC Address")
-	ErrInvalidDPDKEastMacAddress                         = errors.New("invalid DPDK East MAC Address")
-	ErrInvalidDPDKWestMacAddress                         = errors.New("invalid DPDK West MAC Address")
-	ErrInvalidTestDuration                               = errors.New("invalid Test Duration")
-	ErrInvalidVerbose                                    = errors.New("invalid Verbose value [true|false]")
+	ErrInvalidNetworkAttachmentDefinitionName   = errors.New("invalid Network-Attachment-Definition Name")
+	ErrInvalidTrafficGeneratorRuntimeClassName  = errors.New("invalid Traffic Generator Runtime class Name")
+	ErrInvalidTrafficGeneratorNodeLabelSelector = errors.New("invalid Traffic Generator Node Label Selector")
+	ErrInvalidDPDKNodeLabelSelector             = errors.New("invalid DPDK Node Label Selector")
+	ErrInvalidTrafficGeneratorPacketsPerSecond  = errors.New("invalid Traffic Generator Packets Per Second")
+	ErrInvalidPortBandwidthGB                   = errors.New("invalid Port Bandwidth [GB]")
+	ErrInvalidTrafficGeneratorEastMacAddress    = errors.New("invalid Traffic Generator East MAC Address")
+	ErrInvalidTrafficGeneratorWestMacAddress    = errors.New("invalid Traffic Generator West MAC Address")
+	ErrInvalidDPDKEastMacAddress                = errors.New("invalid DPDK East MAC Address")
+	ErrInvalidDPDKWestMacAddress                = errors.New("invalid DPDK West MAC Address")
+	ErrInvalidTestDuration                      = errors.New("invalid Test Duration")
+	ErrInvalidVerbose                           = errors.New("invalid Verbose value [true|false]")
 )
 
 type Config struct {
-	PodName                                    string
-	PodUID                                     string
-	TrafficGeneratorRuntimeClassName           string
-	NetworkAttachmentDefinitionName            string
-	TrafficGeneratorNodeLabelSelector          string
-	DPDKNodeLabelSelector                      string
-	TrafficGeneratorPacketsPerSecondInMillions int
-	PortBandwidthGB                            int
-	TrafficGeneratorEastMacAddress             net.HardwareAddr
-	TrafficGeneratorWestMacAddress             net.HardwareAddr
-	DPDKEastMacAddress                         net.HardwareAddr
-	DPDKWestMacAddress                         net.HardwareAddr
-	TrafficGeneratorImage                      string
-	VMContainerDiskImage                       string
-	TestDuration                               time.Duration
-	Verbose                                    bool
+	PodName                           string
+	PodUID                            string
+	TrafficGeneratorRuntimeClassName  string
+	NetworkAttachmentDefinitionName   string
+	TrafficGeneratorNodeLabelSelector string
+	DPDKNodeLabelSelector             string
+	TrafficGeneratorPacketsPerSecond  string
+	PortBandwidthGB                   int
+	TrafficGeneratorEastMacAddress    net.HardwareAddr
+	TrafficGeneratorWestMacAddress    net.HardwareAddr
+	DPDKEastMacAddress                net.HardwareAddr
+	DPDKWestMacAddress                net.HardwareAddr
+	TrafficGeneratorImage             string
+	VMContainerDiskImage              string
+	TestDuration                      time.Duration
+	Verbose                           bool
 }
 
 func New(baseConfig kconfig.Config) (Config, error) {
@@ -110,22 +111,22 @@ func New(baseConfig kconfig.Config) (Config, error) {
 	dpdkEastMacAddressDefault := generateMacAddressWithPresetPrefixAndSuffix(DPDKMacAddressPrefixOctet, EastMacAddressSuffixOctet)
 	dpdkWestMacAddressDefault := generateMacAddressWithPresetPrefixAndSuffix(DPDKMacAddressPrefixOctet, WestMacAddressSuffixOctet)
 	newConfig := Config{
-		PodName:                                    baseConfig.PodName,
-		PodUID:                                     baseConfig.PodUID,
-		NetworkAttachmentDefinitionName:            baseConfig.Params[NetworkAttachmentDefinitionNameParamName],
-		TrafficGeneratorRuntimeClassName:           baseConfig.Params[TrafficGeneratorRuntimeClassNameParamName],
-		TrafficGeneratorNodeLabelSelector:          baseConfig.Params[TrafficGeneratorNodeLabelSelectorParamName],
-		DPDKNodeLabelSelector:                      baseConfig.Params[DPDKNodeLabelSelectorParamName],
-		TrafficGeneratorPacketsPerSecondInMillions: TrafficGeneratorPacketsPerSecondInMillionsDefault,
-		PortBandwidthGB:                            PortBandwidthGBDefault,
-		TrafficGeneratorEastMacAddress:             trafficGeneratorEastMacAddressDefault,
-		TrafficGeneratorWestMacAddress:             trafficGeneratorWestMacAddressDefault,
-		DPDKEastMacAddress:                         dpdkEastMacAddressDefault,
-		DPDKWestMacAddress:                         dpdkWestMacAddressDefault,
-		TrafficGeneratorImage:                      TrafficGeneratorImageDefault,
-		VMContainerDiskImage:                       VMContainerDiskImageDefault,
-		TestDuration:                               TestDurationDefault,
-		Verbose:                                    VerboseDefault,
+		PodName:                           baseConfig.PodName,
+		PodUID:                            baseConfig.PodUID,
+		NetworkAttachmentDefinitionName:   baseConfig.Params[NetworkAttachmentDefinitionNameParamName],
+		TrafficGeneratorRuntimeClassName:  baseConfig.Params[TrafficGeneratorRuntimeClassNameParamName],
+		TrafficGeneratorNodeLabelSelector: baseConfig.Params[TrafficGeneratorNodeLabelSelectorParamName],
+		DPDKNodeLabelSelector:             baseConfig.Params[DPDKNodeLabelSelectorParamName],
+		TrafficGeneratorPacketsPerSecond:  TrafficGeneratorPacketsPerSecondDefault,
+		PortBandwidthGB:                   PortBandwidthGBDefault,
+		TrafficGeneratorEastMacAddress:    trafficGeneratorEastMacAddressDefault,
+		TrafficGeneratorWestMacAddress:    trafficGeneratorWestMacAddressDefault,
+		DPDKEastMacAddress:                dpdkEastMacAddressDefault,
+		DPDKWestMacAddress:                dpdkWestMacAddressDefault,
+		TrafficGeneratorImage:             TrafficGeneratorImageDefault,
+		VMContainerDiskImage:              VMContainerDiskImageDefault,
+		TestDuration:                      TestDurationDefault,
+		Verbose:                           VerboseDefault,
 	}
 
 	if newConfig.NetworkAttachmentDefinitionName == "" {
@@ -149,10 +150,10 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 		}
 	}
 
-	if rawVal := baseConfig.Params[TrafficGeneratorPacketsPerSecondInMillionsParamName]; rawVal != "" {
-		newConfig.TrafficGeneratorPacketsPerSecondInMillions, err = parseNonNegativeInt(rawVal)
+	if rawVal := baseConfig.Params[TrafficGeneratorPacketsPerSecondParamName]; rawVal != "" {
+		newConfig.TrafficGeneratorPacketsPerSecond, err = parseTrafficGeneratorPacketsPerSecond(rawVal)
 		if err != nil {
-			return Config{}, ErrInvalidTrafficGeneratorPacketsPerSecondInMillions
+			return Config{}, ErrInvalidTrafficGeneratorPacketsPerSecond
 		}
 	}
 
@@ -219,18 +220,18 @@ func setMacAddressParams(baseConfig kconfig.Config, newConfig Config) (Config, e
 	return newConfig, nil
 }
 
+func parseTrafficGeneratorPacketsPerSecond(rawVal string) (string, error) {
+	validFormat := regexp.MustCompile(`^[1-9]\d*([km])?$`)
+	if !validFormat.MatchString(rawVal) {
+		return "", errors.New("parameter has invalid format")
+	}
+	return rawVal, nil
+}
+
 func parseNonZeroPositiveInt(rawVal string) (int, error) {
 	val, err := strconv.Atoi(rawVal)
 	if err != nil || val <= 0 {
 		return 0, errors.New("parameter is zero or negative")
-	}
-	return val, nil
-}
-
-func parseNonNegativeInt(rawVal string) (int, error) {
-	val, err := strconv.Atoi(rawVal)
-	if err != nil || val < 0 {
-		return 0, errors.New("parameter is negative")
 	}
 	return val, nil
 }

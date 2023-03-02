@@ -70,8 +70,7 @@ func printConfig(checkupConfig config.Config) {
 	log.Printf("%q: %q", config.TrafficGeneratorRuntimeClassNameParamName, checkupConfig.TrafficGeneratorRuntimeClassName)
 	log.Printf("%q: %q", config.PortBandwidthGBParamName, fmt.Sprintf("%d", checkupConfig.PortBandwidthGB))
 	log.Printf("%q: %q", config.TrafficGeneratorNodeLabelSelectorParamName, checkupConfig.TrafficGeneratorNodeLabelSelector)
-	log.Printf("%q: %q", config.TrafficGeneratorPacketsPerSecondInMillionsParamName,
-		fmt.Sprintf("%d", checkupConfig.TrafficGeneratorPacketsPerSecondInMillions))
+	log.Printf("%q: %q", config.TrafficGeneratorPacketsPerSecondParamName, checkupConfig.TrafficGeneratorPacketsPerSecond)
 	log.Printf("%q: %q", config.DPDKNodeLabelSelectorParamName, checkupConfig.DPDKNodeLabelSelector)
 	log.Printf("%q: %q", config.TrafficGeneratorEastMacAddressParamName, checkupConfig.TrafficGeneratorEastMacAddress)
 	log.Printf("%q: %q", config.TrafficGeneratorWestMacAddressParamName, checkupConfig.TrafficGeneratorWestMacAddress)
