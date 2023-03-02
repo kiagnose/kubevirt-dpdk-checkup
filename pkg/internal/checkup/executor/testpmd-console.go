@@ -74,7 +74,7 @@ func NewTestpmdConsole(vmiSerialClient vmiSerialConsoleClient, namespace, vmiEas
 	}
 }
 
-func (t TestpmdConsole) runTestpmd(vmiName string) error {
+func (t TestpmdConsole) RunTestpmd(vmiName string) error {
 	const batchTimeout = 30 * time.Second
 
 	testpmdCmd := buildTestpmdCmd(t.vmiEastNICPCIAddress, t.vmiWestNICPCIAddress, t.vmiEastEthPeerMACAddress, t.vmiWestEthPeerMACAddress)
@@ -98,7 +98,7 @@ func (t TestpmdConsole) runTestpmd(vmiName string) error {
 	return nil
 }
 
-func (t TestpmdConsole) clearStatsTestpmd(vmiName string) error {
+func (t TestpmdConsole) ClearStatsTestpmd(vmiName string) error {
 	const batchTimeout = 30 * time.Second
 
 	const testpmdCmd = "clear fwd stats all"
@@ -118,7 +118,7 @@ func (t TestpmdConsole) clearStatsTestpmd(vmiName string) error {
 	return nil
 }
 
-func (t TestpmdConsole) getStatsTestpmd(vmiName string) ([testPmdPortStatsSize]TestPmdPortStats, error) {
+func (t TestpmdConsole) GetStatsTestpmd(vmiName string) ([testPmdPortStatsSize]TestPmdPortStats, error) {
 	const batchTimeout = 30 * time.Second
 
 	const testpmdPromt = "testpmd> "
