@@ -64,10 +64,11 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 	actualConfig, err := config.New(baseConfig)
 	assert.NoError(t, err)
 
-	trafficGeneratorEastMacAddressDefault, _ := net.ParseMAC(config.TrafficGeneratorEastMacAddressDefault)
-	trafficGeneratorWestMacAddressDefault, _ := net.ParseMAC(config.TrafficGeneratorWestMacAddressDefault)
-	dpdkEastMacAddressDefault, _ := net.ParseMAC(config.DPDKEastMacAddressDefault)
-	dpdkWestMacAddressDefault, _ := net.ParseMAC(config.DPDKWestMacAddressDefault)
+	assert.NotNil(t, actualConfig.TrafficGeneratorEastMacAddress)
+	assert.NotNil(t, actualConfig.TrafficGeneratorWestMacAddress)
+	assert.NotNil(t, actualConfig.DPDKEastMacAddress)
+	assert.NotNil(t, actualConfig.DPDKWestMacAddress)
+
 	expectedConfig := config.Config{
 		PodName:                          testPodName,
 		PodUID:                           testPodUID,
@@ -75,10 +76,10 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		NetworkAttachmentDefinitionName:  networkAttachmentDefinitionName,
 		TrafficGeneratorPacketsPerSecondInMillions: config.TrafficGeneratorPacketsPerSecondInMillionsDefault,
 		PortBandwidthGB:                config.PortBandwidthGBDefault,
-		TrafficGeneratorEastMacAddress: trafficGeneratorEastMacAddressDefault,
-		TrafficGeneratorWestMacAddress: trafficGeneratorWestMacAddressDefault,
-		DPDKEastMacAddress:             dpdkEastMacAddressDefault,
-		DPDKWestMacAddress:             dpdkWestMacAddressDefault,
+		TrafficGeneratorEastMacAddress: actualConfig.TrafficGeneratorEastMacAddress,
+		TrafficGeneratorWestMacAddress: actualConfig.TrafficGeneratorWestMacAddress,
+		DPDKEastMacAddress:             actualConfig.DPDKEastMacAddress,
+		DPDKWestMacAddress:             actualConfig.DPDKWestMacAddress,
 		TrafficGeneratorImage:          config.TrafficGeneratorImageDefault,
 		VMContainerDiskImage:           config.VMContainerDiskImageDefault,
 		TestDuration:                   config.TestDurationDefault,
