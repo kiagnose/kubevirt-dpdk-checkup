@@ -87,12 +87,12 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 		e.vmiWestNICPCIAddress, e.vmiWestEthPeerMACAddress, e.verbosePrintsEnabled)
 
 	log.Printf("Starting testpmd in VMI...")
-	if err := testpmdConsole.runTestpmd(vmiUnderTestName); err != nil {
+	if err := testpmdConsole.RunTestpmd(vmiUnderTestName); err != nil {
 		return status.Results{}, err
 	}
 
 	log.Printf("Clearing testpmd stats in VMI...")
-	if err := testpmdConsole.clearStatsTestpmd(vmiUnderTestName); err != nil {
+	if err := testpmdConsole.ClearStatsTestpmd(vmiUnderTestName); err != nil {
 		return status.Results{}, err
 	}
 
@@ -110,7 +110,7 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 	log.Printf("get testpmd stats in DPDK VMI...")
 	var testPmdStats [testPmdPortStatsSize]TestPmdPortStats
 	var err error
-	if testPmdStats, err = testpmdConsole.getStatsTestpmd(vmiUnderTestName); err != nil {
+	if testPmdStats, err = testpmdConsole.GetStatsTestpmd(vmiUnderTestName); err != nil {
 		return status.Results{}, err
 	}
 	results.DPDKPacketsRxDropped = testPmdStats[testPmdPortStatsSummary].RXDropped
