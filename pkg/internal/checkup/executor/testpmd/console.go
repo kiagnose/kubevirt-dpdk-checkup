@@ -17,7 +17,7 @@
  *
  */
 
-package executor
+package testpmd
 
 import (
 	"fmt"
@@ -28,8 +28,14 @@ import (
 
 	expect "github.com/google/goexpect"
 
+	"kubevirt.io/client-go/kubecli"
+
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/executor/console"
 )
+
+type vmiSerialConsoleClient interface {
+	VMISerialConsole(namespace, name string, timeout time.Duration) (kubecli.StreamInterface, error)
+}
 
 type TestpmdConsole struct {
 	vmiSerialClient          vmiSerialConsoleClient
