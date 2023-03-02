@@ -28,6 +28,7 @@ import (
 	"kubevirt.io/client-go/kubecli"
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/executor/console"
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/executor/testpmd"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/trex"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/status"
@@ -80,7 +81,7 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 
 	trexClient := trex.NewClient(e.podClient, e.namespace, podName, podContainerName, e.verbosePrintsEnabled)
 
-	testpmdConsole := NewTestpmdConsole(e.vmiSerialClient, e.namespace, e.vmiEastNICPCIAddress, e.vmiEastEthPeerMACAddress,
+	testpmdConsole := testpmd.NewTestpmdConsole(e.vmiSerialClient, e.namespace, e.vmiEastNICPCIAddress, e.vmiEastEthPeerMACAddress,
 		e.vmiWestNICPCIAddress, e.vmiWestEthPeerMACAddress, e.verbosePrintsEnabled)
 
 	log.Printf("Starting testpmd in VMI...")
@@ -138,15 +139,15 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 	log.Printf("traffic Generator packet sent via port %d: %d", trafficSourcePort, results.TrafficGeneratorTxPackets)
 
 	log.Printf("get testpmd stats in DPDK VMI...")
-	var testPmdStats [StatsArraySize]PortStats
+	var testPmdStats [testpmd.StatsArraySize]testpmd.PortStats
 	if testPmdStats, err = testpmdConsole.GetStats(vmiName); err != nil {
 		return status.Results{}, err
 	}
-	results.DPDKPacketsRxDropped = testPmdStats[StatsSummary].RXDropped
-	results.DPDKPacketsTxDropped = testPmdStats[StatsSummary].TXDropped
+	results.DPDKPacketsRxDropped = testPmdStats[testpmd.StatsSummary].RXDropped
+	results.DPDKPacketsTxDropped = testPmdStats[testpmd.StatsSummary].TXDropped
 	log.Printf("DPDK side packets Dropped: Rx: %d; TX: %d", results.DPDKPacketsRxDropped, results.DPDKPacketsTxDropped)
 	results.DPDKRxTestPackets =
-		testPmdStats[StatsSummary].RXTotal - testPmdStats[StatsPort0].TXPackets - testPmdStats[StatsPort1].RXPackets
+		testPmdStats[testpmd.StatsSummary].RXTotal - testPmdStats[testpmd.StatsPort0].TXPackets - testPmdStats[testpmd.StatsPort1].RXPackets
 	log.Printf("DPDK side test packets received (including dropped, excluding non-related packets): %d", results.DPDKRxTestPackets)
 
 	return results, nil
