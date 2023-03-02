@@ -44,6 +44,8 @@ git push --delete upstream <tag_name>
 
 - [ ] Verify that the container images with the proper label exist in the registry:
   - [kubevirt-dpdk-checkup](https://quay.io/repository/kiagnose/kubevirt-dpdk-checkup?tab=tags)
+  - [kubevirt-dpdk-checkup-traffic-gen](https://quay.io/repository/kiagnose/kubevirt-dpdk-checkup-traffic-gen?tab=tags)
+  - [kubevirt-dpdk-checkup-vm](https://quay.io/repository/kiagnose/kubevirt-dpdk-checkup-vm?tab=tags)
 
 ## GitHub Release
 
