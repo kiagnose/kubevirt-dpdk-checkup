@@ -31,6 +31,16 @@ import (
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/executor/console"
 )
 
+type TestpmdConsole struct {
+	vmiSerialClient          vmiSerialConsoleClient
+	namespace                string
+	vmiEastNICPCIAddress     string
+	vmiEastEthPeerMACAddress string
+	vmiWestNICPCIAddress     string
+	vmiWestEthPeerMACAddress string
+	verbosePrintsEnabled     bool
+}
+
 type TestPmdPortStats struct {
 	RXPackets int64
 	RXDropped int64
@@ -51,12 +61,25 @@ const (
 
 const testpmdPrompt = "testpmd> "
 
-func (e Executor) runTestpmd(vmiName string) error {
+func NewTestpmdConsole(vmiSerialClient vmiSerialConsoleClient, namespace, vmiEastNICPCIAddress,
+	vmiEastEthPeerMACAddress, vmiWestNICPCIAddress, vmiWestEthPeerMACAddress string, verbosePrintsEnabled bool) *TestpmdConsole {
+	return &TestpmdConsole{
+		vmiSerialClient:          vmiSerialClient,
+		namespace:                namespace,
+		vmiEastEthPeerMACAddress: vmiEastEthPeerMACAddress,
+		vmiWestEthPeerMACAddress: vmiWestEthPeerMACAddress,
+		vmiEastNICPCIAddress:     vmiEastNICPCIAddress,
+		vmiWestNICPCIAddress:     vmiWestNICPCIAddress,
+		verbosePrintsEnabled:     verbosePrintsEnabled,
+	}
+}
+
+func (t TestpmdConsole) runTestpmd(vmiName string) error {
 	const batchTimeout = 30 * time.Second
 
-	testpmdCmd := buildTestpmdCmd(e.vmiEastNICPCIAddress, e.vmiWestNICPCIAddress, e.vmiEastEthPeerMACAddress, e.vmiWestEthPeerMACAddress)
+	testpmdCmd := buildTestpmdCmd(t.vmiEastNICPCIAddress, t.vmiWestNICPCIAddress, t.vmiEastEthPeerMACAddress, t.vmiWestEthPeerMACAddress)
 
-	resp, err := console.SafeExpectBatchWithResponse(e.vmiSerialClient, e.namespace, vmiName,
+	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, vmiName,
 		[]expect.Batcher{
 			&expect.BSnd{S: testpmdCmd + "\n"},
 			&expect.BExp{R: testpmdPrompt},
@@ -75,12 +98,12 @@ func (e Executor) runTestpmd(vmiName string) error {
 	return nil
 }
 
-func (e Executor) clearStatsTestpmd(vmiName string) error {
+func (t TestpmdConsole) clearStatsTestpmd(vmiName string) error {
 	const batchTimeout = 30 * time.Second
 
 	const testpmdCmd = "clear fwd stats all"
 
-	_, err := console.SafeExpectBatchWithResponse(e.vmiSerialClient, e.namespace, vmiName,
+	_, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, vmiName,
 		[]expect.Batcher{
 			&expect.BSnd{S: testpmdCmd + "\n"},
 			&expect.BExp{R: testpmdPrompt},
@@ -95,14 +118,14 @@ func (e Executor) clearStatsTestpmd(vmiName string) error {
 	return nil
 }
 
-func (e Executor) getStatsTestpmd(vmiName string) ([testPmdPortStatsSize]TestPmdPortStats, error) {
+func (t TestpmdConsole) getStatsTestpmd(vmiName string) ([testPmdPortStatsSize]TestPmdPortStats, error) {
 	const batchTimeout = 30 * time.Second
 
 	const testpmdPromt = "testpmd> "
 
 	testpmdCmd := "show fwd stats all"
 
-	resp, err := console.SafeExpectBatchWithResponse(e.vmiSerialClient, e.namespace, vmiName,
+	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, vmiName,
 		[]expect.Batcher{
 			&expect.BSnd{S: testpmdCmd + "\n"},
 			&expect.BExp{R: testpmdPromt},
@@ -114,7 +137,7 @@ func (e Executor) getStatsTestpmd(vmiName string) ([testPmdPortStatsSize]TestPmd
 		return [testPmdPortStatsSize]TestPmdPortStats{}, err
 	}
 
-	if e.verbosePrintsEnabled {
+	if t.verbosePrintsEnabled {
 		log.Printf("testpmd stats: %v", resp)
 	}
 
