@@ -45,7 +45,7 @@ type podExecuteClient interface {
 	ExecuteCommandOnPod(ctx context.Context, namespace, name, containerName string, command []string) (stdout, stderr string, err error)
 }
 
-type testPmdPortStats struct {
+type TestPmdPortStats struct {
 	RXPackets int64
 	RXDropped int64
 	RXTotal   int64
@@ -54,10 +54,10 @@ type testPmdPortStats struct {
 	TXTotal   int64
 }
 
-type testPmdStatsIdx int
+type TestPmdStatsIdx int
 
 const (
-	testPmdStatsPort0 testPmdStatsIdx = iota
+	testPmdStatsPort0 TestPmdStatsIdx = iota
 	testPmdStatsPort1
 	testPmdPortStatsSummary
 	testPmdPortStatsSize
@@ -159,7 +159,7 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 	log.Printf("traffic Generator packet sent via port %d: %d", trafficSourcePort, results.TrafficGeneratorTxPackets)
 
 	log.Printf("get testpmd stats in DPDK VMI...")
-	var testPmdStats [testPmdPortStatsSize]testPmdPortStats
+	var testPmdStats [testPmdPortStatsSize]TestPmdPortStats
 	if testPmdStats, err = e.getStatsTestpmd(vmiName); err != nil {
 		return status.Results{}, err
 	}
@@ -217,7 +217,7 @@ func (e Executor) clearStatsTestpmd(vmiName string) error {
 	return nil
 }
 
-func (e Executor) getStatsTestpmd(vmiName string) ([testPmdPortStatsSize]testPmdPortStats, error) {
+func (e Executor) getStatsTestpmd(vmiName string) ([testPmdPortStatsSize]TestPmdPortStats, error) {
 	const batchTimeout = 30 * time.Second
 
 	const testpmdPromt = "testpmd> "
@@ -233,7 +233,7 @@ func (e Executor) getStatsTestpmd(vmiName string) ([testPmdPortStatsSize]testPmd
 	)
 
 	if err != nil {
-		return [testPmdPortStatsSize]testPmdPortStats{}, err
+		return [testPmdPortStatsSize]TestPmdPortStats{}, err
 	}
 
 	if e.verbosePrintsEnabled {
@@ -266,8 +266,8 @@ func findStringLineIndex(lines []string, substring string) int {
 	return len(lines)
 }
 
-func parseTestpmdStats(input string) ([testPmdPortStatsSize]testPmdPortStats, error) {
-	var statistics [testPmdPortStatsSize]testPmdPortStats
+func parseTestpmdStats(input string) ([testPmdPortStatsSize]TestPmdPortStats, error) {
+	var statistics [testPmdPortStatsSize]TestPmdPortStats
 	const (
 		port0SectionStart   = "Forward statistics for port 0"
 		port0SectionEnd     = "----------------------------------------------------------------------------"
@@ -282,18 +282,18 @@ func parseTestpmdStats(input string) ([testPmdPortStatsSize]testPmdPortStats, er
 	for statsIdx := range startSections {
 		sectionString, err := extractSectionStatistics(input, startSections[statsIdx], endSections[statsIdx])
 		if err != nil {
-			return [testPmdPortStatsSize]testPmdPortStats{}, fmt.Errorf("failed parsing section on port %d: %w", statsIdx, err)
+			return [testPmdPortStatsSize]TestPmdPortStats{}, fmt.Errorf("failed parsing section on port %d: %w", statsIdx, err)
 		}
 		err = parseTestpmdStatsSection(&statistics[statsIdx], sectionString)
 		if err != nil {
-			return [testPmdPortStatsSize]testPmdPortStats{}, err
+			return [testPmdPortStatsSize]TestPmdPortStats{}, err
 		}
 	}
 
 	return statistics, nil
 }
 
-func parseTestpmdStatsSection(stats *testPmdPortStats, section string) error {
+func parseTestpmdStatsSection(stats *TestPmdPortStats, section string) error {
 	const (
 		RXPacketsIndex = 1
 		RXDroppedIndex = 3
