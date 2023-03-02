@@ -84,12 +84,12 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 		e.vmiWestNICPCIAddress, e.vmiWestEthPeerMACAddress, e.verbosePrintsEnabled)
 
 	log.Printf("Starting testpmd in VMI...")
-	if err := testpmdConsole.RunTestpmd(vmiName); err != nil {
+	if err := testpmdConsole.Run(vmiName); err != nil {
 		return status.Results{}, err
 	}
 
 	log.Printf("Clearing testpmd stats in VMI...")
-	if err := testpmdConsole.ClearStatsTestpmd(vmiName); err != nil {
+	if err := testpmdConsole.ClearStats(vmiName); err != nil {
 		return status.Results{}, err
 	}
 
@@ -138,15 +138,15 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 	log.Printf("traffic Generator packet sent via port %d: %d", trafficSourcePort, results.TrafficGeneratorTxPackets)
 
 	log.Printf("get testpmd stats in DPDK VMI...")
-	var testPmdStats [testPmdPortStatsSize]TestPmdPortStats
-	if testPmdStats, err = testpmdConsole.GetStatsTestpmd(vmiName); err != nil {
+	var testPmdStats [StatsArraySize]PortStats
+	if testPmdStats, err = testpmdConsole.GetStats(vmiName); err != nil {
 		return status.Results{}, err
 	}
-	results.DPDKPacketsRxDropped = testPmdStats[testPmdPortStatsSummary].RXDropped
-	results.DPDKPacketsTxDropped = testPmdStats[testPmdPortStatsSummary].TXDropped
+	results.DPDKPacketsRxDropped = testPmdStats[StatsSummary].RXDropped
+	results.DPDKPacketsTxDropped = testPmdStats[StatsSummary].TXDropped
 	log.Printf("DPDK side packets Dropped: Rx: %d; TX: %d", results.DPDKPacketsRxDropped, results.DPDKPacketsTxDropped)
 	results.DPDKRxTestPackets =
-		testPmdStats[testPmdPortStatsSummary].RXTotal - testPmdStats[testPmdStatsPort0].TXPackets - testPmdStats[testPmdStatsPort1].RXPackets
+		testPmdStats[StatsSummary].RXTotal - testPmdStats[StatsPort0].TXPackets - testPmdStats[StatsPort1].RXPackets
 	log.Printf("DPDK side test packets received (including dropped, excluding non-related packets): %d", results.DPDKRxTestPackets)
 
 	return results, nil
