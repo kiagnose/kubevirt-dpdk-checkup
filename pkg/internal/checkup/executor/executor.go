@@ -60,7 +60,7 @@ const (
 )
 
 type Executor struct {
-	client                           vmiSerialConsoleClient
+	vmiSerialClient                  vmiSerialConsoleClient
 	namespace                        string
 	vmiUsername                      string
 	vmiPassword                      string
@@ -77,7 +77,7 @@ const testpmdPrompt = "testpmd> "
 
 func New(client vmiSerialConsoleClient, namespace string, cfg config.Config) Executor {
 	return Executor{
-		client:                           client,
+		vmiSerialClient:                  client,
 		namespace:                        namespace,
 		vmiUsername:                      config.VMIUsername,
 		vmiPassword:                      config.VMIPassword,
@@ -93,12 +93,12 @@ func New(client vmiSerialConsoleClient, namespace string, cfg config.Config) Exe
 
 func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMIName string) (status.Results, error) {
 	log.Printf("Login to VMI under test...")
-	if err := console.LoginToCentOS(e.client, e.namespace, vmiUnderTestName, e.vmiUsername, e.vmiPassword); err != nil {
+	if err := console.LoginToCentOS(e.vmiSerialClient, e.namespace, vmiUnderTestName, e.vmiUsername, e.vmiPassword); err != nil {
 		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, vmiUnderTestName, err)
 	}
 
 	log.Printf("Login to traffic generator...")
-	if err := console.LoginToCentOS(e.client, e.namespace, trafficGenVMIName, e.vmiUsername, e.vmiPassword); err != nil {
+	if err := console.LoginToCentOS(e.vmiSerialClient, e.namespace, trafficGenVMIName, e.vmiUsername, e.vmiPassword); err != nil {
 		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
 	}
 
@@ -149,7 +149,7 @@ func (e Executor) runTestpmd(vmiName string) error {
 
 	testpmdCmd := buildTestpmdCmd(e.vmiEastNICPCIAddress, e.vmiWestNICPCIAddress, e.vmiEastEthPeerMACAddress, e.vmiWestEthPeerMACAddress)
 
-	resp, err := console.SafeExpectBatchWithResponse(e.client, e.namespace, vmiName,
+	resp, err := console.SafeExpectBatchWithResponse(e.vmiSerialClient, e.namespace, vmiName,
 		[]expect.Batcher{
 			&expect.BSnd{S: testpmdCmd + "\n"},
 			&expect.BExp{R: testpmdPrompt},
@@ -173,7 +173,7 @@ func (e Executor) clearStatsTestpmd(vmiName string) error {
 
 	const testpmdCmd = "clear fwd stats all"
 
-	_, err := console.SafeExpectBatchWithResponse(e.client, e.namespace, vmiName,
+	_, err := console.SafeExpectBatchWithResponse(e.vmiSerialClient, e.namespace, vmiName,
 		[]expect.Batcher{
 			&expect.BSnd{S: testpmdCmd + "\n"},
 			&expect.BExp{R: testpmdPrompt},
@@ -195,7 +195,7 @@ func (e Executor) getStatsTestpmd(vmiName string) ([testPmdPortStatsSize]TestPmd
 
 	testpmdCmd := "show fwd stats all"
 
-	resp, err := console.SafeExpectBatchWithResponse(e.client, e.namespace, vmiName,
+	resp, err := console.SafeExpectBatchWithResponse(e.vmiSerialClient, e.namespace, vmiName,
 		[]expect.Batcher{
 			&expect.BSnd{S: testpmdCmd + "\n"},
 			&expect.BExp{R: testpmdPromt},
