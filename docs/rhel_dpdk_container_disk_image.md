@@ -1,6 +1,6 @@
 # Building RHEL DPDK VM ContainerDisk Image
 
-Create a new RHEL 8.7 virtual machine, with at least the following specifications:
+Create a new RHEL 9.1 virtual machine, with at least the following specifications:
 
 - 2 CPU Cores
 - 4 GiB RAM
@@ -8,7 +8,7 @@ Create a new RHEL 8.7 virtual machine, with at least the following specification
 
 In order to build the ContainerDisk image, the solution uses a pipeline of:
 
-- [image-builder](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html-single/composing_a_customized_rhel_system_image/index)
+- [image-builder](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html-single/composing_a_customized_rhel_system_image/index)
 - [virt-customize](https://www.libguestfs.org/virt-customize.1.html)
 - [podman](https://podman.io)
 
@@ -26,7 +26,7 @@ sudo subscription-manager register
 ## Dependencies Installation
 
 ```bash
-sudo dnf install libguestfs-tools
+sudo dnf install guestfs-tools
 sudo dnf install podman
 sudo dnf install osbuild-composer composer-cli bash-completion
 sudo systemctl enable --now osbuild-composer.socket
@@ -46,7 +46,7 @@ Verify that the image builder is working:
 composer-cli status show
 ```
 
-Verify that you can use RHEL 8.7 distro:
+Verify that you can use RHEL 9.1 distro:
 
 ```bash
 composer-cli distros list
@@ -61,7 +61,7 @@ cat << EOF > dpdk-vm.toml
 name = "dpdk_image"
 description = "Image to use with the DPDK checkup"
 version = "0.0.1"
-distro = "rhel-87"
+distro = "rhel-91"
 
 [[packages]]
 name = "dpdk"
