@@ -24,4 +24,3 @@ grubby --update-kernel=ALL --args="default_hugepagesz=1GB hugepagesz=1G hugepage
 
 echo  isolated_cores=2-7 > /etc/tuned/cpu-partitioning-variables.conf
 tuned-adm profile cpu-partitioning
-echo "options vfio enable_unsafe_noiommu_mode=1" > /etc/modprobe.d/vfio-noiommu.conf
