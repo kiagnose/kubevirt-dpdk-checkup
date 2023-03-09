@@ -19,6 +19,3 @@
 
 driverctl set-override 0000:06:00.0 vfio-pci
 driverctl set-override 0000:07:00.0 vfio-pci
-
-mkdir /mnt/huge
-mount /mnt/huge --source nodev -t hugetlbfs -o pagesize=1GB
