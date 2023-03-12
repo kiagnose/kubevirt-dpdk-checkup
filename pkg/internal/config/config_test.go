@@ -123,14 +123,14 @@ func TestNewShouldApplyUserConfig(t *testing.T) {
 	assert.Equal(t, expectedConfig, actualConfig)
 }
 
-func TestNewShouldFailWhen(t *testing.T) {
-	type failureTestCase struct {
-		description    string
-		key            string
-		faultyKeyValue string
-		expectedError  error
-	}
+type failureTestCase struct {
+	description    string
+	key            string
+	faultyKeyValue string
+	expectedError  error
+}
 
+func TestNewShouldFailWhen(t *testing.T) {
 	testCases := []failureTestCase{
 		{
 			description:    "Traffic Generator Runtimeclass Name is invalid",
@@ -143,6 +143,18 @@ func TestNewShouldFailWhen(t *testing.T) {
 			key:            config.NetworkAttachmentDefinitionNameParamName,
 			faultyKeyValue: "",
 			expectedError:  config.ErrInvalidNetworkAttachmentDefinitionName,
+		},
+		{
+			description:    "trafficGeneratorNodeLabelSelector is missing and DPDKNodeLabelSelector is set",
+			key:            config.TrafficGeneratorNodeLabelSelectorParamName,
+			faultyKeyValue: "",
+			expectedError:  config.ErrIllegalLabelSelectorCombination,
+		},
+		{
+			description:    "DPDKNodeLabelSelector is missing and trafficGeneratorNodeLabelSelector is set",
+			key:            config.DPDKNodeLabelSelectorParamName,
+			faultyKeyValue: "",
+			expectedError:  config.ErrIllegalLabelSelectorCombination,
 		},
 		{
 			description:    "TrafficGeneratorPacketsPerSecond is invalid",
@@ -202,19 +214,23 @@ func TestNewShouldFailWhen(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.description, func(t *testing.T) {
-			faultyUserParams := getValidUserParameters()
-			faultyUserParams[testCase.key] = testCase.faultyKeyValue
-
-			baseConfig := kconfig.Config{
-				PodName: testPodName,
-				PodUID:  testPodUID,
-				Params:  faultyUserParams,
-			}
-
-			_, err := config.New(baseConfig)
-			assert.ErrorIs(t, err, testCase.expectedError)
+			runFailureTest(t, testCase)
 		})
 	}
+}
+
+func runFailureTest(t *testing.T, testCase failureTestCase) {
+	faultyUserParams := getValidUserParameters()
+	faultyUserParams[testCase.key] = testCase.faultyKeyValue
+
+	baseConfig := kconfig.Config{
+		PodName: testPodName,
+		PodUID:  testPodUID,
+		Params:  faultyUserParams,
+	}
+
+	_, err := config.New(baseConfig)
+	assert.ErrorIs(t, err, testCase.expectedError)
 }
 
 func getValidUserParameters() map[string]string {

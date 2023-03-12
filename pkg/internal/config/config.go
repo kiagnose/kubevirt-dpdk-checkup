@@ -70,18 +70,18 @@ const (
 )
 
 var (
-	ErrInvalidNetworkAttachmentDefinitionName   = errors.New("invalid Network-Attachment-Definition Name")
-	ErrInvalidTrafficGeneratorRuntimeClassName  = errors.New("invalid Traffic Generator Runtime class Name")
-	ErrInvalidTrafficGeneratorNodeLabelSelector = errors.New("invalid Traffic Generator Node Label Selector")
-	ErrInvalidDPDKNodeLabelSelector             = errors.New("invalid DPDK Node Label Selector")
-	ErrInvalidTrafficGeneratorPacketsPerSecond  = errors.New("invalid Traffic Generator Packets Per Second")
-	ErrInvalidPortBandwidthGB                   = errors.New("invalid Port Bandwidth [GB]")
-	ErrInvalidTrafficGeneratorEastMacAddress    = errors.New("invalid Traffic Generator East MAC Address")
-	ErrInvalidTrafficGeneratorWestMacAddress    = errors.New("invalid Traffic Generator West MAC Address")
-	ErrInvalidDPDKEastMacAddress                = errors.New("invalid DPDK East MAC Address")
-	ErrInvalidDPDKWestMacAddress                = errors.New("invalid DPDK West MAC Address")
-	ErrInvalidTestDuration                      = errors.New("invalid Test Duration")
-	ErrInvalidVerbose                           = errors.New("invalid Verbose value [true|false]")
+	ErrInvalidNetworkAttachmentDefinitionName  = errors.New("invalid Network-Attachment-Definition Name")
+	ErrInvalidTrafficGeneratorRuntimeClassName = errors.New("invalid Traffic Generator Runtime class Name")
+	ErrIllegalLabelSelectorCombination         = errors.New("illegal Traffic Generator and DPDK Node " +
+		"Label Selector combination")
+	ErrInvalidTrafficGeneratorPacketsPerSecond = errors.New("invalid Traffic Generator Packets Per Second")
+	ErrInvalidPortBandwidthGB                  = errors.New("invalid Port Bandwidth [GB]")
+	ErrInvalidTrafficGeneratorEastMacAddress   = errors.New("invalid Traffic Generator East MAC Address")
+	ErrInvalidTrafficGeneratorWestMacAddress   = errors.New("invalid Traffic Generator West MAC Address")
+	ErrInvalidDPDKEastMacAddress               = errors.New("invalid DPDK East MAC Address")
+	ErrInvalidDPDKWestMacAddress               = errors.New("invalid DPDK West MAC Address")
+	ErrInvalidTestDuration                     = errors.New("invalid Test Duration")
+	ErrInvalidVerbose                          = errors.New("invalid Verbose value [true|false]")
 )
 
 type Config struct {
@@ -129,15 +129,17 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		Verbose:                           VerboseDefault,
 	}
 
-	if newConfig.NetworkAttachmentDefinitionName == "" {
-		return Config{}, ErrInvalidNetworkAttachmentDefinitionName
+	newConfig, err := setOptionalParams(baseConfig, newConfig)
+	if err != nil {
+		return Config{}, err
 	}
 
-	if newConfig.TrafficGeneratorRuntimeClassName == "" {
-		return Config{}, ErrInvalidTrafficGeneratorRuntimeClassName
+	err = newConfig.validate()
+	if err != nil {
+		return Config{}, err
 	}
 
-	return setOptionalParams(baseConfig, newConfig)
+	return newConfig, nil
 }
 
 func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, error) {
@@ -247,4 +249,21 @@ func generateMacAddressWithPresetPrefixAndSuffix(prefixOctet, suffixOctet byte) 
 	address[prefixOctetIdx] = prefixOctet
 	address[suffixOctetIdx] = suffixOctet
 	return address
+}
+
+func (c Config) validate() error {
+	if c.NetworkAttachmentDefinitionName == "" {
+		return ErrInvalidNetworkAttachmentDefinitionName
+	}
+
+	if c.TrafficGeneratorRuntimeClassName == "" {
+		return ErrInvalidTrafficGeneratorRuntimeClassName
+	}
+
+	if c.TrafficGeneratorNodeLabelSelector == "" && c.DPDKNodeLabelSelector != "" ||
+		c.TrafficGeneratorNodeLabelSelector != "" && c.DPDKNodeLabelSelector == "" {
+		return ErrIllegalLabelSelectorCombination
+	}
+
+	return nil
 }
