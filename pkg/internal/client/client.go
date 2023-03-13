@@ -22,6 +22,8 @@ package client
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -74,6 +76,24 @@ func (c *Client) GetPod(ctx context.Context, namespace, name string) (*corev1.Po
 
 func (c *Client) DeletePod(ctx context.Context, namespace, name string) error {
 	return c.KubevirtClient.CoreV1().Pods(namespace).Delete(ctx, name, metav1.DeleteOptions{})
+}
+
+func (c *Client) GetPodLogsByLabel(ctx context.Context, namespace, labelSelector string) (string, error) {
+	podList, err := c.KubevirtClient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
+	if err != nil {
+		return "", err
+	}
+
+	logs := strings.Builder{}
+	for podIdx := range podList.Items {
+		rawLogs, err := c.KubevirtClient.CoreV1().Pods(namespace).GetLogs(podList.Items[podIdx].Name,
+			&corev1.PodLogOptions{}).DoRaw(context.Background())
+		if err != nil {
+			return "", err
+		}
+		logs.WriteString(fmt.Sprintf("Pod %s/%s Logs:\n%s\n", podList.Items[podIdx].Namespace, podList.Items[podIdx].Name, string(rawLogs)))
+	}
+	return logs.String(), nil
 }
 
 func (c *Client) CreateVirtualMachineInstance(ctx context.Context,

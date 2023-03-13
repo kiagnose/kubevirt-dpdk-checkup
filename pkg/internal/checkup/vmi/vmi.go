@@ -236,6 +236,19 @@ func WithCloudInitNoCloudVolume(name, userData string) Option {
 	}
 }
 
+// WithLabels adds the given labels.
+func WithLabels(labels map[string]string) Option {
+	return func(vmi *kvcorev1.VirtualMachineInstance) {
+		if vmi.ObjectMeta.Labels == nil {
+			vmi.ObjectMeta.Labels = map[string]string{}
+		}
+
+		for key, val := range labels {
+			vmi.ObjectMeta.Labels[key] = val
+		}
+	}
+}
+
 func Pointer[T any](v T) *T {
 	return &v
 }
