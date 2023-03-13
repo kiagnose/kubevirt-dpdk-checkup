@@ -52,6 +52,9 @@ rules:
   - apiGroups: [ "" ]
     resources: [ "pods/exec" ]
     verbs: [ "create" ]
+  - apiGroups: [ "k8s.cni.cncf.io" ]
+    resources: [ "network-attachment-definitions" ]
+    verbs: [ "get" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
