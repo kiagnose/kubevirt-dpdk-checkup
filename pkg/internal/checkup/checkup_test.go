@@ -26,10 +26,12 @@ import (
 	"strings"
 	"testing"
 
+	networkv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
 	assert "github.com/stretchr/testify/require"
 
 	k8scorev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	kvcorev1 "kubevirt.io/api/core/v1"
@@ -333,6 +335,16 @@ func (cs *clientStub) GetPod(_ context.Context, namespace, name string) (*k8scor
 		return nil, k8serrors.NewNotFound(schema.GroupResource{Group: "", Resource: "pods"}, name)
 	}
 	return pod, nil
+}
+
+func (cs *clientStub) GetNetworkAttachmentDefinition(_ context.Context, _, _ string) (*networkv1.NetworkAttachmentDefinition, error) {
+	return &networkv1.NetworkAttachmentDefinition{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"k8s.v1.cni.cncf.io/resourceName": "openshift.io/dpdk-net",
+			},
+		},
+	}, nil
 }
 
 func (cs *clientStub) TrafficGeneratorPodName() string {

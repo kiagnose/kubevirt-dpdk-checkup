@@ -51,6 +51,7 @@ type kubeVirtVMIClient interface {
 	CreatePod(ctx context.Context, namespace string, pod *k8scorev1.Pod) (*k8scorev1.Pod, error)
 	DeletePod(ctx context.Context, namespace, name string) error
 	GetPod(ctx context.Context, namespace, name string) (*k8scorev1.Pod, error)
+	GetNetworkAttachmentDefinition(ctx context.Context, namespace, name string) (*networkv1.NetworkAttachmentDefinition, error)
 }
 
 type testExecutor interface {
@@ -248,7 +249,12 @@ func (c *Checkup) createTrafficGeneratorPod(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	trafficGeneratorPod := newTrafficGeneratorPod(c.params, secondaryNetworksRequest)
+
+	pciDevicesVarName, err := c.getPCIDevicesVarName(ctx)
+	if err != nil {
+		return err
+	}
+	trafficGeneratorPod := newTrafficGeneratorPod(c.params, secondaryNetworksRequest, pciDevicesVarName)
 
 	log.Printf("Creating traffic generator Pod %s..", ObjectFullName(c.namespace, trafficGeneratorPod.Name))
 	c.trafficGeneratorPod, err = c.client.CreatePod(ctx, c.namespace, trafficGeneratorPod)
@@ -257,6 +263,32 @@ func (c *Checkup) createTrafficGeneratorPod(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (c *Checkup) getPCIDevicesVarName(ctx context.Context) (string, error) {
+	netAttachDef, err := c.client.GetNetworkAttachmentDefinition(ctx, c.namespace, c.params.NetworkAttachmentDefinitionName)
+	if err != nil {
+		return "", err
+	}
+
+	const resourceNameAnnotationKey = "k8s.v1.cni.cncf.io/resourceName"
+	rawResourceName, exists := netAttachDef.Annotations[resourceNameAnnotationKey]
+	if !exists {
+		return "", fmt.Errorf("%q annotation is not found on the network-attachement-definition %q",
+			resourceNameAnnotationKey, ObjectFullName(c.namespace, c.params.NetworkAttachmentDefinitionName))
+	}
+
+	const (
+		pciDevicesVarPrefix    = "PCIDEVICE"
+		pciDevicesVarDelimiter = "_"
+	)
+
+	// build the PCI Device env var naming recipe
+	// https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin#pod-device-information
+	pciDevicesVarName := pciDevicesVarPrefix + pciDevicesVarDelimiter + rawResourceName
+	pciDevicesVarName = strings.ReplaceAll(pciDevicesVarName, ".", pciDevicesVarDelimiter)
+	pciDevicesVarName = strings.ReplaceAll(pciDevicesVarName, "/", pciDevicesVarDelimiter)
+	return strings.ToUpper(pciDevicesVarName), nil
 }
 
 func (c *Checkup) waitForPodRunningStatus(ctx context.Context, namespace, name string) error {
@@ -376,7 +408,7 @@ func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 	)
 }
 
-func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest string) *k8scorev1.Pod {
+func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest, pciDevicesVarName string) *k8scorev1.Pod {
 	const (
 		trafficGeneratorPodCPUCount            = 8
 		trafficGeneratorPodNumOfNonTrafficCPUs = 2
@@ -391,6 +423,7 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		srcEastMACAddressParamName = "SRC_EAST_MAC_ADDRESS"
 		dstWestMACAddressParamName = "DST_WEST_MAC_ADDRESS"
 		dstEastMACAddressParamName = "DST_EAST_MAC_ADDRESS"
+		PCIDeviceVarParamName      = "PCI_DEVICES_VAR_NAME"
 	)
 
 	envVars := map[string]string{
@@ -402,6 +435,7 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		dstWestMACAddressParamName: checkupConfig.DPDKWestMacAddress.String(),
 		dstEastMACAddressParamName: checkupConfig.DPDKEastMacAddress.String(),
 		verboseParamName:           strings.ToUpper(strconv.FormatBool(checkupConfig.Verbose)),
+		PCIDeviceVarParamName:      pciDevicesVarName,
 	}
 	securityContext := pod.NewSecurityContext(int64(0), false,
 		[]k8scorev1.Capability{"IPC_LOCK", "SYS_RESOURCE", "NET_RAW", "NET_ADMIN"})
