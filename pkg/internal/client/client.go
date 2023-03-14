@@ -24,6 +24,9 @@ import (
 	"context"
 	"time"
 
+	networkv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
+	netattdefclient "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/client/clientset/versioned/typed/k8s.cni.cncf.io/v1"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -36,6 +39,7 @@ import (
 
 type Client struct {
 	kubecli.KubevirtClient
+	netattdefclient.K8sCniCncfIoV1Interface
 	config *rest.Config
 }
 
@@ -61,7 +65,12 @@ func New() (*Client, error) {
 		return nil, err
 	}
 
-	return &Client{client, config}, nil
+	cniClient, err := netattdefclient.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Client{client, cniClient, config}, nil
 }
 
 func (c *Client) CreatePod(ctx context.Context, namespace string, pod *corev1.Pod) (*corev1.Pod, error) {
@@ -161,6 +170,12 @@ func (c *Client) ExecuteCommandOnPod(ctx context.Context,
 	case <-ctx.Done():
 		return stdout, stderr, ctx.Err()
 	}
+}
+
+func (c *Client) GetNetworkAttachmentDefinition(
+	ctx context.Context,
+	namespace, name string) (*networkv1.NetworkAttachmentDefinition, error) {
+	return c.K8sCniCncfIoV1Interface.NetworkAttachmentDefinitions(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
 func executeCommandOnPodWithOptions(virtCli kubecli.KubevirtClient, clientConfig *rest.Config,

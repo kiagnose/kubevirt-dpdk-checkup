@@ -73,6 +73,8 @@ github.com/json-iterator/go
 ## explicit; go 1.17
 github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io
 github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1
+github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/client/clientset/versioned/scheme
+github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/client/clientset/versioned/typed/k8s.cni.cncf.io/v1
 # github.com/kiagnose/kiagnose v0.2.1-0.20221208132946-95d8c7995fab
 ## explicit; go 1.19
 github.com/kiagnose/kiagnose/kiagnose/config
