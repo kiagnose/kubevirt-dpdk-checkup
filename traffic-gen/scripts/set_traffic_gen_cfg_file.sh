@@ -55,22 +55,9 @@ remove_number() {
 	echo "${new_list}"
 }
 
-get_pci_device_env_var() {
-	local pci_device_env_with_value=$(env | grep "PCIDEVICE_")
-
-	if [ "$(echo "${pci_device_env_with_value}" | wc -l)" != "1" ]; then
-		echo "error: could not find pci device env var"
-		exit 1
-	fi
-
-	local pci_device_env_name="${pci_device_env_with_value%%=*}"
-	echo "${pci_device_env_name}"
-}
-
 set_pci_addresses() {
-	local pci_device_env_name=$(get_pci_device_env_var)
 	# set interfaces
-	IFS=',' read -r -a nics_array <<< "${!pci_device_env_name}"
+	IFS=',' read -r -a nics_array <<< "${!PCI_DEVICES_VAR_NAME}"
 	export PCIDEVICE_NIC_1="\"${nics_array[0]}\""
 	export PCIDEVICE_NIC_2="\"${nics_array[1]}\""
 }
