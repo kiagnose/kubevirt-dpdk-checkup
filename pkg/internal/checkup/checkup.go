@@ -437,6 +437,9 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		verboseParamName:           strings.ToUpper(strconv.FormatBool(checkupConfig.Verbose)),
 		PCIDeviceVarParamName:      pciDevicesVarName,
 	}
+	if checkupConfig.Verbose {
+		log.Printf("envVars: %v", envVars)
+	}
 	securityContext := pod.NewSecurityContext(int64(0), false,
 		[]k8scorev1.Capability{"IPC_LOCK", "SYS_RESOURCE", "NET_RAW", "NET_ADMIN"})
 
