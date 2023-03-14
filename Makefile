@@ -119,6 +119,7 @@ build-vm-image: build-vm-image-builder
       --volume=$(VIRT_BUILDER_CACHE_DIR):/root/.cache/virt-builder:Z \
       --volume=$(VIRT_BUILDER_OUTPUT_DIR):/output:Z \
       --volume=$(CURDIR)/vm/scripts:/root/scripts:Z \
+      --privileged \
       $(REG)/$(ORG)/$(VM_IMAGE_BUILDER_IMAGE_NAME):$(VM_IMAGE_BUILDER_IMAGE_TAG) \
       /root/scripts/build-vm-image
 .PHONY: build-vm-image
