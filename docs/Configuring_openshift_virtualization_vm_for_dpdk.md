@@ -43,9 +43,7 @@ The pod running the VM (a.k.a. the virt-launcher pod) needs to run the DPDK opti
 Since currently Kubevirt does not support setting the runtimeclassName per VM, the change needs to be on a cluster level, by using the [jsonpatch annotations](https://github.com/kubevirt/hyperconverged-cluster-operator/blob/main/docs/cluster-configuration.md#jsonpatch-annotations) on HCO:
 ```bash
 oc annotate --overwrite -n openshift-cnv hco kubevirt-hyperconverged \
-  kubevirt.kubevirt.io/jsonpatch='[{"op": "add", \
-    "path": "/spec/configuration/DefaultRuntimeClassName", \
-    "value": <runtimeclass-name>}]'
+kubevirt.kubevirt.io/jsonpatch='[{"op": "add", "path": "/spec/configuration/defaultRuntimeClass", "value": <runtimeclass-name>}]'
 ```
 > **Note**: 
 > After setting this conifiguration all VMs will be assigned to the default RuntimeClassName.
