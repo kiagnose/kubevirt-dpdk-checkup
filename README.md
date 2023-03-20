@@ -71,23 +71,23 @@ roleRef:
 
 ## Configuration
 
-| Key                                         | Description                                                                                                       | Is Mandatory | Remarks                                                                                                |
-|---------------------------------------------|-------------------------------------------------------------------------------------------------------------------|--------------|--------------------------------------------------------------------------------------------------------|
-| spec.timeout                                | How much time before the checkup will try to close itself                                                         | True         |                                                                                                        |
-| spec.param.networkAttachmentDefinitionName  | NetworkAttachmentDefinition name of the SR-IOV NICs connected                                                     | True         | Assumed to be in the same namespace                                                                    |
-| spec.param.trafficGeneratorRuntimeClassName | [Runtime Class](https://kubernetes.io/docs/concepts/containers/runtime-class/) the traffic generator pod will use | True         |                                                                                                        |
-| spec.param.trafficGeneratorImage            | Traffic generator's container image                                                                               | False        | Defaults to the U/S image https://quay.io/repository/kiagnose/kubevirt-dpdk-checkup-traffic-gen:latest |
-| spec.param.trafficGeneratorNodeSelector     | Node Name on which the traffic generator Pod will be scheduled to                                                 | False        | Assumed to be configured to Nodes that allow DPDK traffic                                              |
-| spec.param.trafficGeneratorPacketsPerSecond | Amount of packets per second. format: <amount>[/k/m] k-kilo; m-million                                            | False        | Defaults to 14m                                                                                        |
-| spec.param.trafficGeneratorEastMacAddress   | MAC address of the NIC connected to the traffic generator pod/VM                                                  | False        | Defaults to a random MAC address of the form: 50:xx:xx:xx:xx:01                                        |
-| spec.param.trafficGeneratorWestMacAddress   | MAC address of the NIC connected to the traffic generator pod/VM                                                  | False        | Defaults to a random MAC address of the form: 50:xx:xx:xx:xx:02                                        |
-| spec.param.vmContainerDiskImage             | Container disk image for the VM                                                                                   | False        | Defaults to https://quay.io/repository/kiagnose/kubevirt-dpdk-checkup-vm:latest                        |
-| spec.param.DPDKLabelSelector                | Node Label of on which the VM shall run                                                                           | False        | Assumed to be configured to Nodes that allow DPDK traffic                                              |
-| spec.param.DPDKEastMacAddress               | MAC address of the NIC connected to the DPDK VM                                                                   | False        | Defaults to a random MAC address of the form: 60:xx:xx:xx:xx:01                                        |
-| spec.param.DPDKWestMacAddress               | MAC address of the NIC connected to the DPDK VM                                                                   | False        | Defaults to a random MAC address of the form: 60:xx:xx:xx:xx:02                                        |
-| spec.param.testDuration                     | How much time will the traffic generator will run                                                                 | False        | Defaults to 5 Minutes                                                                                  |
-| spec.param.portBandwidthGB                  | SR-IOV NIC max bandwidth                                                                                          | False        | Defaults to 10GB                                                                                       |
-| spec.param.verbose                          | Increases checkup's log verbosity                                                                                 | False        | "true" / "false". Defaults to "false"                                                                  |
+| Key                                         | Description                                                                                                       | Is Mandatory | Remarks                                                                             |
+|---------------------------------------------|-------------------------------------------------------------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------|
+| spec.timeout                                | How much time before the checkup will try to close itself                                                         | True         |                                                                                     |
+| spec.param.networkAttachmentDefinitionName  | NetworkAttachmentDefinition name of the SR-IOV NICs connected                                                     | True         | Assumed to be in the same namespace                                                 |
+| spec.param.trafficGeneratorRuntimeClassName | [Runtime Class](https://kubernetes.io/docs/concepts/containers/runtime-class/) the traffic generator pod will use | True         |                                                                                     |
+| spec.param.trafficGeneratorImage            | Traffic generator's container image                                                                               | False        | Defaults to the U/S image `quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main` |
+| spec.param.trafficGeneratorNodeSelector     | Node Name on which the traffic generator Pod will be scheduled to                                                 | False        | Assumed to be configured to Nodes that allow DPDK traffic                           |
+| spec.param.trafficGeneratorPacketsPerSecond | Amount of packets per second. format: <amount>[/k/m] k-kilo; m-million                                            | False        | Defaults to 14m                                                                     |
+| spec.param.trafficGeneratorEastMacAddress   | MAC address of the NIC connected to the traffic generator pod/VM                                                  | False        | Defaults to a random MAC address of the form: 50:xx:xx:xx:xx:01                     |
+| spec.param.trafficGeneratorWestMacAddress   | MAC address of the NIC connected to the traffic generator pod/VM                                                  | False        | Defaults to a random MAC address of the form: 50:xx:xx:xx:xx:02                     |
+| spec.param.vmContainerDiskImage             | Container disk image for the VM                                                                                   | False        | Defaults to `quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main`                        |
+| spec.param.DPDKLabelSelector                | Node Label of on which the VM shall run                                                                           | False        | Assumed to be configured to Nodes that allow DPDK traffic                           |
+| spec.param.DPDKEastMacAddress               | MAC address of the NIC connected to the DPDK VM                                                                   | False        | Defaults to a random MAC address of the form: 60:xx:xx:xx:xx:01                     |
+| spec.param.DPDKWestMacAddress               | MAC address of the NIC connected to the DPDK VM                                                                   | False        | Defaults to a random MAC address of the form: 60:xx:xx:xx:xx:02                     |
+| spec.param.testDuration                     | How much time will the traffic generator will run                                                                 | False        | Defaults to 5 Minutes                                                               |
+| spec.param.portBandwidthGB                  | SR-IOV NIC max bandwidth                                                                                          | False        | Defaults to 10GB                                                                    |
+| spec.param.verbose                          | Increases checkup's log verbosity                                                                                 | False        | "true" / "false". Defaults to "false"                                               |
 
 ### Example
 
@@ -103,6 +103,7 @@ data:
 ```
 
 ## Execution
+
 In order to execute the checkup, fill in the required data and apply this manifest:
 
 ```yaml
@@ -123,7 +124,7 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
-              drop: ["ALL"]
+              drop: [ "ALL" ]
             runAsNonRoot: true
             seccompProfile:
               type: "RuntimeDefault"
@@ -145,7 +146,6 @@ After the checkup Job had completed, the results are made available at the user-
 ```bash
 kubectl get configmap dpdk-checkup-config -n <target-namespace> -o yaml
 ```
-
 
 | Key                                              | Description                                                       | Remarks  |
 |--------------------------------------------------|-------------------------------------------------------------------|----------|
