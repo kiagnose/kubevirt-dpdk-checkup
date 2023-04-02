@@ -410,6 +410,7 @@ func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 
 func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest, pciDevicesVarName string) *k8scorev1.Pod {
 	const (
+		trafficGeneratorServiceAccountName     = "dpdk-checkup-traffic-gen-sa"
 		trafficGeneratorPodCPUCount            = 8
 		trafficGeneratorPodNumOfNonTrafficCPUs = 2
 		trafficGeneratorPodHugepagesCount      = "8Gi"
@@ -455,6 +456,7 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 	)
 
 	return pod.NewPod(randomizeName(TrafficGeneratorPodNamePrefix),
+		pod.WithServiceAccountName(trafficGeneratorServiceAccountName),
 		pod.WithPodContainer(trafficGeneratorContainer),
 		pod.WithRuntimeClassName(checkupConfig.TrafficGeneratorRuntimeClassName),
 		pod.WithoutCRIOCPULoadBalancing(),
