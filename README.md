@@ -67,6 +67,11 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: kubevirt-dpdk-checker
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dpdk-checkup-traffic-gen-sa
 ```
 
 ## Configuration
