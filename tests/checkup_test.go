@@ -37,6 +37,7 @@ import (
 
 const (
 	testServiceAccountName              = "dpdk-checkup-sa"
+	testTrafficGenServiceAccountName    = "dpdk-checkup-traffic-gen-sa"
 	testKiagnoseConfigMapAccessRoleName = "kiagnose-configmap-access"
 	testKubeVirtDPDKCheckerRoleName     = "kubevirt-dpdk-checker"
 	testConfigMapName                   = "dpdk-checkup-config"
@@ -51,6 +52,7 @@ var _ = Describe("Execute the checkup Job", func() {
 
 	BeforeEach(func() {
 		setupCheckupPermissions()
+		setupTrafficGeneratorPermissions()
 
 		var err error
 		configMap = newConfigMap()
@@ -209,6 +211,30 @@ func setupCheckupPermissions() {
 		err = virtClient.RbacV1().RoleBindings(kubeVirtDPDKCheckerRoleBinding.Namespace).Delete(
 			context.Background(),
 			kubeVirtDPDKCheckerRoleBinding.Name,
+			metav1.DeleteOptions{},
+		)
+		Expect(err).NotTo(HaveOccurred())
+	})
+}
+
+func setupTrafficGeneratorPermissions() {
+	var (
+		err                            error
+		trafficGeneratorServiceAccount *corev1.ServiceAccount
+	)
+
+	trafficGeneratorServiceAccount = newServiceAccount(testTrafficGenServiceAccountName)
+	trafficGeneratorServiceAccount, err = virtClient.CoreV1().ServiceAccounts(testNamespace).Create(
+		context.Background(),
+		trafficGeneratorServiceAccount,
+		metav1.CreateOptions{},
+	)
+	Expect(err).NotTo(HaveOccurred())
+
+	DeferCleanup(func() {
+		err = virtClient.CoreV1().ServiceAccounts(trafficGeneratorServiceAccount.Namespace).Delete(
+			context.Background(),
+			trafficGeneratorServiceAccount.Name,
 			metav1.DeleteOptions{},
 		)
 		Expect(err).NotTo(HaveOccurred())
