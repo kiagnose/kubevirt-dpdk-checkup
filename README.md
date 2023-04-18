@@ -164,7 +164,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: dpdk-checkup
-          image: quay.io/kiagnose/kubevirt-dpdk-checkup:latest
+          image: quay.io/kiagnose/kubevirt-dpdk-checkup:main
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
