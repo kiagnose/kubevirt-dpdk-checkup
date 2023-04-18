@@ -86,6 +86,12 @@ func WithLabels(labels map[string]string) PodOption {
 	}
 }
 
+func WithServiceAccountName(name string) PodOption {
+	return func(pod *corev1.Pod) {
+		pod.Spec.ServiceAccountName = name
+	}
+}
+
 func WithHugepagesVolume() PodOption {
 	return func(pod *corev1.Pod) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes,
