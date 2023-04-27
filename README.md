@@ -110,8 +110,6 @@ supplementalGroups:
   type: RunAsAny
 users:
 - system:serviceaccount:dpdk-checkup-ns:dpdk-checkup-traffic-gen-sa
-volumes:
-- hostPath
 ```
 
 ## Configuration
