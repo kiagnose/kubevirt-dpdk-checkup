@@ -1,3 +1,10 @@
+## [0.1.1] - 2023-05-02
+### Bug Fixes
+ - Fixed traffic generator Pod could not start on OpenShift 4.13 because of:
+    - SR-IOV device plugin change.
+    - TRex's scapy server failure.
+    - Wrong SCC definition.
+
 ## [0.1.0] - 2023-03-02
 ### New Features
  - Initial release.
