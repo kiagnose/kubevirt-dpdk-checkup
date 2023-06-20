@@ -39,14 +39,16 @@ In order to configure the cluster according to these steps please follow this [O
 
 ### Kubevirt cluster wide configuration
 
-The pod running the VM (a.k.a. the virt-launcher pod) needs to run the DPDK optimized performance profile defined in the previous chapter. This is done by selecting the runtimeclassName in the pod running the VM.
-Since currently Kubevirt does not support setting the runtimeclassName per VM, the change needs to be on a cluster level, by using the [jsonpatch annotations](https://github.com/kubevirt/hyperconverged-cluster-operator/blob/main/docs/cluster-configuration.md#jsonpatch-annotations) on HCO:
+The pod running the VM (a.k.a. the virt-launcher pod) needs to run with the DPDK optimized runtimeClass derived from the performance profile defined in the previous chapter. 
+Kubevirt allows selecting the default [defaultRuntimeClass](https://github.com/kubevirt/hyperconverged-cluster-operator/blob/47c2018959c454a858c9acbad54ef3795b16d8f7/docs/cluster-configuration.md#default-runtimeclass) configuration on a cluster level, which is configurable via the HCO CR. 
+One way to configure it is by patching the HCO CR:
 ```bash
-oc annotate --overwrite -n openshift-cnv hco kubevirt-hyperconverged \
-kubevirt.kubevirt.io/jsonpatch='[{"op": "add", "path": "/spec/configuration/defaultRuntimeClass", "value": <runtimeclass-name>}]'
+oc patch -n openshift-cnv hco kubevirt-hyperconverged \
+--type='json' -p='[{"op": "add", "path": "/spec/defaultRuntimeClass", "value":"<runtimeclass-name>"}]'
 ```
+
 > **Note**: 
-> After setting this conifiguration all VMs will be assigned to the default RuntimeClassName.
+> After setting this configuration all VMs will be assigned to the default RuntimeClassName.
 
 ### VM configuration
 
