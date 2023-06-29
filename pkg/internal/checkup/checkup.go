@@ -21,6 +21,7 @@ package checkup
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
@@ -257,6 +258,11 @@ func (c *Checkup) createTrafficGeneratorPod(ctx context.Context) error {
 	trafficGeneratorPod := newTrafficGeneratorPod(c.params, secondaryNetworksRequest, pciDevicesVarName)
 
 	log.Printf("Creating traffic generator Pod %s..", ObjectFullName(c.namespace, trafficGeneratorPod.Name))
+	if c.params.Verbose {
+		trafficGeneratorPodJSON, _ := json.Marshal(trafficGeneratorPod)
+		log.Print(string(trafficGeneratorPodJSON))
+	}
+
 	c.trafficGeneratorPod, err = c.client.CreatePod(ctx, c.namespace, trafficGeneratorPod)
 	if err != nil {
 		return err
