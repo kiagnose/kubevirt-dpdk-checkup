@@ -90,6 +90,8 @@ func TestSetupShouldFail(t *testing.T) {
 		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
 
 		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedVMICreationFailure.Error())
+		assert.Empty(t, testClient.createdVMIs)
+		assert.Empty(t, testClient.createdPods)
 	})
 
 	t.Run("when wait for VMI to boot fails", func(t *testing.T) {
@@ -101,6 +103,8 @@ func TestSetupShouldFail(t *testing.T) {
 		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
 
 		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedVMIReadFailure.Error())
+		assert.Empty(t, testClient.createdVMIs)
+		assert.Empty(t, testClient.createdPods)
 	})
 
 	t.Run("when Pod creation fails", func(t *testing.T) {
@@ -112,6 +116,8 @@ func TestSetupShouldFail(t *testing.T) {
 		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
 
 		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedPodCreationFailure.Error())
+		assert.Empty(t, testClient.createdVMIs)
+		assert.Empty(t, testClient.createdPods)
 	})
 
 	t.Run("when wait Pod Running fails on read", func(t *testing.T) {
@@ -123,6 +129,8 @@ func TestSetupShouldFail(t *testing.T) {
 		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
 
 		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedPodReadFailure.Error())
+		assert.Empty(t, testClient.createdVMIs)
+		assert.Empty(t, testClient.createdPods)
 	})
 }
 

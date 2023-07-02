@@ -84,17 +84,28 @@ func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config
 	}
 }
 
-func (c *Checkup) Setup(ctx context.Context) error {
+func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
 	const errMessagePrefix = "setup"
 	var err error
 
 	if err = c.createVMI(ctx); err != nil {
 		return fmt.Errorf("%s: %w", errMessagePrefix, err)
 	}
+	defer func() {
+		if setupErr != nil {
+			c.cleanupVMI()
+		}
+	}()
 
 	if err = c.createTrafficGeneratorPod(ctx); err != nil {
 		return fmt.Errorf("%s: %w", errMessagePrefix, err)
 	}
+
+	defer func() {
+		if setupErr != nil {
+			c.cleanupPod()
+		}
+	}()
 
 	err = c.waitForVMIToBoot(ctx)
 	if err != nil {
@@ -242,6 +253,19 @@ func (c *Checkup) waitForVMIDeletion(ctx context.Context) error {
 	return nil
 }
 
+func (c *Checkup) cleanupVMI() {
+	const setupCleanupTimeout = 30 * time.Second
+
+	log.Printf("setup failed, cleanup VMI '%s/%s'", c.vmi.Namespace, c.vmi.Name)
+	delCtx, cancel := context.WithTimeout(context.Background(), setupCleanupTimeout)
+	defer cancel()
+	_ = c.deleteVMI(delCtx)
+
+	if derr := c.waitForVMIDeletion(delCtx); derr != nil {
+		log.Printf("Failed to cleanup VMI '%s/%s': %v", c.vmi.Namespace, c.vmi.Name, derr)
+	}
+}
+
 func (c *Checkup) createTrafficGeneratorPod(ctx context.Context) error {
 	secondaryNetworksRequest, err := pod.CreateNetworksRequest([]networkv1.NetworkSelectionElement{
 		{Name: c.params.NetworkAttachmentDefinitionName, Namespace: c.namespace, MacRequest: c.params.TrafficGeneratorEastMacAddress.String()},
@@ -355,6 +379,19 @@ func (c *Checkup) waitForPodDeletion(ctx context.Context) error {
 
 	log.Printf("Pod %q is deleted", podFullName)
 	return nil
+}
+
+func (c *Checkup) cleanupPod() {
+	const setupCleanupTimeout = 30 * time.Second
+
+	log.Printf("setup failed, cleanup Pod '%s/%s'", c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
+	delCtx, cancel := context.WithTimeout(context.Background(), setupCleanupTimeout)
+	defer cancel()
+	_ = c.deletePod(delCtx)
+
+	if derr := c.waitForPodDeletion(delCtx); derr != nil {
+		log.Printf("Failed to cleanup Pod '%s/%s': %v", c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name, derr)
+	}
 }
 
 func ObjectFullName(namespace, name string) string {
