@@ -28,7 +28,7 @@ all: check build
 
 check: lint test/unit
 
-build: build-traffic-gen
+build:
 	mkdir -p $(CURDIR)/_go-cache
 	$(CRI_BIN) run --rm \
 	           --volume $(CURDIR):$(CURDIR):Z \
@@ -40,7 +40,7 @@ build: build-traffic-gen
 	$(CRI_BIN) build --build-arg BASE_IMAGE_TAG=$(CRI_BUILD_BASE_IMAGE_TAG) . -t $(REG)/$(ORG)/$(CHECKUP_IMAGE_NAME):$(CHECKUP_IMAGE_TAG)
 .PHONY: build
 
-push: push-traffic-gen
+push:
 	$(CRI_BIN) push $(REG)/$(ORG)/$(CHECKUP_IMAGE_NAME):$(CHECKUP_IMAGE_TAG)
 	$(CRI_BIN) tag $(REG)/$(ORG)/$(CHECKUP_IMAGE_NAME):$(CHECKUP_IMAGE_TAG) $(REG)/$(ORG)/$(CHECKUP_IMAGE_NAME):$(CHECKUP_GIT_TAG)
 	$(CRI_BIN) push $(REG)/$(ORG)/$(CHECKUP_IMAGE_NAME):$(CHECKUP_GIT_TAG)
