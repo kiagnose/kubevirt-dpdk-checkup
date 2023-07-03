@@ -73,18 +73,6 @@ func New() (*Client, error) {
 	return &Client{client, cniClient, config}, nil
 }
 
-func (c *Client) CreatePod(ctx context.Context, namespace string, pod *corev1.Pod) (*corev1.Pod, error) {
-	return c.KubevirtClient.CoreV1().Pods(namespace).Create(ctx, pod, metav1.CreateOptions{})
-}
-
-func (c *Client) GetPod(ctx context.Context, namespace, name string) (*corev1.Pod, error) {
-	return c.KubevirtClient.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
-}
-
-func (c *Client) DeletePod(ctx context.Context, namespace, name string) error {
-	return c.KubevirtClient.CoreV1().Pods(namespace).Delete(ctx, name, metav1.DeleteOptions{})
-}
-
 func (c *Client) CreateVirtualMachineInstance(ctx context.Context,
 	namespace string,
 	vmi *kvcorev1.VirtualMachineInstance) (*kvcorev1.VirtualMachineInstance, error) {
@@ -140,6 +128,18 @@ func (c *Client) VMISerialConsole(namespace, name string, timeout time.Duration)
 		name,
 		&kubecli.SerialConsoleOptions{ConnectionTimeout: timeout},
 	)
+}
+
+func (c *Client) CreatePod(ctx context.Context, namespace string, pod *corev1.Pod) (*corev1.Pod, error) {
+	return c.KubevirtClient.CoreV1().Pods(namespace).Create(ctx, pod, metav1.CreateOptions{})
+}
+
+func (c *Client) GetPod(ctx context.Context, namespace, name string) (*corev1.Pod, error) {
+	return c.KubevirtClient.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
+}
+
+func (c *Client) DeletePod(ctx context.Context, namespace, name string) error {
+	return c.KubevirtClient.CoreV1().Pods(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 }
 
 func (c *Client) ExecuteCommandOnPod(ctx context.Context,
