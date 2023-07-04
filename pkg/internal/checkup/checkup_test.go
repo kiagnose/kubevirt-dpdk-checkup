@@ -71,9 +71,6 @@ func TestCheckupShouldSucceed(t *testing.T) {
 	_, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
 	assert.ErrorContains(t, err, "not found")
 
-	_, err = testClient.GetPod(context.Background(), testNamespace, podName)
-	assert.ErrorContains(t, err, "not found")
-
 	actualResults := testCheckup.Results()
 	expectedResults := status.Results{}
 
@@ -161,16 +158,6 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 			vmiDeletionFailure: errors.New(vmiDeletionFailureMsg),
 			expectedFailure:    vmiDeletionFailureMsg,
 		},
-		{
-			description:        "Traffic generator Pod deletion fails",
-			podDeletionFailure: errors.New(podDeletionFailureMsg),
-			expectedFailure:    podDeletionFailureMsg,
-		},
-		{
-			description:     "wait for Traffic generator Pod deletion fails",
-			podReadFailure:  errors.New(podReadFailureMsg),
-			expectedFailure: podReadFailureMsg,
-		},
 	}
 
 	for _, testCase := range testCases {
@@ -212,9 +199,6 @@ func TestRunFailure(t *testing.T) {
 	assert.NoError(t, testCheckup.Teardown(context.Background()))
 
 	_, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
-	assert.ErrorContains(t, err, "not found")
-
-	_, err = testClient.GetPod(context.Background(), testNamespace, podName)
 	assert.ErrorContains(t, err, "not found")
 
 	actualResults := testCheckup.Results()
