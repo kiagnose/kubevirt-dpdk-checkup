@@ -21,10 +21,8 @@ package checkup
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 	"time"
 
@@ -33,12 +31,9 @@ import (
 	k8srand "k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	networkv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
-
 	kvcorev1 "kubevirt.io/api/core/v1"
 
 	kaffinity "github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/affinity"
-	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/pod"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/vmi"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/status"
@@ -50,10 +45,6 @@ type kubeVirtVMIClient interface {
 		vmi *kvcorev1.VirtualMachineInstance) (*kvcorev1.VirtualMachineInstance, error)
 	GetVirtualMachineInstance(ctx context.Context, namespace, name string) (*kvcorev1.VirtualMachineInstance, error)
 	DeleteVirtualMachineInstance(ctx context.Context, namespace, name string) error
-	CreatePod(ctx context.Context, namespace string, pod *k8scorev1.Pod) (*k8scorev1.Pod, error)
-	DeletePod(ctx context.Context, namespace, name string) error
-	GetPod(ctx context.Context, namespace, name string) (*k8scorev1.Pod, error)
-	GetNetworkAttachmentDefinition(ctx context.Context, namespace, name string) (*networkv1.NetworkAttachmentDefinition, error)
 }
 
 type testExecutor interface {
@@ -61,19 +52,17 @@ type testExecutor interface {
 }
 
 type Checkup struct {
-	client              kubeVirtVMIClient
-	namespace           string
-	params              config.Config
-	vmi                 *kvcorev1.VirtualMachineInstance
-	trafficGeneratorPod *k8scorev1.Pod
-	results             status.Results
-	executor            testExecutor
+	client    kubeVirtVMIClient
+	namespace string
+	params    config.Config
+	vmi       *kvcorev1.VirtualMachineInstance
+	results   status.Results
+	executor  testExecutor
 }
 
 const (
-	VMINamePrefix                 = "dpdk-vmi"
-	TrafficGeneratorPodNamePrefix = "kubevirt-dpdk-checkup-traffic-gen"
-	DPDKCheckupUIDLabelKey        = "kubevirt-dpdk-checkup/uid"
+	VMINamePrefix          = "dpdk-vmi"
+	DPDKCheckupUIDLabelKey = "kubevirt-dpdk-checkup/uid"
 )
 
 func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config, executor testExecutor) *Checkup {
@@ -99,24 +88,9 @@ func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
 		}
 	}()
 
-	if err = c.createTrafficGeneratorPod(ctx); err != nil {
-		return fmt.Errorf("%s: %w", errMessagePrefix, err)
-	}
-
-	defer func() {
-		if setupErr != nil {
-			c.cleanupPod()
-		}
-	}()
-
 	err = c.waitForVMIToBoot(ctx)
 	if err != nil {
 		return err
-	}
-
-	err = c.waitForPodRunningStatus(ctx, c.namespace, c.trafficGeneratorPod.Name)
-	if err != nil {
-		return fmt.Errorf("%s: %w", errMessagePrefix, err)
 	}
 
 	return nil
@@ -259,134 +233,6 @@ func (c *Checkup) cleanupVMI() {
 	}
 }
 
-func (c *Checkup) createTrafficGeneratorPod(ctx context.Context) error {
-	secondaryNetworksRequest, err := pod.CreateNetworksRequest([]networkv1.NetworkSelectionElement{
-		{Name: c.params.NetworkAttachmentDefinitionName, Namespace: c.namespace, MacRequest: c.params.TrafficGeneratorEastMacAddress.String()},
-		{Name: c.params.NetworkAttachmentDefinitionName, Namespace: c.namespace, MacRequest: c.params.TrafficGeneratorWestMacAddress.String()},
-	})
-	if err != nil {
-		return err
-	}
-
-	pciDevicesVarName, err := c.getPCIDevicesVarName(ctx)
-	if err != nil {
-		return err
-	}
-	trafficGeneratorPod := newTrafficGeneratorPod(c.params, secondaryNetworksRequest, pciDevicesVarName)
-
-	log.Printf("Creating traffic generator Pod %s..", ObjectFullName(c.namespace, trafficGeneratorPod.Name))
-	if c.params.Verbose {
-		trafficGeneratorPodJSON, _ := json.Marshal(trafficGeneratorPod)
-		log.Print(string(trafficGeneratorPodJSON))
-	}
-
-	c.trafficGeneratorPod, err = c.client.CreatePod(ctx, c.namespace, trafficGeneratorPod)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *Checkup) getPCIDevicesVarName(ctx context.Context) (string, error) {
-	netAttachDef, err := c.client.GetNetworkAttachmentDefinition(ctx, c.namespace, c.params.NetworkAttachmentDefinitionName)
-	if err != nil {
-		return "", err
-	}
-
-	const resourceNameAnnotationKey = "k8s.v1.cni.cncf.io/resourceName"
-	rawResourceName, exists := netAttachDef.Annotations[resourceNameAnnotationKey]
-	if !exists {
-		return "", fmt.Errorf("%q annotation is not found on the network-attachement-definition %q",
-			resourceNameAnnotationKey, ObjectFullName(c.namespace, c.params.NetworkAttachmentDefinitionName))
-	}
-
-	const (
-		pciDevicesVarPrefix    = "PCIDEVICE"
-		pciDevicesVarDelimiter = "_"
-	)
-
-	// build the PCI Device env var naming recipe
-	// https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin#pod-device-information
-	pciDevicesVarName := pciDevicesVarPrefix + pciDevicesVarDelimiter + rawResourceName
-	pciDevicesVarName = strings.ReplaceAll(pciDevicesVarName, ".", pciDevicesVarDelimiter)
-	pciDevicesVarName = strings.ReplaceAll(pciDevicesVarName, "/", pciDevicesVarDelimiter)
-	return strings.ToUpper(pciDevicesVarName), nil
-}
-
-func (c *Checkup) waitForPodRunningStatus(ctx context.Context, namespace, name string) error {
-	podFullName := ObjectFullName(c.namespace, name)
-	log.Printf("Waiting for Pod %s..", podFullName)
-	var updatedPod *k8scorev1.Pod
-
-	conditionFn := func(ctx context.Context) (bool, error) {
-		var err error
-		updatedPod, err = c.client.GetPod(ctx, namespace, name)
-		if err != nil {
-			return false, err
-		}
-		return pod.PodInRunningPhase(updatedPod), nil
-	}
-	const interval = time.Second * 5
-	if err := wait.PollImmediateUntilWithContext(ctx, interval, conditionFn); err != nil {
-		return fmt.Errorf("failed to wait for Pod '%s' to be in Running Phase: %v", podFullName, err)
-	}
-
-	log.Printf("Pod %s is Running", podFullName)
-	c.trafficGeneratorPod = updatedPod
-	return nil
-}
-
-func (c *Checkup) deletePod(ctx context.Context) error {
-	if c.trafficGeneratorPod == nil {
-		return fmt.Errorf("failed to delete traffic generator Pod, object doesn't exist")
-	}
-
-	vmiFullName := ObjectFullName(c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
-
-	log.Printf("Trying to delete traffic generator Pod: %q", vmiFullName)
-	if err := c.client.DeletePod(ctx, c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name); err != nil {
-		log.Printf("Failed to delete traffic generator Pod: %q", vmiFullName)
-		return err
-	}
-
-	return nil
-}
-
-func (c *Checkup) waitForPodDeletion(ctx context.Context) error {
-	podFullName := ObjectFullName(c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
-	log.Printf("Waiting for Pod %q to be deleted..", podFullName)
-
-	conditionFn := func(ctx context.Context) (bool, error) {
-		var err error
-		_, err = c.client.GetPod(ctx, c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
-		if k8serrors.IsNotFound(err) {
-			return true, nil
-		}
-		return false, err
-	}
-	const interval = 5 * time.Second
-	if err := wait.PollImmediateUntilWithContext(ctx, interval, conditionFn); err != nil {
-		return fmt.Errorf("failed to wait for POD %q to be in deleted: %v", podFullName, err)
-	}
-
-	log.Printf("Pod %q is deleted", podFullName)
-	return nil
-}
-
-func (c *Checkup) cleanupPod() {
-	const setupCleanupTimeout = 30 * time.Second
-
-	log.Printf("setup failed, cleanup Pod '%s/%s'", c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
-	delCtx, cancel := context.WithTimeout(context.Background(), setupCleanupTimeout)
-	defer cancel()
-	_ = c.deletePod(delCtx)
-
-	if derr := c.waitForPodDeletion(delCtx); derr != nil {
-		log.Printf("Failed to cleanup Pod '%s/%s': %v", c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name, derr)
-	}
-}
-
 func ObjectFullName(namespace, name string) string {
 	return fmt.Sprintf("%s/%s", namespace, name)
 }
@@ -454,80 +300,5 @@ func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 		vmi.WithVirtIODisk(rootDiskName),
 		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword)),
 		vmi.WithVirtIODisk(cloudInitDiskName),
-	)
-}
-
-func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest, pciDevicesVarName string) *k8scorev1.Pod {
-	const (
-		trafficGeneratorServiceAccountName     = "dpdk-checkup-traffic-gen-sa"
-		trafficGeneratorPodCPUCount            = 8
-		trafficGeneratorPodNumOfNonTrafficCPUs = 2
-		trafficGeneratorPodHugepagesCount      = "1Gi"
-		terminationGracePeriodSeconds          = int64(0)
-
-		portBandwidthParamName     = "PORT_BANDWIDTH_GB"
-		verboseParamName           = "SET_VERBOSE"
-		numTrafficCpusParamName    = "NUM_OF_TRAFFIC_CPUS"
-		numCpusParamName           = "NUM_OF_CPUS"
-		srcWestMACAddressParamName = "SRC_WEST_MAC_ADDRESS"
-		srcEastMACAddressParamName = "SRC_EAST_MAC_ADDRESS"
-		dstWestMACAddressParamName = "DST_WEST_MAC_ADDRESS"
-		dstEastMACAddressParamName = "DST_EAST_MAC_ADDRESS"
-		PCIDeviceVarParamName      = "PCI_DEVICES_VAR_NAME"
-	)
-
-	envVars := map[string]string{
-		portBandwidthParamName:     fmt.Sprintf("%d", checkupConfig.PortBandwidthGB),
-		numTrafficCpusParamName:    fmt.Sprintf("%d", trafficGeneratorPodCPUCount-trafficGeneratorPodNumOfNonTrafficCPUs),
-		numCpusParamName:           fmt.Sprintf("%d", trafficGeneratorPodCPUCount),
-		srcWestMACAddressParamName: checkupConfig.TrafficGeneratorWestMacAddress.String(),
-		srcEastMACAddressParamName: checkupConfig.TrafficGeneratorEastMacAddress.String(),
-		dstWestMACAddressParamName: checkupConfig.DPDKWestMacAddress.String(),
-		dstEastMACAddressParamName: checkupConfig.DPDKEastMacAddress.String(),
-		verboseParamName:           strings.ToUpper(strconv.FormatBool(checkupConfig.Verbose)),
-		PCIDeviceVarParamName:      pciDevicesVarName,
-	}
-	if checkupConfig.Verbose {
-		log.Printf("envVars: %v", envVars)
-	}
-	securityContext := pod.NewSecurityContext(int64(0), false,
-		[]k8scorev1.Capability{"IPC_LOCK", "SYS_RESOURCE", "NET_RAW", "NET_ADMIN"})
-
-	trafficGeneratorContainer := pod.NewPodContainer(TrafficGeneratorPodNamePrefix,
-		pod.WithContainerImage(checkupConfig.TrafficGeneratorImage),
-		pod.WithContainerCommand([]string{"/bin/bash", "/opt/scripts/main.sh"}),
-		pod.WithContainerSecurityContext(securityContext),
-		pod.WithContainerEnvVars(envVars),
-		pod.WithContainerCPUsStrict(fmt.Sprintf("%d", trafficGeneratorPodCPUCount)),
-		pod.WithContainerHugepagesResources(trafficGeneratorPodHugepagesCount),
-		pod.WithContainerHugepagesVolumeMount(),
-		pod.WithContainerLibModulesVolumeMount(),
-	)
-
-	labels := map[string]string{
-		DPDKCheckupUIDLabelKey: checkupConfig.PodUID,
-	}
-	var affinity *k8scorev1.Affinity
-	if checkupConfig.DPDKNodeLabelSelector != "" {
-		affinity = &k8scorev1.Affinity{NodeAffinity: kaffinity.NewRequiredNodeAffinity(checkupConfig.TrafficGeneratorNodeLabelSelector)}
-	} else {
-		affinity = &k8scorev1.Affinity{PodAntiAffinity: kaffinity.NewPreferredPodAntiAffinity(DPDKCheckupUIDLabelKey,
-			checkupConfig.PodUID)}
-	}
-
-	return pod.NewPod(randomizeName(TrafficGeneratorPodNamePrefix),
-		pod.WithServiceAccountName(trafficGeneratorServiceAccountName),
-		pod.WithPodContainer(trafficGeneratorContainer),
-		pod.WithLabels(labels),
-		pod.WithAffinity(affinity),
-		pod.WithRuntimeClassName(checkupConfig.TrafficGeneratorRuntimeClassName),
-		pod.WithoutCRIOCPULoadBalancing(),
-		pod.WithoutCRIOCPUQuota(),
-		pod.WithoutCRIOIRQLoadBalancing(),
-		pod.WithOwnerReference(checkupConfig.PodName, checkupConfig.PodUID),
-		pod.WithNetworkRequestAnnotation(secondaryNetworkRequest),
-		pod.WithHugepagesVolume(),
-		pod.WithLibModulesVolume(),
-		pod.WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds),
 	)
 }
