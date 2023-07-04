@@ -156,15 +156,7 @@ func (c *Checkup) Teardown(ctx context.Context) error {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 
-	if err := c.deletePod(ctx); err != nil {
-		return fmt.Errorf("%s: %w", errPrefix, err)
-	}
-
 	if err := c.waitForVMIDeletion(ctx); err != nil {
-		return fmt.Errorf("%s: %w", errPrefix, err)
-	}
-
-	if err := c.waitForPodDeletion(ctx); err != nil {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 
