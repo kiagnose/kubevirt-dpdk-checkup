@@ -32,16 +32,13 @@ import (
 	"kubevirt.io/client-go/kubecli"
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/console"
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/trex"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/status"
 )
 
 type vmiSerialConsoleClient interface {
 	VMISerialConsole(namespace, name string, timeout time.Duration) (kubecli.StreamInterface, error)
-}
-
-type podExecuteClient interface {
-	ExecuteCommandOnPod(ctx context.Context, namespace, name, containerName string, command []string) (stdout, stderr string, err error)
 }
 
 type testPmdPortStats struct {
@@ -64,7 +61,7 @@ const (
 
 type Executor struct {
 	client                           vmiSerialConsoleClient
-	podClient                        podExecuteClient
+	podClient                        trex.PodExecuteClient
 	namespace                        string
 	vmiUsername                      string
 	vmiPassword                      string
@@ -79,7 +76,7 @@ type Executor struct {
 
 const testpmdPrompt = "testpmd> "
 
-func New(client vmiSerialConsoleClient, podClient podExecuteClient, namespace string, cfg config.Config) Executor {
+func New(client vmiSerialConsoleClient, podClient trex.PodExecuteClient, namespace string, cfg config.Config) Executor {
 	return Executor{
 		client:                           client,
 		podClient:                        podClient,
@@ -101,7 +98,7 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, vmiName, err)
 	}
 
-	trexClient := NewTrexConsole(e.podClient, e.namespace, podName, podContainerName, e.verbosePrintsEnabled)
+	trexClient := trex.NewClient(e.podClient, e.namespace, podName, podContainerName, e.verbosePrintsEnabled)
 
 	log.Printf("Starting testpmd in VMI...")
 	if err := e.runTestpmd(vmiName); err != nil {
@@ -138,13 +135,13 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 		return status.Results{}, err
 	}
 
-	var trafficGeneratorSrcPortStats portStats
+	var trafficGeneratorSrcPortStats trex.PortStats
 	trafficGeneratorSrcPortStats, err = trexClient.GetPortStats(ctx, trafficSourcePort)
 	if err != nil {
 		return status.Results{}, err
 	}
 
-	var trafficGeneratorDstPortStats portStats
+	var trafficGeneratorDstPortStats trex.PortStats
 	trafficGeneratorDstPortStats, err = trexClient.GetPortStats(ctx, trafficDestPort)
 	if err != nil {
 		return status.Results{}, err
