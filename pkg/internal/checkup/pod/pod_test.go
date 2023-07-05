@@ -186,17 +186,6 @@ func TestNewPodWithoutCRIOIRQLoadBalancing(t *testing.T) {
 	assert.Equal(t, expectedPod, actualPod)
 }
 
-func TestNewPodWithNodeSelector(t *testing.T) {
-	actualPod := pod.NewPod(testPodName, pod.WithNodeSelector("node-name"))
-
-	expectedPod := newBasePod(actualPod.Name)
-	expectedPod.Spec.NodeSelector = map[string]string{
-		k8scorev1.LabelHostname: "node-name",
-	}
-
-	assert.Equal(t, expectedPod, actualPod)
-}
-
 func TestNewPodWithRuntimeClassName(t *testing.T) {
 	runtimeClass := "my-runtime-class"
 	actualPod := pod.NewPod(testPodName, pod.WithRuntimeClassName(runtimeClass))

@@ -37,6 +37,7 @@ import (
 
 	kvcorev1 "kubevirt.io/api/core/v1"
 
+	kaffinity "github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/affinity"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/pod"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/vmi"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
@@ -72,6 +73,7 @@ type Checkup struct {
 const (
 	VMINamePrefix                 = "dpdk-vmi"
 	TrafficGeneratorPodNamePrefix = "kubevirt-dpdk-checkup-traffic-gen"
+	DPDKCheckupUIDLabelKey        = "kubevirt-dpdk-checkup/uid"
 )
 
 func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config, executor testExecutor) *Checkup {
@@ -428,8 +430,21 @@ func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 		terminationGracePeriodSeconds = 0
 	)
 
+	labels := map[string]string{
+		DPDKCheckupUIDLabelKey: checkupConfig.PodUID,
+	}
+	var affinity *k8scorev1.Affinity
+	if checkupConfig.DPDKNodeLabelSelector != "" {
+		affinity = &k8scorev1.Affinity{NodeAffinity: kaffinity.NewRequiredNodeAffinity(checkupConfig.DPDKNodeLabelSelector)}
+	} else {
+		affinity = &k8scorev1.Affinity{PodAntiAffinity: kaffinity.NewPreferredPodAntiAffinity(DPDKCheckupUIDLabelKey,
+			checkupConfig.PodUID)}
+	}
+
 	return vmi.New(randomizeName(VMINamePrefix),
 		vmi.WithOwnerReference(checkupConfig.PodName, checkupConfig.PodUID),
+		vmi.WithLabels(labels),
+		vmi.WithAffinity(affinity),
 		vmi.WithoutCRIOCPULoadBalancing(),
 		vmi.WithoutCRIOCPUQuota(),
 		vmi.WithoutCRIOIRQLoadBalancing(),
@@ -443,7 +458,6 @@ func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 		vmi.WithHugePages(),
 		vmi.WithMemoryRequest("8Gi"),
 		vmi.WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds),
-		vmi.WithNodeSelector(checkupConfig.DPDKNodeLabelSelector),
 		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMContainerDiskImage),
 		vmi.WithVirtIODisk(rootDiskName),
 		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword)),
@@ -498,15 +512,27 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		pod.WithContainerLibModulesVolumeMount(),
 	)
 
+	labels := map[string]string{
+		DPDKCheckupUIDLabelKey: checkupConfig.PodUID,
+	}
+	var affinity *k8scorev1.Affinity
+	if checkupConfig.DPDKNodeLabelSelector != "" {
+		affinity = &k8scorev1.Affinity{NodeAffinity: kaffinity.NewRequiredNodeAffinity(checkupConfig.TrafficGeneratorNodeLabelSelector)}
+	} else {
+		affinity = &k8scorev1.Affinity{PodAntiAffinity: kaffinity.NewPreferredPodAntiAffinity(DPDKCheckupUIDLabelKey,
+			checkupConfig.PodUID)}
+	}
+
 	return pod.NewPod(randomizeName(TrafficGeneratorPodNamePrefix),
 		pod.WithServiceAccountName(trafficGeneratorServiceAccountName),
 		pod.WithPodContainer(trafficGeneratorContainer),
+		pod.WithLabels(labels),
+		pod.WithAffinity(affinity),
 		pod.WithRuntimeClassName(checkupConfig.TrafficGeneratorRuntimeClassName),
 		pod.WithoutCRIOCPULoadBalancing(),
 		pod.WithoutCRIOCPUQuota(),
 		pod.WithoutCRIOIRQLoadBalancing(),
 		pod.WithOwnerReference(checkupConfig.PodName, checkupConfig.PodUID),
-		pod.WithNodeSelector(checkupConfig.TrafficGeneratorNodeLabelSelector),
 		pod.WithNetworkRequestAnnotation(secondaryNetworkRequest),
 		pod.WithHugepagesVolume(),
 		pod.WithLibModulesVolume(),

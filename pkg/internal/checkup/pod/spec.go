@@ -92,6 +92,15 @@ func WithServiceAccountName(name string) PodOption {
 	}
 }
 
+// WithAffinity adds the given affinity.
+func WithAffinity(affinity *corev1.Affinity) PodOption {
+	return func(pod *corev1.Pod) {
+		if affinity != nil {
+			pod.Spec.Affinity = affinity
+		}
+	}
+}
+
 func WithHugepagesVolume() PodOption {
 	return func(pod *corev1.Pod) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes,
@@ -154,20 +163,6 @@ func WithoutCRIOIRQLoadBalancing() PodOption {
 		}
 
 		pod.ObjectMeta.Annotations[CRIOIRQLoadBalancingAnnotation] = Disable
-	}
-}
-
-func WithNodeSelector(nodeName string) PodOption {
-	return func(pod *corev1.Pod) {
-		if nodeName == "" {
-			return
-		}
-
-		if pod.Spec.NodeSelector == nil {
-			pod.Spec.NodeSelector = map[string]string{}
-		}
-
-		pod.Spec.NodeSelector[corev1.LabelHostname] = nodeName
 	}
 }
 
