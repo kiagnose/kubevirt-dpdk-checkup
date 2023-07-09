@@ -282,12 +282,11 @@ func newConfigMap() *corev1.ConfigMap {
 		},
 		Data: map[string]string{
 			"spec.timeout": "10m",
-			"spec.param.networkAttachmentDefinitionName":  networkAttachmentDefinitionName,
-			"spec.param.trafficGeneratorRuntimeClassName": runtimeClassName,
-			"spec.param.trafficGeneratorImage":            trafficGeneratorImage,
-			"spec.param.vmContainerDiskImage":             vmContainerDiskImage,
-			"spec.param.testDuration":                     "1m",
-			"spec.param.verbose":                          "true",
+			"spec.param.networkAttachmentDefinitionName": networkAttachmentDefinitionName,
+			"spec.param.trafficGeneratorImage":           trafficGeneratorImage,
+			"spec.param.vmContainerDiskImage":            vmContainerDiskImage,
+			"spec.param.testDuration":                    "1m",
+			"spec.param.verbose":                         "true",
 		},
 	}
 }

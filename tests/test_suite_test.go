@@ -38,7 +38,6 @@ const (
 	namespaceEnvVarName                    = "TEST_NAMESPACE"
 	imageEnvVarName                        = "TEST_IMAGE"
 	networkAttachmentDefinitionNameVarName = "NETWORK_ATTACHMENT_DEFINITION_NAME"
-	runtimeClassNameVarName                = "RUNTIME_CLASS_NAME"
 	trafficGeneratorImageVarName           = "TRAFFIC_GEN_IMAGE_URL"
 	vmContainerDiskImageEnvVarName         = "VM_CONTAINER_DISK_IMAGE_URL"
 )
@@ -47,7 +46,6 @@ const (
 	defaultNamespace                       = "kiagnose-demo"
 	defaultImageName                       = "quay.io/kiagnose/kubevirt-dpdk-checkup:main"
 	defaultNetworkAttachmentDefinitionName = "intel-dpdk-network-1"
-	defaultRuntimeClassName                = "performance-performance-zeus10"
 )
 
 var (
@@ -55,7 +53,6 @@ var (
 	testNamespace                   string
 	testImageName                   string
 	networkAttachmentDefinitionName string
-	runtimeClassName                string
 	trafficGeneratorImage           string
 	vmContainerDiskImage            string
 )
@@ -78,10 +75,6 @@ var _ = BeforeSuite(func() {
 
 	if networkAttachmentDefinitionName = os.Getenv(networkAttachmentDefinitionNameVarName); networkAttachmentDefinitionName == "" {
 		networkAttachmentDefinitionName = defaultNetworkAttachmentDefinitionName
-	}
-
-	if runtimeClassName = os.Getenv(runtimeClassNameVarName); runtimeClassName == "" {
-		runtimeClassName = defaultRuntimeClassName
 	}
 
 	trafficGeneratorImage = os.Getenv(trafficGeneratorImageVarName)
