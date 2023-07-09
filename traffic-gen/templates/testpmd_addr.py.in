@@ -1,7 +1,0 @@
-# wild first XL710 mac
-mac_telco0 = "$DST_EAST_MAC_ADDRESS"
-# wild second XL710 mac
-mac_telco1 = "$DST_WEST_MAC_ADDRESS"
-# we don’t care of the IP in this phase
-ip_telco0  = '10.0.0.1'
-ip_telco1 = '10.1.1.1'
