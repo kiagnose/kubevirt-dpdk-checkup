@@ -31,19 +31,19 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-type PodExecuteClient interface {
+type podExecuteClient interface {
 	ExecuteCommandOnPod(ctx context.Context, namespace, name, containerName string, command []string) (stdout, stderr string, err error)
 }
 
 type trexClient struct {
-	podClient            PodExecuteClient
+	podClient            podExecuteClient
 	namespace            string
 	name                 string
 	containerName        string
 	verbosePrintsEnabled bool
 }
 
-func NewClient(client PodExecuteClient, namespace, name, containerName string, verbosePrintsEnabled bool) trexClient {
+func NewClient(client podExecuteClient, namespace, name, containerName string, verbosePrintsEnabled bool) trexClient {
 	return trexClient{
 		podClient:            client,
 		namespace:            namespace,
