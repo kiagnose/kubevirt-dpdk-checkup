@@ -46,15 +46,6 @@ rules:
   - apiGroups: [ "subresources.kubevirt.io" ]
     resources: [ "virtualmachineinstances/console" ]
     verbs: [ "get" ]
-  - apiGroups: [ "" ]
-    resources: [ "pods" ]
-    verbs: [ "create", "get", "delete" ]
-  - apiGroups: [ "" ]
-    resources: [ "pods/exec" ]
-    verbs: [ "create" ]
-  - apiGroups: [ "k8s.cni.cncf.io" ]
-    resources: [ "network-attachment-definitions" ]
-    verbs: [ "get" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
