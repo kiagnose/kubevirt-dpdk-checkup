@@ -278,21 +278,6 @@ func newKubeVirtDPDKCheckerRole() *rbacv1.Role {
 				Resources: []string{"virtualmachineinstances/console"},
 				Verbs:     []string{"get"},
 			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"pods"},
-				Verbs:     []string{"create", "get", "delete"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"pods/exec"},
-				Verbs:     []string{"create"},
-			},
-			{
-				APIGroups: []string{"k8s.cni.cncf.io"},
-				Resources: []string{"network-attachment-definitions"},
-				Verbs:     []string{"get"},
-			},
 		},
 	}
 }
