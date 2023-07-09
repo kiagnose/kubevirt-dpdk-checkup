@@ -457,7 +457,7 @@ func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest
 		trafficGeneratorServiceAccountName     = "dpdk-checkup-traffic-gen-sa"
 		trafficGeneratorPodCPUCount            = 8
 		trafficGeneratorPodNumOfNonTrafficCPUs = 2
-		trafficGeneratorPodHugepagesCount      = "8Gi"
+		trafficGeneratorPodHugepagesCount      = "1Gi"
 		terminationGracePeriodSeconds          = int64(0)
 
 		portBandwidthParamName     = "PORT_BANDWIDTH_GB"
