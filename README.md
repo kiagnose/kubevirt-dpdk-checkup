@@ -58,49 +58,6 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: kubevirt-dpdk-checker
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: dpdk-checkup-traffic-gen-sa
-```
-
-If the checkup should run on an OpenShift cluster, apply the following `SecurityContextConstraints` object:
-
-```yaml
-apiVersion: security.openshift.io/v1
-kind: SecurityContextConstraints
-metadata:
-  name: dpdk-checkup-traffic-gen
-allowHostDirVolumePlugin: true
-allowHostIPC: false
-allowHostNetwork: false
-allowHostPID: false
-allowHostPorts: false
-allowPrivilegeEscalation: false
-allowPrivilegedContainer: false
-allowedCapabilities:
-- IPC_LOCK
-- NET_ADMIN
-- NET_RAW
-- SYS_RESOURCE
-defaultAddCapabilities: null
-fsGroup:
-  type: RunAsAny
-groups: []
-readOnlyRootFilesystem: false
-requiredDropCapabilities: null
-runAsUser:
-  type: RunAsAny
-seLinuxContext:
-  type: RunAsAny
-seccompProfiles:
-- runtime/default
-- unconfined
-supplementalGroups:
-  type: RunAsAny
-users:
-- system:serviceaccount:dpdk-checkup-ns:dpdk-checkup-traffic-gen-sa
 ```
 
 ## Configuration
