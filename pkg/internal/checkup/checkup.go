@@ -420,6 +420,8 @@ func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 		CPUSocketsCount   = 1
 		CPUCoresCount     = 4
 		CPUTreadsCount    = 2
+		hugePageSize      = "1Gi"
+		guestMemory       = "4Gi"
 		rootDiskName      = "rootdisk"
 		cloudInitDiskName = "cloudinitdisk"
 		eastNetworkName   = "nic-east"
@@ -440,8 +442,7 @@ func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 		vmi.WithMultusNetwork(westNetworkName, checkupConfig.NetworkAttachmentDefinitionName),
 		vmi.WithNetworkInterfaceMultiQueue(),
 		vmi.WithRandomNumberGenerator(),
-		vmi.WithHugePages(),
-		vmi.WithMemoryRequest("8Gi"),
+		vmi.WithMemory(hugePageSize, guestMemory),
 		vmi.WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds),
 		vmi.WithNodeSelector(checkupConfig.DPDKNodeLabelSelector),
 		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMContainerDiskImage),
