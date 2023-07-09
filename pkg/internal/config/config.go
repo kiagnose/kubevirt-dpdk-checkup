@@ -32,7 +32,6 @@ import (
 
 const (
 	NetworkAttachmentDefinitionNameParamName   = "networkAttachmentDefinitionName"
-	TrafficGeneratorRuntimeClassNameParamName  = "trafficGeneratorRuntimeClassName"
 	TrafficGeneratorNodeLabelSelectorParamName = "trafficGeneratorNodeLabelSelector"
 	DPDKNodeLabelSelectorParamName             = "DPDKNodeLabelSelector"
 	TrafficGeneratorPacketsPerSecondParamName  = "trafficGeneratorPacketsPerSecond"
@@ -70,9 +69,8 @@ const (
 )
 
 var (
-	ErrInvalidNetworkAttachmentDefinitionName  = errors.New("invalid Network-Attachment-Definition Name")
-	ErrInvalidTrafficGeneratorRuntimeClassName = errors.New("invalid Traffic Generator Runtime class Name")
-	ErrIllegalLabelSelectorCombination         = errors.New("illegal Traffic Generator and DPDK Node " +
+	ErrInvalidNetworkAttachmentDefinitionName = errors.New("invalid Network-Attachment-Definition Name")
+	ErrIllegalLabelSelectorCombination        = errors.New("illegal Traffic Generator and DPDK Node " +
 		"Label Selector combination")
 	ErrInvalidTrafficGeneratorPacketsPerSecond = errors.New("invalid Traffic Generator Packets Per Second")
 	ErrInvalidPortBandwidthGB                  = errors.New("invalid Port Bandwidth [GB]")
@@ -87,7 +85,6 @@ var (
 type Config struct {
 	PodName                           string
 	PodUID                            string
-	TrafficGeneratorRuntimeClassName  string
 	NetworkAttachmentDefinitionName   string
 	TrafficGeneratorNodeLabelSelector string
 	DPDKNodeLabelSelector             string
@@ -114,7 +111,6 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		PodName:                           baseConfig.PodName,
 		PodUID:                            baseConfig.PodUID,
 		NetworkAttachmentDefinitionName:   baseConfig.Params[NetworkAttachmentDefinitionNameParamName],
-		TrafficGeneratorRuntimeClassName:  baseConfig.Params[TrafficGeneratorRuntimeClassNameParamName],
 		TrafficGeneratorNodeLabelSelector: baseConfig.Params[TrafficGeneratorNodeLabelSelectorParamName],
 		DPDKNodeLabelSelector:             baseConfig.Params[DPDKNodeLabelSelectorParamName],
 		TrafficGeneratorPacketsPerSecond:  TrafficGeneratorPacketsPerSecondDefault,
@@ -131,10 +127,6 @@ func New(baseConfig kconfig.Config) (Config, error) {
 
 	if newConfig.NetworkAttachmentDefinitionName == "" {
 		return Config{}, ErrInvalidNetworkAttachmentDefinitionName
-	}
-
-	if newConfig.TrafficGeneratorRuntimeClassName == "" {
-		return Config{}, ErrInvalidTrafficGeneratorRuntimeClassName
 	}
 
 	if newConfig.TrafficGeneratorNodeLabelSelector == "" && newConfig.DPDKNodeLabelSelector != "" ||
