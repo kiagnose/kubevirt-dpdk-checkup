@@ -1,0 +1,26 @@
+name: Build Traffic generator ContainerDisk
+
+on:
+  pull_request:
+    branches:
+      - main
+      - 'release-**'
+      - traffic-gen-in-vm
+    paths:
+      - 'vms/image-builder/**'
+      - 'vms/traffic-gen/**'
+
+ # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build_traffic_gen_containerDisk_image:
+    name: Build Traffic-gen ContainerDisk Image
+    runs-on: ubuntu-latest
+    env:
+      CRI_BIN: podman
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Build the ContainerDisk image
+        run: make build-traffic-gen-container-disk
