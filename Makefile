@@ -135,3 +135,7 @@ build-traffic-gen-vm-image: build-vm-image-builder
 build-traffic-gen-container-disk: build-traffic-gen-vm-image
 	$(CRI_BIN) build $(CURDIR) -f $(CURDIR)/vms/traffic-gen/Dockerfile -t $(REG)/$(ORG)/$(TRAFFIC_GEN_CONTAINER_DISK_IMAGE_NAME):$(TRAFFIC_GEN_CONTAINER_DISK_IMAGE_TAG)
 .PHONY: build-traffic-gen-container-disk
+
+push-traffic-gen-container-disk:
+	$(CRI_BIN) push $(REG)/$(ORG)/$(TRAFFIC_GEN_CONTAINER_DISK_IMAGE_NAME):$(TRAFFIC_GEN_CONTAINER_DISK_IMAGE_TAG)
+.PHONY: push-traffic-gen-container-disk
