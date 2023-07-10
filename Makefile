@@ -9,6 +9,8 @@ VIRT_BUILDER_CACHE_DIR := $(CURDIR)/_virt_builder/cache
 VIRT_BUILDER_OUTPUT_DIR := $(CURDIR)/_virt_builder/output
 VM_CONTAINER_DISK_IMAGE_NAME := kubevirt-dpdk-checkup-vm
 VM_CONTAINER_DISK_IMAGE_TAG ?= latest
+TRAFFIC_GEN_CONTAINER_DISK_IMAGE_NAME := kubevirt-dpdk-checkup-traffic-gen
+TRAFFIC_GEN_CONTAINER_DISK_IMAGE_TAG ?= latest
 GO_IMAGE_NAME := docker.io/library/golang
 GO_IMAGE_TAG := 1.19.4
 BIN_DIR = $(CURDIR)/_output/bin
@@ -129,3 +131,7 @@ build-traffic-gen-vm-image: build-vm-image-builder
       $(REG)/$(ORG)/$(VM_IMAGE_BUILDER_IMAGE_NAME):$(VM_IMAGE_BUILDER_IMAGE_TAG) \
       /root/scripts/build-vm-image
 .PHONY: build-traffic-gen-vm-image
+
+build-traffic-gen-container-disk: build-traffic-gen-vm-image
+	$(CRI_BIN) build $(CURDIR) -f $(CURDIR)/vms/traffic-gen/Dockerfile -t $(REG)/$(ORG)/$(TRAFFIC_GEN_CONTAINER_DISK_IMAGE_NAME):$(TRAFFIC_GEN_CONTAINER_DISK_IMAGE_TAG)
+.PHONY: build-traffic-gen-container-disk
