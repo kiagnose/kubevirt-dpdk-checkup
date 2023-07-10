@@ -38,13 +38,8 @@ type vmiSerialConsoleClient interface {
 	VMISerialConsole(namespace, name string, timeout time.Duration) (kubecli.StreamInterface, error)
 }
 
-type podExecuteClient interface {
-	ExecuteCommandOnPod(ctx context.Context, namespace, name, containerName string, command []string) (stdout, stderr string, err error)
-}
-
 type Executor struct {
 	vmiSerialClient                  vmiSerialConsoleClient
-	podClient                        podExecuteClient
 	namespace                        string
 	vmiUsername                      string
 	vmiPassword                      string
@@ -57,10 +52,9 @@ type Executor struct {
 	trafficGeneratorPacketsPerSecond string
 }
 
-func New(client vmiSerialConsoleClient, podClient podExecuteClient, namespace string, cfg config.Config) Executor {
+func New(client vmiSerialConsoleClient, namespace string, cfg config.Config) Executor {
 	return Executor{
 		vmiSerialClient:                  client,
-		podClient:                        podClient,
 		namespace:                        namespace,
 		vmiUsername:                      config.VMIUsername,
 		vmiPassword:                      config.VMIPassword,
@@ -74,12 +68,15 @@ func New(client vmiSerialConsoleClient, podClient podExecuteClient, namespace st
 	}
 }
 
-func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerName string) (status.Results, error) {
+func (e Executor) Execute(ctx context.Context, vmiName string) (status.Results, error) {
 	if err := console.LoginToCentOS(e.vmiSerialClient, e.namespace, vmiName, e.vmiUsername, e.vmiPassword); err != nil {
 		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, vmiName, err)
 	}
 
-	trexClient := trex.NewClient(e.podClient, e.namespace, podName, podContainerName, e.verbosePrintsEnabled)
+	const (
+		trafficSourcePort = 0
+		trafficDestPort   = 1
+	)
 
 	testpmdConsole := testpmd.NewTestpmdConsole(e.vmiSerialClient, e.namespace, e.vmiEastNICPCIAddress, e.vmiEastEthPeerMACAddress,
 		e.vmiWestNICPCIAddress, e.vmiWestEthPeerMACAddress, e.verbosePrintsEnabled)
@@ -94,42 +91,9 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 		return status.Results{}, err
 	}
 
-	log.Printf("Clearing Trex console stats before test...")
-	_, err := trexClient.ClearStats(ctx)
-	if err != nil {
-		return status.Results{}, fmt.Errorf("failed to clear trex stats on pod \"%s/%s\" side: %w", e.namespace, podName, err)
-	}
-
-	const (
-		trafficSourcePort = 0
-		trafficDestPort   = 1
-	)
-
-	log.Printf("Running traffic for %s...", e.testDuration.String())
-	_, err = trexClient.StartTraffic(ctx, e.trafficGeneratorPacketsPerSecond, trafficSourcePort, e.testDuration)
-	if err != nil {
-		return status.Results{}, fmt.Errorf("failed to run traffic from trex-console on pod \"%s/%s\" side: %w",
-			e.namespace, podName, err)
-	}
-
 	results := status.Results{}
-	trafficGeneratorMaxDropRate, err := trexClient.MonitorDropRates(ctx, e.testDuration)
-	log.Printf("traffic Generator Max Drop Rate: %fBps", trafficGeneratorMaxDropRate)
-	if err != nil {
-		return status.Results{}, err
-	}
-
 	var trafficGeneratorSrcPortStats trex.PortStats
-	trafficGeneratorSrcPortStats, err = trexClient.GetPortStats(ctx, trafficSourcePort)
-	if err != nil {
-		return status.Results{}, err
-	}
-
 	var trafficGeneratorDstPortStats trex.PortStats
-	trafficGeneratorDstPortStats, err = trexClient.GetPortStats(ctx, trafficDestPort)
-	if err != nil {
-		return status.Results{}, err
-	}
 
 	results.TrafficGeneratorOutErrorPackets = trafficGeneratorSrcPortStats.Result.Oerrors
 	log.Printf("traffic Generator port %d Packet output errors: %d", trafficSourcePort, results.TrafficGeneratorOutErrorPackets)
@@ -140,6 +104,7 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 
 	log.Printf("get testpmd stats in DPDK VMI...")
 	var testPmdStats [testpmd.StatsArraySize]testpmd.PortStats
+	var err error
 	if testPmdStats, err = testpmdConsole.GetStats(vmiName); err != nil {
 		return status.Results{}, err
 	}
