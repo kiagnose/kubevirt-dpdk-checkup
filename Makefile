@@ -20,6 +20,7 @@ CRI_BUILD_BASE_IMAGE_TAG ?= latest
 LINTER_IMAGE_NAME := docker.io/golangci/golangci-lint
 LINTER_IMAGE_TAG := v1.50.1
 GO_MOD_VERSION=$(shell hack/go-mod-version.sh)
+KUBECONFIG ?= $(HOME)/.kube/config
 
 E2E_TEST_TIMEOUT ?= 1h
 E2E_TEST_ARGS ?= $(strip -test.v -test.timeout=$(E2E_TEST_TIMEOUT) -ginkgo.v -ginkgo.timeout=$(E2E_TEST_TIMEOUT) $(E2E_TEST_EXTRA_ARGS))
@@ -58,9 +59,9 @@ test/unit:
 test/e2e:
 	$(CRI_BIN) run --rm \
 	           --volume $(CURDIR):$(CURDIR):Z \
-	           --volume $(HOME)/.kube:/root/.kube:Z \
+	           --volume $(shell dirname $(KUBECONFIG)):/root/.kube:Z,ro \
 	           --workdir $(CURDIR) \
-	           -e KUBECONFIG=/root/.kube/config \
+	           -e KUBECONFIG=/root/.kube/$(shell basename $(KUBECONFIG)) \
 	           -e TEST_IMAGE=$(TEST_IMAGE) \
 	           -e TEST_NAMESPACE=$(TEST_NAMESPACE) \
 	           -e NETWORK_ATTACHMENT_DEFINITION_NAME=$(NETWORK_ATTACHMENT_DEFINITION_NAME) \
