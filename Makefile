@@ -117,3 +117,15 @@ build-vm-container-disk: build-vm-image
 push-vm-container-disk:
 	$(CRI_BIN) push $(REG)/$(ORG)/$(VM_CONTAINER_DISK_IMAGE_NAME):$(VM_CONTAINER_DISK_IMAGE_TAG)
 .PHONY: push-vm-container-disk
+
+build-traffic-gen-vm-image: build-vm-image-builder
+	mkdir -vp $(VIRT_BUILDER_CACHE_DIR)
+	mkdir -vp $(VIRT_BUILDER_OUTPUT_DIR)
+
+	$(CRI_BIN) container run --rm \
+      --volume=$(VIRT_BUILDER_CACHE_DIR):/root/.cache/virt-builder:Z \
+      --volume=$(VIRT_BUILDER_OUTPUT_DIR):/output:Z \
+      --volume=$(CURDIR)/vms/traffic-gen/scripts:/root/scripts:Z \
+      $(REG)/$(ORG)/$(VM_IMAGE_BUILDER_IMAGE_NAME):$(VM_IMAGE_BUILDER_IMAGE_TAG) \
+      /root/scripts/build-vm-image
+.PHONY: build-traffic-gen-vm-image
