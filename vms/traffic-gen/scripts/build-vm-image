@@ -17,8 +17,13 @@
 # Copyright 2023 Red Hat, Inc.
 #
 
-driverctl set-override 0000:08:00.0 vfio-pci
-driverctl set-override 0000:09:00.0 vfio-pci
+export LIBGUESTFS_BACKEND=direct
 
-mkdir /mnt/huge
-mount /mnt/huge --source nodev -t hugetlbfs -o pagesize=1GB
+virt-builder centosstream-8 \
+  --format qcow2 \
+  --root-password password:redhat \
+  --install cloud-init,driverctl,tuned-profiles-cpu-partitioning,tar,python3,pciutils \
+  --run /root/scripts/customize-vm \
+  --firstboot /root/scripts/first-boot \
+  --selinux-relabel \
+  --output /output/kubevirt-dpdk-checkup-traffic-gen.qcow2
