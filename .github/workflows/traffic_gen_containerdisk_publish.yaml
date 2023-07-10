@@ -1,0 +1,31 @@
+name: Publish Traffic generator ContainerDisk
+
+on:
+  push:
+    branches:
+      - main
+      - traffic-gen-in-vm
+    tags:
+      - 'v*.*.*'
+
+ # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  publish_containerDisk_image:
+    name: Build and publish traffic-gen ContainerDisk Image
+    runs-on: ubuntu-latest
+    env:
+      CRI_BIN: podman
+      TRAFFIC_GEN_CONTAINER_DISK_IMAGE_TAG: ${{github.ref_name}}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Build the ContainerDisk image
+        run: make build-traffic-gen-container-disk
+      - name: Login to quay.io
+        run:
+          ${CRI_BIN} login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_TOKEN }} quay.io
+      - name: Publish
+        run:
+          make push-traffic-gen-container-disk
