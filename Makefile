@@ -105,13 +105,13 @@ build-vm-image: build-vm-image-builder
 	$(CRI_BIN) container run --rm \
       --volume=$(VIRT_BUILDER_CACHE_DIR):/root/.cache/virt-builder:Z \
       --volume=$(VIRT_BUILDER_OUTPUT_DIR):/output:Z \
-      --volume=$(CURDIR)/vms/scripts:/root/scripts:Z \
+      --volume=$(CURDIR)/vms/vm-under-test/scripts:/root/scripts:Z \
       $(REG)/$(ORG)/$(VM_IMAGE_BUILDER_IMAGE_NAME):$(VM_IMAGE_BUILDER_IMAGE_TAG) \
       /root/scripts/build-vm-image
 .PHONY: build-vm-image
 
 build-vm-container-disk: build-vm-image
-	$(CRI_BIN) build $(CURDIR) -f $(CURDIR)/vms/Dockerfile -t $(REG)/$(ORG)/$(VM_CONTAINER_DISK_IMAGE_NAME):$(VM_CONTAINER_DISK_IMAGE_TAG)
+	$(CRI_BIN) build $(CURDIR) -f $(CURDIR)/vms/vm-under-test/Dockerfile -t $(REG)/$(ORG)/$(VM_CONTAINER_DISK_IMAGE_NAME):$(VM_CONTAINER_DISK_IMAGE_TAG)
 .PHONY: build-vm-container-disk
 
 push-vm-container-disk:
