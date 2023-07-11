@@ -133,7 +133,7 @@ func (c *Checkup) Teardown(ctx context.Context) error {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 
-	if err := c.waitForVMIDeletion(ctx); err != nil {
+	if err := c.waitForVMIDeletion(ctx, c.vmiUnderTest.Name); err != nil {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 
@@ -197,12 +197,12 @@ func (c *Checkup) deleteVMI(ctx context.Context) error {
 	return nil
 }
 
-func (c *Checkup) waitForVMIDeletion(ctx context.Context) error {
-	vmiFullName := ObjectFullName(c.vmiUnderTest.Namespace, c.vmiUnderTest.Name)
+func (c *Checkup) waitForVMIDeletion(ctx context.Context, name string) error {
+	vmiFullName := ObjectFullName(c.namespace, name)
 	log.Printf("Waiting for VMI %q to be deleted...", vmiFullName)
 
 	conditionFn := func(ctx context.Context) (bool, error) {
-		_, err := c.client.GetVirtualMachineInstance(ctx, c.vmiUnderTest.Namespace, c.vmiUnderTest.Name)
+		_, err := c.client.GetVirtualMachineInstance(ctx, c.namespace, name)
 		if k8serrors.IsNotFound(err) {
 			return true, nil
 		}
@@ -226,7 +226,7 @@ func (c *Checkup) cleanupVMI() {
 	defer cancel()
 	_ = c.deleteVMI(delCtx)
 
-	if derr := c.waitForVMIDeletion(delCtx); derr != nil {
+	if derr := c.waitForVMIDeletion(delCtx, c.vmiUnderTest.Name); derr != nil {
 		log.Printf("Failed to cleanup VMI '%s/%s': %v", c.vmiUnderTest.Namespace, c.vmiUnderTest.Name, derr)
 	}
 }
