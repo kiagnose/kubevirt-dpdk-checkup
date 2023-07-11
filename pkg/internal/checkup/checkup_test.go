@@ -26,12 +26,10 @@ import (
 	"strings"
 	"testing"
 
-	networkv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
 	assert "github.com/stretchr/testify/require"
 
 	k8scorev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	kvcorev1 "kubevirt.io/api/core/v1"
@@ -85,7 +83,6 @@ func TestSetupShouldFail(t *testing.T) {
 
 		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedVMICreationFailure.Error())
 		assert.Empty(t, testClient.createdVMIs)
-		assert.Empty(t, testClient.createdPods)
 	})
 
 	t.Run("when wait for VMI to boot fails", func(t *testing.T) {
@@ -98,7 +95,6 @@ func TestSetupShouldFail(t *testing.T) {
 
 		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedVMIReadFailure.Error())
 		assert.Empty(t, testClient.createdVMIs)
-		assert.Empty(t, testClient.createdPods)
 	})
 }
 
@@ -182,10 +178,6 @@ chpasswd:
 
 type clientStub struct {
 	createdVMIs        map[string]*kvcorev1.VirtualMachineInstance
-	createdPods        map[string]*k8scorev1.Pod
-	podCreationFailure error
-	podReadFailure     error
-	podDeletionFailure error
 	vmiCreationFailure error
 	vmiReadFailure     error
 	vmiDeletionFailure error
@@ -194,7 +186,6 @@ type clientStub struct {
 func newClientStub() *clientStub {
 	return &clientStub{
 		createdVMIs: map[string]*kvcorev1.VirtualMachineInstance{},
-		createdPods: map[string]*k8scorev1.Pod{},
 	}
 }
 
@@ -246,59 +237,6 @@ func (cs *clientStub) DeleteVirtualMachineInstance(_ context.Context, namespace,
 	delete(cs.createdVMIs, vmiFullName)
 
 	return nil
-}
-
-func (cs *clientStub) CreatePod(_ context.Context, namespace string, pod *k8scorev1.Pod) (*k8scorev1.Pod, error) {
-	if cs.podCreationFailure != nil {
-		return nil, cs.podCreationFailure
-	}
-
-	pod.Namespace = namespace
-
-	podFullName := checkup.ObjectFullName(pod.Namespace, pod.Name)
-	pod.Status.Phase = k8scorev1.PodRunning
-	cs.createdPods[podFullName] = pod
-
-	return pod, nil
-}
-
-func (cs *clientStub) DeletePod(_ context.Context, namespace, name string) error {
-	if cs.podDeletionFailure != nil {
-		return cs.podDeletionFailure
-	}
-
-	podFullName := checkup.ObjectFullName(namespace, name)
-	_, exist := cs.createdPods[podFullName]
-	if !exist {
-		return k8serrors.NewNotFound(schema.GroupResource{Group: "", Resource: "pods"}, name)
-	}
-
-	delete(cs.createdPods, podFullName)
-
-	return nil
-}
-
-func (cs *clientStub) GetPod(_ context.Context, namespace, name string) (*k8scorev1.Pod, error) {
-	if cs.podReadFailure != nil {
-		return nil, cs.podReadFailure
-	}
-
-	podFullName := checkup.ObjectFullName(namespace, name)
-	pod, exist := cs.createdPods[podFullName]
-	if !exist {
-		return nil, k8serrors.NewNotFound(schema.GroupResource{Group: "", Resource: "pods"}, name)
-	}
-	return pod, nil
-}
-
-func (cs *clientStub) GetNetworkAttachmentDefinition(_ context.Context, _, _ string) (*networkv1.NetworkAttachmentDefinition, error) {
-	return &networkv1.NetworkAttachmentDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Annotations: map[string]string{
-				"k8s.v1.cni.cncf.io/resourceName": "openshift.io/dpdk-net",
-			},
-		},
-	}, nil
 }
 
 func (cs *clientStub) VMIName() string {
