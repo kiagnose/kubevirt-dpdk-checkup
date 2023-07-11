@@ -253,7 +253,7 @@ type executorStub struct {
 	executeErr error
 }
 
-func (es executorStub) Execute(_ context.Context, vmiName string) (status.Results, error) {
+func (es executorStub) Execute(_ context.Context, vmiUnderTestName string) (status.Results, error) {
 	if es.executeErr != nil {
 		return status.Results{}, es.executeErr
 	}
