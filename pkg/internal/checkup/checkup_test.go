@@ -241,7 +241,7 @@ func (cs *clientStub) DeleteVirtualMachineInstance(_ context.Context, namespace,
 
 func (cs *clientStub) VMIName() string {
 	for _, vmi := range cs.createdVMIs {
-		if strings.Contains(vmi.Name, checkup.VMINamePrefix) {
+		if strings.Contains(vmi.Name, checkup.VMIUnderTestNamePrefix) {
 			return vmi.Name
 		}
 	}
