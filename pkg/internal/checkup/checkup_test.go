@@ -57,13 +57,13 @@ func TestCheckupShouldSucceed(t *testing.T) {
 
 	assert.NoError(t, testCheckup.Setup(context.Background()))
 
-	vmiName := testClient.VMIName()
-	assert.NotEmpty(t, vmiName)
+	vmiUnderTestName := testClient.VMIName(checkup.VMIUnderTestNamePrefix)
+	assert.NotEmpty(t, vmiUnderTestName)
 
 	assert.NoError(t, testCheckup.Run(context.Background()))
 	assert.NoError(t, testCheckup.Teardown(context.Background()))
 
-	_, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
+	_, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiUnderTestName)
 	assert.ErrorContains(t, err, "not found")
 
 	actualResults := testCheckup.Results()
@@ -149,14 +149,14 @@ func TestRunFailure(t *testing.T) {
 
 	assert.NoError(t, testCheckup.Setup(context.Background()))
 
-	vmiName := testClient.VMIName()
-	assert.NotEmpty(t, vmiName)
+	vmiUnderTestName := testClient.VMIName(checkup.VMIUnderTestNamePrefix)
+	assert.NotEmpty(t, vmiUnderTestName)
 
 	assert.Error(t, expectedExecutionFailure, testCheckup.Run(context.Background()))
 
 	assert.NoError(t, testCheckup.Teardown(context.Background()))
 
-	_, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
+	_, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiUnderTestName)
 	assert.ErrorContains(t, err, "not found")
 
 	actualResults := testCheckup.Results()
@@ -239,9 +239,9 @@ func (cs *clientStub) DeleteVirtualMachineInstance(_ context.Context, namespace,
 	return nil
 }
 
-func (cs *clientStub) VMIName() string {
+func (cs *clientStub) VMIName(namePrefix string) string {
 	for _, vmi := range cs.createdVMIs {
-		if strings.Contains(vmi.Name, checkup.VMIUnderTestNamePrefix) {
+		if strings.Contains(vmi.Name, namePrefix) {
 			return vmi.Name
 		}
 	}
