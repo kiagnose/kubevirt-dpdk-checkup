@@ -62,16 +62,10 @@ func TestCheckupShouldSucceed(t *testing.T) {
 	vmiName := testClient.VMIName()
 	assert.NotEmpty(t, vmiName)
 
-	podName := testClient.TrafficGeneratorPodName()
-	assert.NotEmpty(t, podName)
-
 	assert.NoError(t, testCheckup.Run(context.Background()))
 	assert.NoError(t, testCheckup.Teardown(context.Background()))
 
 	_, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
-	assert.ErrorContains(t, err, "not found")
-
-	_, err = testClient.GetPod(context.Background(), testNamespace, podName)
 	assert.ErrorContains(t, err, "not found")
 
 	actualResults := testCheckup.Results()
@@ -106,32 +100,6 @@ func TestSetupShouldFail(t *testing.T) {
 		assert.Empty(t, testClient.createdVMIs)
 		assert.Empty(t, testClient.createdPods)
 	})
-
-	t.Run("when Pod creation fails", func(t *testing.T) {
-		expectedPodCreationFailure := errors.New("failed to create Pod")
-
-		testClient := newClientStub()
-		testConfig := newTestConfig()
-		testClient.podCreationFailure = expectedPodCreationFailure
-		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
-
-		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedPodCreationFailure.Error())
-		assert.Empty(t, testClient.createdVMIs)
-		assert.Empty(t, testClient.createdPods)
-	})
-
-	t.Run("when wait Pod Running fails on read", func(t *testing.T) {
-		expectedPodReadFailure := errors.New("failed to read Pod")
-
-		testClient := newClientStub()
-		testConfig := newTestConfig()
-		testClient.podReadFailure = expectedPodReadFailure
-		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
-
-		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedPodReadFailure.Error())
-		assert.Empty(t, testClient.createdVMIs)
-		assert.Empty(t, testClient.createdPods)
-	})
 }
 
 func TestTeardownShouldFailWhen(t *testing.T) {
@@ -139,16 +107,12 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 		description        string
 		vmiReadFailure     error
 		vmiDeletionFailure error
-		podDeletionFailure error
-		podReadFailure     error
 		expectedFailure    string
 	}
 
 	const (
 		vmiReadFailureMsg     = "failed to delete VMI"
 		vmiDeletionFailureMsg = "failed to read VMI"
-		podReadFailureMsg     = "failed to read Pod"
-		podDeletionFailureMsg = "failed to delete Pod"
 	)
 	testCases := []FailTestCase{
 		{
@@ -160,16 +124,6 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 			description:        "wait for VMI deletion fails",
 			vmiDeletionFailure: errors.New(vmiDeletionFailureMsg),
 			expectedFailure:    vmiDeletionFailureMsg,
-		},
-		{
-			description:        "Traffic generator Pod deletion fails",
-			podDeletionFailure: errors.New(podDeletionFailureMsg),
-			expectedFailure:    podDeletionFailureMsg,
-		},
-		{
-			description:     "wait for Traffic generator Pod deletion fails",
-			podReadFailure:  errors.New(podReadFailureMsg),
-			expectedFailure: podReadFailureMsg,
 		},
 	}
 
@@ -185,8 +139,6 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 
 			testClient.vmiDeletionFailure = testCase.vmiDeletionFailure
 			testClient.vmiReadFailure = testCase.vmiReadFailure
-			testClient.podDeletionFailure = testCase.podDeletionFailure
-			testClient.podReadFailure = testCase.podReadFailure
 			assert.ErrorContains(t, testCheckup.Teardown(context.Background()), testCase.expectedFailure)
 		})
 	}
@@ -204,17 +156,11 @@ func TestRunFailure(t *testing.T) {
 	vmiName := testClient.VMIName()
 	assert.NotEmpty(t, vmiName)
 
-	podName := testClient.TrafficGeneratorPodName()
-	assert.NotEmpty(t, podName)
-
 	assert.Error(t, expectedExecutionFailure, testCheckup.Run(context.Background()))
 
 	assert.NoError(t, testCheckup.Teardown(context.Background()))
 
 	_, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
-	assert.ErrorContains(t, err, "not found")
-
-	_, err = testClient.GetPod(context.Background(), testNamespace, podName)
 	assert.ErrorContains(t, err, "not found")
 
 	actualResults := testCheckup.Results()
@@ -353,16 +299,6 @@ func (cs *clientStub) GetNetworkAttachmentDefinition(_ context.Context, _, _ str
 			},
 		},
 	}, nil
-}
-
-func (cs *clientStub) TrafficGeneratorPodName() string {
-	for _, pod := range cs.createdPods {
-		if strings.Contains(pod.Name, checkup.TrafficGeneratorPodNamePrefix) {
-			return pod.Name
-		}
-	}
-
-	return ""
 }
 
 func (cs *clientStub) VMIName() string {

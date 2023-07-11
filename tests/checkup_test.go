@@ -37,7 +37,6 @@ import (
 
 const (
 	testServiceAccountName              = "dpdk-checkup-sa"
-	testTrafficGenServiceAccountName    = "dpdk-checkup-traffic-gen-sa"
 	testKiagnoseConfigMapAccessRoleName = "kiagnose-configmap-access"
 	testKubeVirtDPDKCheckerRoleName     = "kubevirt-dpdk-checker"
 	testConfigMapName                   = "dpdk-checkup-config"
@@ -52,7 +51,6 @@ var _ = Describe("Execute the checkup Job", func() {
 
 	BeforeEach(func() {
 		setupCheckupPermissions()
-		setupTrafficGeneratorPermissions()
 
 		var err error
 		configMap = newConfigMap()
@@ -215,30 +213,6 @@ func setupCheckupPermissions() {
 	})
 }
 
-func setupTrafficGeneratorPermissions() {
-	var (
-		err                            error
-		trafficGeneratorServiceAccount *corev1.ServiceAccount
-	)
-
-	trafficGeneratorServiceAccount = newServiceAccount(testTrafficGenServiceAccountName)
-	trafficGeneratorServiceAccount, err = virtClient.CoreV1().ServiceAccounts(testNamespace).Create(
-		context.Background(),
-		trafficGeneratorServiceAccount,
-		metav1.CreateOptions{},
-	)
-	Expect(err).NotTo(HaveOccurred())
-
-	DeferCleanup(func() {
-		err = virtClient.CoreV1().ServiceAccounts(trafficGeneratorServiceAccount.Namespace).Delete(
-			context.Background(),
-			trafficGeneratorServiceAccount.Name,
-			metav1.DeleteOptions{},
-		)
-		Expect(err).NotTo(HaveOccurred())
-	})
-}
-
 func newServiceAccount(serviceAccountName string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
@@ -276,21 +250,6 @@ func newKubeVirtDPDKCheckerRole() *rbacv1.Role {
 			{
 				APIGroups: []string{"subresources.kubevirt.io"},
 				Resources: []string{"virtualmachineinstances/console"},
-				Verbs:     []string{"get"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"pods"},
-				Verbs:     []string{"create", "get", "delete"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"pods/exec"},
-				Verbs:     []string{"create"},
-			},
-			{
-				APIGroups: []string{"k8s.cni.cncf.io"},
-				Resources: []string{"network-attachment-definitions"},
 				Verbs:     []string{"get"},
 			},
 		},
