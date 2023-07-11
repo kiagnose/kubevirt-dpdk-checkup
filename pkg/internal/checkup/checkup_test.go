@@ -46,8 +46,8 @@ const (
 	testNetworkAttachmentDefinitionName = "dpdk-network"
 	trafficGeneratorEastMacAddress      = "DE:AD:BE:EF:00:01"
 	trafficGeneratorWestMacAddress      = "DE:AD:BE:EF:01:00"
-	dpdkEastMacAddress                  = "DE:AD:BE:EF:00:02"
-	dpdkWestMacAddress                  = "DE:AD:BE:EF:02:00"
+	vmiUnderTestEastMacAddress          = "DE:AD:BE:EF:00:02"
+	vmiUnderTestWestMacAddress          = "DE:AD:BE:EF:02:00"
 )
 
 func TestCheckupShouldSucceed(t *testing.T) {
@@ -264,8 +264,8 @@ func (es executorStub) Execute(_ context.Context, vmiUnderTestName string) (stat
 func newTestConfig() config.Config {
 	trafficGeneratorEastHWAddress, _ := net.ParseMAC(trafficGeneratorEastMacAddress)
 	trafficGeneratorWestHWAddress, _ := net.ParseMAC(trafficGeneratorWestMacAddress)
-	dpdkEastHWAddress, _ := net.ParseMAC(dpdkEastMacAddress)
-	dpdkWestHWAddress, _ := net.ParseMAC(dpdkWestMacAddress)
+	dpdkEastHWAddress, _ := net.ParseMAC(vmiUnderTestEastMacAddress)
+	dpdkWestHWAddress, _ := net.ParseMAC(vmiUnderTestWestMacAddress)
 	return config.Config{
 		PodName:                           testPodName,
 		PodUID:                            testPodUID,
