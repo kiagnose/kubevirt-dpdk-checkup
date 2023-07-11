@@ -88,10 +88,13 @@ func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
 		}
 	}()
 
-	err = c.waitForVMIToBoot(ctx)
+	var updatedVMIUnderTest *kvcorev1.VirtualMachineInstance
+	updatedVMIUnderTest, err = c.waitForVMIToBoot(ctx, c.vmiUnderTest.Name)
 	if err != nil {
 		return err
 	}
+
+	c.vmiUnderTest = updatedVMIUnderTest
 
 	return nil
 }
@@ -153,14 +156,14 @@ func (c *Checkup) createVMI(ctx context.Context) error {
 	return nil
 }
 
-func (c *Checkup) waitForVMIToBoot(ctx context.Context) error {
-	vmiFullName := ObjectFullName(c.vmiUnderTest.Namespace, c.vmiUnderTest.Name)
+func (c *Checkup) waitForVMIToBoot(ctx context.Context, name string) (*kvcorev1.VirtualMachineInstance, error) {
+	vmiFullName := ObjectFullName(c.namespace, name)
 	log.Printf("Waiting for VMI %q to boot...", vmiFullName)
 	var updatedVMI *kvcorev1.VirtualMachineInstance
 
 	conditionFn := func(ctx context.Context) (bool, error) {
 		var err error
-		updatedVMI, err = c.client.GetVirtualMachineInstance(ctx, c.vmiUnderTest.Namespace, c.vmiUnderTest.Name)
+		updatedVMI, err = c.client.GetVirtualMachineInstance(ctx, c.namespace, name)
 		if err != nil {
 			return false, err
 		}
@@ -175,12 +178,12 @@ func (c *Checkup) waitForVMIToBoot(ctx context.Context) error {
 	}
 	const pollInterval = 5 * time.Second
 	if err := wait.PollImmediateUntilWithContext(ctx, pollInterval, conditionFn); err != nil {
-		return fmt.Errorf("failed to wait for VMI %q to boot: %v", vmiFullName, err)
+		return nil, fmt.Errorf("failed to wait for VMI %q to boot: %v", vmiFullName, err)
 	}
 
 	log.Printf("VMI %q had successfully booted", vmiFullName)
-	c.vmiUnderTest = updatedVMI
-	return nil
+
+	return updatedVMI, nil
 }
 
 func (c *Checkup) deleteVMI(ctx context.Context) error {
