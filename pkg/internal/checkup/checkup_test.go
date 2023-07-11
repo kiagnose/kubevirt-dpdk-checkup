@@ -264,8 +264,8 @@ func (es executorStub) Execute(_ context.Context, vmiUnderTestName string) (stat
 func newTestConfig() config.Config {
 	trafficGeneratorEastHWAddress, _ := net.ParseMAC(trafficGeneratorEastMacAddress)
 	trafficGeneratorWestHWAddress, _ := net.ParseMAC(trafficGeneratorWestMacAddress)
-	dpdkEastHWAddress, _ := net.ParseMAC(vmiUnderTestEastMacAddress)
-	dpdkWestHWAddress, _ := net.ParseMAC(vmiUnderTestWestMacAddress)
+	vmiUnderTestEastHWAddress, _ := net.ParseMAC(vmiUnderTestEastMacAddress)
+	vmiUnderTestWestHWAddress, _ := net.ParseMAC(vmiUnderTestWestMacAddress)
 	return config.Config{
 		PodName:                           testPodName,
 		PodUID:                            testPodUID,
@@ -276,8 +276,8 @@ func newTestConfig() config.Config {
 		PortBandwidthGB:                   config.PortBandwidthGBDefault,
 		TrafficGeneratorEastMacAddress:    trafficGeneratorEastHWAddress,
 		TrafficGeneratorWestMacAddress:    trafficGeneratorWestHWAddress,
-		DPDKEastMacAddress:                dpdkEastHWAddress,
-		DPDKWestMacAddress:                dpdkWestHWAddress,
+		DPDKEastMacAddress:                vmiUnderTestEastHWAddress,
+		DPDKWestMacAddress:                vmiUnderTestWestHWAddress,
 		TestDuration:                      config.TestDurationDefault,
 	}
 }
