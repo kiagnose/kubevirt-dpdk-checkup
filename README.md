@@ -66,7 +66,6 @@ roleRef:
 |---------------------------------------------|-------------------------------------------------------------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------|
 | spec.timeout                                | How much time before the checkup will try to close itself                                                         | True         |                                                                                     |
 | spec.param.networkAttachmentDefinitionName  | NetworkAttachmentDefinition name of the SR-IOV NICs connected                                                     | True         | Assumed to be in the same namespace                                                 |
-| spec.param.trafficGeneratorRuntimeClassName | [Runtime Class](https://kubernetes.io/docs/concepts/containers/runtime-class/) the traffic generator pod will use | True         |                                                                                     |
 | spec.param.trafficGeneratorImage            | Traffic generator's container image                                                                               | False        | Defaults to the U/S image `quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main` |
 | spec.param.trafficGeneratorNodeSelector     | Node Name on which the traffic generator Pod will be scheduled to                                                 | False        | Assumed to be configured to Nodes that allow DPDK traffic                           |
 | spec.param.trafficGeneratorPacketsPerSecond | Amount of packets per second. format: <amount>[/k/m] k-kilo; m-million                                            | False        | Defaults to 14m                                                                     |
@@ -90,7 +89,6 @@ metadata:
 data:
   spec.timeout: 10m
   spec.param.networkAttachmentDefinitionName: <network-name>
-  spec.param.trafficGeneratorRuntimeClassName: <runtimeclass-name>
 ```
 
 ## Execution
