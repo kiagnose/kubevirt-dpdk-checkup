@@ -129,7 +129,7 @@ func (c *Checkup) Run(ctx context.Context) error {
 func (c *Checkup) Teardown(ctx context.Context) error {
 	const errPrefix = "teardown"
 
-	if err := c.deleteVMI(ctx); err != nil {
+	if err := c.deleteVMI(ctx, c.vmiUnderTest.Name); err != nil {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 
@@ -181,15 +181,11 @@ func (c *Checkup) waitForVMIToBoot(ctx context.Context, name string) (*kvcorev1.
 	return updatedVMI, nil
 }
 
-func (c *Checkup) deleteVMI(ctx context.Context) error {
-	if c.vmiUnderTest == nil {
-		return fmt.Errorf("failed to delete VMI, object doesn't exist")
-	}
-
-	vmiFullName := ObjectFullName(c.vmiUnderTest.Namespace, c.vmiUnderTest.Name)
+func (c *Checkup) deleteVMI(ctx context.Context, name string) error {
+	vmiFullName := ObjectFullName(c.namespace, name)
 
 	log.Printf("Trying to delete VMI: %q", vmiFullName)
-	if err := c.client.DeleteVirtualMachineInstance(ctx, c.vmiUnderTest.Namespace, c.vmiUnderTest.Name); err != nil {
+	if err := c.client.DeleteVirtualMachineInstance(ctx, c.namespace, name); err != nil {
 		log.Printf("Failed to delete VMI: %q", vmiFullName)
 		return err
 	}
@@ -224,7 +220,7 @@ func (c *Checkup) cleanupVMI() {
 	log.Printf("setup failed, cleanup VMI '%s/%s'", c.vmiUnderTest.Namespace, c.vmiUnderTest.Name)
 	delCtx, cancel := context.WithTimeout(context.Background(), setupCleanupTimeout)
 	defer cancel()
-	_ = c.deleteVMI(delCtx)
+	_ = c.deleteVMI(delCtx, c.vmiUnderTest.Name)
 
 	if derr := c.waitForVMIDeletion(delCtx, c.vmiUnderTest.Name); derr != nil {
 		log.Printf("Failed to cleanup VMI '%s/%s': %v", c.vmiUnderTest.Namespace, c.vmiUnderTest.Name, derr)
