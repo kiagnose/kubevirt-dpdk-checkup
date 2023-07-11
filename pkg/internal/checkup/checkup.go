@@ -79,7 +79,7 @@ func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
 	const errMessagePrefix = "setup"
 	var err error
 
-	if err = c.createVMI(ctx); err != nil {
+	if err = c.createVMI(ctx, c.vmiUnderTest); err != nil {
 		return fmt.Errorf("%s: %w", errMessagePrefix, err)
 	}
 	defer func() {
@@ -144,16 +144,11 @@ func (c *Checkup) Results() status.Results {
 	return c.results
 }
 
-func (c *Checkup) createVMI(ctx context.Context) error {
-	log.Printf("Creating VMI %q...", ObjectFullName(c.namespace, c.vmiUnderTest.Name))
+func (c *Checkup) createVMI(ctx context.Context, vmiToCreate *kvcorev1.VirtualMachineInstance) error {
+	log.Printf("Creating VMI %q...", ObjectFullName(c.namespace, vmiToCreate.Name))
 
-	var err error
-	c.vmiUnderTest, err = c.client.CreateVirtualMachineInstance(ctx, c.namespace, c.vmiUnderTest)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	_, err := c.client.CreateVirtualMachineInstance(ctx, c.namespace, vmiToCreate)
+	return err
 }
 
 func (c *Checkup) waitForVMIToBoot(ctx context.Context, name string) (*kvcorev1.VirtualMachineInstance, error) {
