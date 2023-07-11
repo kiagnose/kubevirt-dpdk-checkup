@@ -4,7 +4,7 @@ checkup validating DPDK readiness of cluster, using the Kiagnose engine
 
 ## Permissions
 
-You need to be a cluster-admin in order to execute this checkup.
+You need to be a namespace-admin in order to execute this checkup.
 The checkup requires the following permissions:
 
 ```yaml
