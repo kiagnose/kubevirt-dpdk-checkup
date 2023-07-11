@@ -84,7 +84,7 @@ func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
 	}
 	defer func() {
 		if setupErr != nil {
-			c.cleanupVMI()
+			c.cleanupVMI(c.vmiUnderTest.Name)
 		}
 	}()
 
@@ -214,16 +214,19 @@ func (c *Checkup) waitForVMIDeletion(ctx context.Context, name string) error {
 	return nil
 }
 
-func (c *Checkup) cleanupVMI() {
+func (c *Checkup) cleanupVMI(name string) {
 	const setupCleanupTimeout = 30 * time.Second
 
-	log.Printf("setup failed, cleanup VMI '%s/%s'", c.vmiUnderTest.Namespace, c.vmiUnderTest.Name)
+	vmiFullName := ObjectFullName(c.namespace, name)
+	log.Printf("setup failed, cleanup VMI %q", vmiFullName)
+
 	delCtx, cancel := context.WithTimeout(context.Background(), setupCleanupTimeout)
 	defer cancel()
+
 	_ = c.deleteVMI(delCtx, c.vmiUnderTest.Name)
 
-	if derr := c.waitForVMIDeletion(delCtx, c.vmiUnderTest.Name); derr != nil {
-		log.Printf("Failed to cleanup VMI '%s/%s': %v", c.vmiUnderTest.Namespace, c.vmiUnderTest.Name, derr)
+	if err := c.waitForVMIDeletion(delCtx, name); err != nil {
+		log.Printf("Failed to wait for VMI %q disposal: %v", vmiFullName, err)
 	}
 }
 
