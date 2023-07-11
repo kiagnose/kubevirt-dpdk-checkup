@@ -70,7 +70,7 @@ func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config
 		client:       client,
 		namespace:    namespace,
 		params:       checkupConfig,
-		vmiUnderTest: newDPDKVMI(checkupConfig),
+		vmiUnderTest: newVMIUnderTest(checkupConfig),
 		executor:     executor,
 	}
 }
@@ -254,7 +254,7 @@ func randomizeName(prefix string) string {
 	return fmt.Sprintf("%s-%s", prefix, k8srand.String(randomStringLen))
 }
 
-func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
+func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 	const (
 		CPUSocketsCount   = 1
 		CPUCoresCount     = 4
