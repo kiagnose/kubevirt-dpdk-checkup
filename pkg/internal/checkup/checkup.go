@@ -61,7 +61,7 @@ type Checkup struct {
 }
 
 const (
-	VMINamePrefix          = "dpdk-vmi"
+	VMIUnderTestNamePrefix = "vmi-under-test"
 	DPDKCheckupUIDLabelKey = "kubevirt-dpdk-checkup/uid"
 )
 
@@ -280,7 +280,7 @@ func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstan
 			checkupConfig.PodUID)}
 	}
 
-	return vmi.New(randomizeName(VMINamePrefix),
+	return vmi.New(randomizeName(VMIUnderTestNamePrefix),
 		vmi.WithOwnerReference(checkupConfig.PodName, checkupConfig.PodUID),
 		vmi.WithLabels(labels),
 		vmi.WithAffinity(affinity),
