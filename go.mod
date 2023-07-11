@@ -4,7 +4,6 @@ go 1.20
 
 require (
 	github.com/google/goexpect v0.0.0-20210430020637-ab937bf7fd6f
-	github.com/k8snetworkplumbingwg/network-attachment-definition-client v1.4.0
 	github.com/kiagnose/kiagnose v0.2.1-0.20221208132946-95d8c7995fab
 	github.com/onsi/ginkgo/v2 v2.7.0
 	github.com/onsi/gomega v1.24.2
@@ -41,6 +40,7 @@ require (
 	github.com/imdario/mergo v0.3.15 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/k8snetworkplumbingwg/network-attachment-definition-client v1.4.0 // indirect
 	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
