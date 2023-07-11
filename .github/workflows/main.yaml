@@ -48,11 +48,3 @@ jobs:
         uses: actions/checkout@v3
       - name: Build checkup image
         run: make build
-  build-traffic-gen:
-    name: Build traffic generator image
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-      - name: Build traffic generator image
-        run: make build-traffic-gen
