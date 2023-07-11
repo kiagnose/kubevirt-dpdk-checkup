@@ -48,7 +48,7 @@ type kubeVirtVMIClient interface {
 }
 
 type testExecutor interface {
-	Execute(ctx context.Context, vmiName string) (status.Results, error)
+	Execute(ctx context.Context, vmiUnderTestName string) (status.Results, error)
 }
 
 type Checkup struct {
