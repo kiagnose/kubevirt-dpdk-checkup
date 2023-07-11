@@ -37,7 +37,6 @@ const (
 	testPodName                       = "my-pod"
 	testPodUID                        = "0123456789-0123456789"
 	networkAttachmentDefinitionName   = "intel-dpdk-network1"
-	trafficGeneratorRuntimeClassName  = "dpdk-runtimeclass"
 	portBandwidthGB                   = 100
 	trafficGeneratorNodeLabelSelector = "node-role.kubernetes.io/worker-dpdk1"
 	trafficGeneratorPacketsPerSecond  = "6m"
@@ -56,8 +55,7 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		PodName: testPodName,
 		PodUID:  testPodUID,
 		Params: map[string]string{
-			config.NetworkAttachmentDefinitionNameParamName:  networkAttachmentDefinitionName,
-			config.TrafficGeneratorRuntimeClassNameParamName: trafficGeneratorRuntimeClassName,
+			config.NetworkAttachmentDefinitionNameParamName: networkAttachmentDefinitionName,
 		},
 	}
 
@@ -72,7 +70,6 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 	expectedConfig := config.Config{
 		PodName:                          testPodName,
 		PodUID:                           testPodUID,
-		TrafficGeneratorRuntimeClassName: trafficGeneratorRuntimeClassName,
 		NetworkAttachmentDefinitionName:  networkAttachmentDefinitionName,
 		TrafficGeneratorPacketsPerSecond: config.TrafficGeneratorPacketsPerSecondDefault,
 		PortBandwidthGB:                  config.PortBandwidthGBDefault,
@@ -107,7 +104,6 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 			config.Config{
 				PodName:                           testPodName,
 				PodUID:                            testPodUID,
-				TrafficGeneratorRuntimeClassName:  trafficGeneratorRuntimeClassName,
 				PortBandwidthGB:                   portBandwidthGB,
 				NetworkAttachmentDefinitionName:   networkAttachmentDefinitionName,
 				TrafficGeneratorPacketsPerSecond:  trafficGeneratorPacketsPerSecond,
@@ -129,7 +125,6 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 			config.Config{
 				PodName:                          testPodName,
 				PodUID:                           testPodUID,
-				TrafficGeneratorRuntimeClassName: trafficGeneratorRuntimeClassName,
 				PortBandwidthGB:                  portBandwidthGB,
 				NetworkAttachmentDefinitionName:  networkAttachmentDefinitionName,
 				TrafficGeneratorPacketsPerSecond: trafficGeneratorPacketsPerSecond,
@@ -169,12 +164,6 @@ type failureTestCase struct {
 
 func TestNewShouldFailWhen(t *testing.T) {
 	testCases := []failureTestCase{
-		{
-			description:    "Traffic Generator Runtimeclass Name is invalid",
-			key:            config.TrafficGeneratorRuntimeClassNameParamName,
-			faultyKeyValue: "",
-			expectedError:  config.ErrInvalidTrafficGeneratorRuntimeClassName,
-		},
 		{
 			description:    "NetworkAttachmentDefinitionName is invalid",
 			key:            config.NetworkAttachmentDefinitionNameParamName,
@@ -283,7 +272,6 @@ func getValidUserParametersWithOutNodeSelectors() map[string]string {
 
 func getValidUserParameters() map[string]string {
 	return map[string]string{
-		config.TrafficGeneratorRuntimeClassNameParamName:  trafficGeneratorRuntimeClassName,
 		config.NetworkAttachmentDefinitionNameParamName:   networkAttachmentDefinitionName,
 		config.PortBandwidthGBParamName:                   fmt.Sprintf("%d", portBandwidthGB),
 		config.TrafficGeneratorNodeLabelSelectorParamName: trafficGeneratorNodeLabelSelector,
