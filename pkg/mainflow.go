@@ -73,11 +73,11 @@ func printConfig(checkupConfig config.Config) {
 	log.Printf("%q: %q", config.TrafficGeneratorPacketsPerSecondParamName, checkupConfig.TrafficGeneratorPacketsPerSecond)
 	log.Printf("%q: %q", config.TrafficGeneratorEastMacAddressParamName, checkupConfig.TrafficGeneratorEastMacAddress)
 	log.Printf("%q: %q", config.TrafficGeneratorWestMacAddressParamName, checkupConfig.TrafficGeneratorWestMacAddress)
-	log.Printf("%q: %q", config.PortBandwidthGBParamName, fmt.Sprintf("%d", checkupConfig.PortBandwidthGB))
 	log.Printf("%q: %q", config.DPDKNodeLabelSelectorParamName, checkupConfig.DPDKNodeLabelSelector)
 	log.Printf("%q: %q", config.DPDKEastMacAddressParamName, checkupConfig.DPDKEastMacAddress)
 	log.Printf("%q: %q", config.DPDKWestMacAddressParamName, checkupConfig.DPDKWestMacAddress)
 	log.Printf("%q: %q", config.VMContainerDiskImageParamName, checkupConfig.VMContainerDiskImage)
 	log.Printf("%q: %q", config.TestDurationParamName, checkupConfig.TestDuration)
+	log.Printf("%q: %q", config.PortBandwidthGBParamName, fmt.Sprintf("%d", checkupConfig.PortBandwidthGB))
 	log.Printf("%q: %t", config.VerboseParamName, checkupConfig.Verbose)
 }
