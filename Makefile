@@ -9,6 +9,8 @@ VIRT_BUILDER_CACHE_DIR := $(CURDIR)/_virt_builder/cache
 VIRT_BUILDER_OUTPUT_DIR := $(CURDIR)/_virt_builder/output
 VM_CONTAINER_DISK_IMAGE_NAME := kubevirt-dpdk-checkup-vm
 VM_CONTAINER_DISK_IMAGE_TAG ?= latest
+TRAFFIC_GEN_CONTAINER_DISK_IMAGE_NAME := kubevirt-dpdk-checkup-traffic-gen
+TRAFFIC_GEN_CONTAINER_DISK_IMAGE_TAG ?= latest
 GO_IMAGE_NAME := docker.io/library/golang
 GO_IMAGE_TAG := 1.19.4
 BIN_DIR = $(CURDIR)/_output/bin
@@ -95,7 +97,7 @@ vendor:
 .PHONY: vendor
 
 build-vm-image-builder:
-	$(CRI_BIN) build $(CURDIR)/vm/image-builder -f $(CURDIR)/vm/image-builder/Dockerfile -t $(REG)/$(ORG)/$(VM_IMAGE_BUILDER_IMAGE_NAME):$(VM_IMAGE_BUILDER_IMAGE_TAG)
+	$(CRI_BIN) build $(CURDIR)/vms/image-builder -f $(CURDIR)/vms/image-builder/Dockerfile -t $(REG)/$(ORG)/$(VM_IMAGE_BUILDER_IMAGE_NAME):$(VM_IMAGE_BUILDER_IMAGE_TAG)
 .PHONY: build-vm-image-builder
 
 build-vm-image: build-vm-image-builder
@@ -105,15 +107,35 @@ build-vm-image: build-vm-image-builder
 	$(CRI_BIN) container run --rm \
       --volume=$(VIRT_BUILDER_CACHE_DIR):/root/.cache/virt-builder:Z \
       --volume=$(VIRT_BUILDER_OUTPUT_DIR):/output:Z \
-      --volume=$(CURDIR)/vm/scripts:/root/scripts:Z \
+      --volume=$(CURDIR)/vms/vm-under-test/scripts:/root/scripts:Z \
       $(REG)/$(ORG)/$(VM_IMAGE_BUILDER_IMAGE_NAME):$(VM_IMAGE_BUILDER_IMAGE_TAG) \
       /root/scripts/build-vm-image
 .PHONY: build-vm-image
 
 build-vm-container-disk: build-vm-image
-	$(CRI_BIN) build $(CURDIR) -f $(CURDIR)/vm/Dockerfile -t $(REG)/$(ORG)/$(VM_CONTAINER_DISK_IMAGE_NAME):$(VM_CONTAINER_DISK_IMAGE_TAG)
+	$(CRI_BIN) build $(CURDIR) -f $(CURDIR)/vms/vm-under-test/Dockerfile -t $(REG)/$(ORG)/$(VM_CONTAINER_DISK_IMAGE_NAME):$(VM_CONTAINER_DISK_IMAGE_TAG)
 .PHONY: build-vm-container-disk
 
 push-vm-container-disk:
 	$(CRI_BIN) push $(REG)/$(ORG)/$(VM_CONTAINER_DISK_IMAGE_NAME):$(VM_CONTAINER_DISK_IMAGE_TAG)
 .PHONY: push-vm-container-disk
+
+build-traffic-gen-vm-image: build-vm-image-builder
+	mkdir -vp $(VIRT_BUILDER_CACHE_DIR)
+	mkdir -vp $(VIRT_BUILDER_OUTPUT_DIR)
+
+	$(CRI_BIN) container run --rm \
+      --volume=$(VIRT_BUILDER_CACHE_DIR):/root/.cache/virt-builder:Z \
+      --volume=$(VIRT_BUILDER_OUTPUT_DIR):/output:Z \
+      --volume=$(CURDIR)/vms/traffic-gen/scripts:/root/scripts:Z \
+      $(REG)/$(ORG)/$(VM_IMAGE_BUILDER_IMAGE_NAME):$(VM_IMAGE_BUILDER_IMAGE_TAG) \
+      /root/scripts/build-vm-image
+.PHONY: build-traffic-gen-vm-image
+
+build-traffic-gen-container-disk: build-traffic-gen-vm-image
+	$(CRI_BIN) build $(CURDIR) -f $(CURDIR)/vms/traffic-gen/Dockerfile -t $(REG)/$(ORG)/$(TRAFFIC_GEN_CONTAINER_DISK_IMAGE_NAME):$(TRAFFIC_GEN_CONTAINER_DISK_IMAGE_TAG)
+.PHONY: build-traffic-gen-container-disk
+
+push-traffic-gen-container-disk:
+	$(CRI_BIN) push $(REG)/$(ORG)/$(TRAFFIC_GEN_CONTAINER_DISK_IMAGE_NAME):$(TRAFFIC_GEN_CONTAINER_DISK_IMAGE_TAG)
+.PHONY: push-traffic-gen-container-disk
