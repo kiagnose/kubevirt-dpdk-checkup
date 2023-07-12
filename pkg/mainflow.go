@@ -67,6 +67,7 @@ func Run(rawEnv map[string]string, namespace string) error {
 func printConfig(checkupConfig config.Config) {
 	log.Println("Using the following config:")
 	log.Printf("%q: %q", config.NetworkAttachmentDefinitionNameParamName, checkupConfig.NetworkAttachmentDefinitionName)
+	log.Printf("%q: %q", config.TrafficGeneratorImageParamName, checkupConfig.TrafficGeneratorImage)
 	log.Printf("%q: %q", config.PortBandwidthGBParamName, fmt.Sprintf("%d", checkupConfig.PortBandwidthGB))
 	log.Printf("%q: %q", config.TrafficGeneratorNodeLabelSelectorParamName, checkupConfig.TrafficGeneratorNodeLabelSelector)
 	log.Printf("%q: %q", config.TrafficGeneratorPacketsPerSecondParamName, checkupConfig.TrafficGeneratorPacketsPerSecond)
@@ -75,7 +76,6 @@ func printConfig(checkupConfig config.Config) {
 	log.Printf("%q: %q", config.TrafficGeneratorWestMacAddressParamName, checkupConfig.TrafficGeneratorWestMacAddress)
 	log.Printf("%q: %q", config.DPDKEastMacAddressParamName, checkupConfig.DPDKEastMacAddress)
 	log.Printf("%q: %q", config.DPDKWestMacAddressParamName, checkupConfig.DPDKWestMacAddress)
-	log.Printf("%q: %q", config.TrafficGeneratorImageParamName, checkupConfig.TrafficGeneratorImage)
 	log.Printf("%q: %q", config.VMContainerDiskImageParamName, checkupConfig.VMContainerDiskImage)
 	log.Printf("%q: %q", config.TestDurationParamName, checkupConfig.TestDuration)
 	log.Printf("%q: %t", config.VerboseParamName, checkupConfig.Verbose)
