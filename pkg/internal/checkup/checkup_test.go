@@ -46,8 +46,8 @@ const (
 	testNetworkAttachmentDefinitionName = "dpdk-network"
 	trafficGeneratorEastMacAddress      = "DE:AD:BE:EF:00:01"
 	trafficGeneratorWestMacAddress      = "DE:AD:BE:EF:01:00"
-	dpdkEastMacAddress                  = "DE:AD:BE:EF:00:02"
-	dpdkWestMacAddress                  = "DE:AD:BE:EF:02:00"
+	vmiUnderTestEastMacAddress          = "DE:AD:BE:EF:00:02"
+	vmiUnderTestWestMacAddress          = "DE:AD:BE:EF:02:00"
 )
 
 func TestCheckupShouldSucceed(t *testing.T) {
@@ -57,13 +57,13 @@ func TestCheckupShouldSucceed(t *testing.T) {
 
 	assert.NoError(t, testCheckup.Setup(context.Background()))
 
-	vmiName := testClient.VMIName()
-	assert.NotEmpty(t, vmiName)
+	vmiUnderTestName := testClient.VMIName(checkup.VMIUnderTestNamePrefix)
+	assert.NotEmpty(t, vmiUnderTestName)
 
 	assert.NoError(t, testCheckup.Run(context.Background()))
 	assert.NoError(t, testCheckup.Teardown(context.Background()))
 
-	_, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
+	_, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiUnderTestName)
 	assert.ErrorContains(t, err, "not found")
 
 	actualResults := testCheckup.Results()
@@ -149,14 +149,14 @@ func TestRunFailure(t *testing.T) {
 
 	assert.NoError(t, testCheckup.Setup(context.Background()))
 
-	vmiName := testClient.VMIName()
-	assert.NotEmpty(t, vmiName)
+	vmiUnderTestName := testClient.VMIName(checkup.VMIUnderTestNamePrefix)
+	assert.NotEmpty(t, vmiUnderTestName)
 
 	assert.Error(t, expectedExecutionFailure, testCheckup.Run(context.Background()))
 
 	assert.NoError(t, testCheckup.Teardown(context.Background()))
 
-	_, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
+	_, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiUnderTestName)
 	assert.ErrorContains(t, err, "not found")
 
 	actualResults := testCheckup.Results()
@@ -239,9 +239,9 @@ func (cs *clientStub) DeleteVirtualMachineInstance(_ context.Context, namespace,
 	return nil
 }
 
-func (cs *clientStub) VMIName() string {
+func (cs *clientStub) VMIName(namePrefix string) string {
 	for _, vmi := range cs.createdVMIs {
-		if strings.Contains(vmi.Name, checkup.VMINamePrefix) {
+		if strings.Contains(vmi.Name, namePrefix) {
 			return vmi.Name
 		}
 	}
@@ -253,7 +253,7 @@ type executorStub struct {
 	executeErr error
 }
 
-func (es executorStub) Execute(_ context.Context, vmiName string) (status.Results, error) {
+func (es executorStub) Execute(_ context.Context, vmiUnderTestName string) (status.Results, error) {
 	if es.executeErr != nil {
 		return status.Results{}, es.executeErr
 	}
@@ -264,8 +264,8 @@ func (es executorStub) Execute(_ context.Context, vmiName string) (status.Result
 func newTestConfig() config.Config {
 	trafficGeneratorEastHWAddress, _ := net.ParseMAC(trafficGeneratorEastMacAddress)
 	trafficGeneratorWestHWAddress, _ := net.ParseMAC(trafficGeneratorWestMacAddress)
-	dpdkEastHWAddress, _ := net.ParseMAC(dpdkEastMacAddress)
-	dpdkWestHWAddress, _ := net.ParseMAC(dpdkWestMacAddress)
+	vmiUnderTestEastHWAddress, _ := net.ParseMAC(vmiUnderTestEastMacAddress)
+	vmiUnderTestWestHWAddress, _ := net.ParseMAC(vmiUnderTestWestMacAddress)
 	return config.Config{
 		PodName:                           testPodName,
 		PodUID:                            testPodUID,
@@ -276,8 +276,8 @@ func newTestConfig() config.Config {
 		PortBandwidthGB:                   config.PortBandwidthGBDefault,
 		TrafficGeneratorEastMacAddress:    trafficGeneratorEastHWAddress,
 		TrafficGeneratorWestMacAddress:    trafficGeneratorWestHWAddress,
-		DPDKEastMacAddress:                dpdkEastHWAddress,
-		DPDKWestMacAddress:                dpdkWestHWAddress,
+		DPDKEastMacAddress:                vmiUnderTestEastHWAddress,
+		DPDKWestMacAddress:                vmiUnderTestWestHWAddress,
 		TestDuration:                      config.TestDurationDefault,
 	}
 }

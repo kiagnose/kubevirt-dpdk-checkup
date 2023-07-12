@@ -48,30 +48,30 @@ type kubeVirtVMIClient interface {
 }
 
 type testExecutor interface {
-	Execute(ctx context.Context, vmiName string) (status.Results, error)
+	Execute(ctx context.Context, vmiUnderTestName string) (status.Results, error)
 }
 
 type Checkup struct {
-	client    kubeVirtVMIClient
-	namespace string
-	params    config.Config
-	vmi       *kvcorev1.VirtualMachineInstance
-	results   status.Results
-	executor  testExecutor
+	client       kubeVirtVMIClient
+	namespace    string
+	params       config.Config
+	vmiUnderTest *kvcorev1.VirtualMachineInstance
+	results      status.Results
+	executor     testExecutor
 }
 
 const (
-	VMINamePrefix          = "dpdk-vmi"
+	VMIUnderTestNamePrefix = "vmi-under-test"
 	DPDKCheckupUIDLabelKey = "kubevirt-dpdk-checkup/uid"
 )
 
 func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config, executor testExecutor) *Checkup {
 	return &Checkup{
-		client:    client,
-		namespace: namespace,
-		params:    checkupConfig,
-		vmi:       newDPDKVMI(checkupConfig),
-		executor:  executor,
+		client:       client,
+		namespace:    namespace,
+		params:       checkupConfig,
+		vmiUnderTest: newVMIUnderTest(checkupConfig),
+		executor:     executor,
 	}
 }
 
@@ -79,19 +79,22 @@ func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
 	const errMessagePrefix = "setup"
 	var err error
 
-	if err = c.createVMI(ctx); err != nil {
+	if err = c.createVMI(ctx, c.vmiUnderTest); err != nil {
 		return fmt.Errorf("%s: %w", errMessagePrefix, err)
 	}
 	defer func() {
 		if setupErr != nil {
-			c.cleanupVMI()
+			c.cleanupVMI(c.vmiUnderTest.Name)
 		}
 	}()
 
-	err = c.waitForVMIToBoot(ctx)
+	var updatedVMIUnderTest *kvcorev1.VirtualMachineInstance
+	updatedVMIUnderTest, err = c.waitForVMIToBoot(ctx, c.vmiUnderTest.Name)
 	if err != nil {
 		return err
 	}
+
+	c.vmiUnderTest = updatedVMIUnderTest
 
 	return nil
 }
@@ -99,11 +102,11 @@ func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
 func (c *Checkup) Run(ctx context.Context) error {
 	var err error
 
-	c.results, err = c.executor.Execute(ctx, c.vmi.Name)
+	c.results, err = c.executor.Execute(ctx, c.vmiUnderTest.Name)
 	if err != nil {
 		return err
 	}
-	c.results.DPDKVMNode = c.vmi.Status.NodeName
+	c.results.DPDKVMNode = c.vmiUnderTest.Status.NodeName
 
 	if c.results.TrafficGeneratorOutErrorPackets != 0 || c.results.TrafficGeneratorInErrorPackets != 0 {
 		return fmt.Errorf("detected Error Packets on the traffic generator's side: Oerrors %d Ierrors %d",
@@ -126,11 +129,11 @@ func (c *Checkup) Run(ctx context.Context) error {
 func (c *Checkup) Teardown(ctx context.Context) error {
 	const errPrefix = "teardown"
 
-	if err := c.deleteVMI(ctx); err != nil {
+	if err := c.deleteVMI(ctx, c.vmiUnderTest.Name); err != nil {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 
-	if err := c.waitForVMIDeletion(ctx); err != nil {
+	if err := c.waitForVMIDeletion(ctx, c.vmiUnderTest.Name); err != nil {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 
@@ -141,26 +144,21 @@ func (c *Checkup) Results() status.Results {
 	return c.results
 }
 
-func (c *Checkup) createVMI(ctx context.Context) error {
-	log.Printf("Creating VMI %q...", ObjectFullName(c.namespace, c.vmi.Name))
+func (c *Checkup) createVMI(ctx context.Context, vmiToCreate *kvcorev1.VirtualMachineInstance) error {
+	log.Printf("Creating VMI %q...", ObjectFullName(c.namespace, vmiToCreate.Name))
 
-	var err error
-	c.vmi, err = c.client.CreateVirtualMachineInstance(ctx, c.namespace, c.vmi)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	_, err := c.client.CreateVirtualMachineInstance(ctx, c.namespace, vmiToCreate)
+	return err
 }
 
-func (c *Checkup) waitForVMIToBoot(ctx context.Context) error {
-	vmiFullName := ObjectFullName(c.vmi.Namespace, c.vmi.Name)
+func (c *Checkup) waitForVMIToBoot(ctx context.Context, name string) (*kvcorev1.VirtualMachineInstance, error) {
+	vmiFullName := ObjectFullName(c.namespace, name)
 	log.Printf("Waiting for VMI %q to boot...", vmiFullName)
 	var updatedVMI *kvcorev1.VirtualMachineInstance
 
 	conditionFn := func(ctx context.Context) (bool, error) {
 		var err error
-		updatedVMI, err = c.client.GetVirtualMachineInstance(ctx, c.vmi.Namespace, c.vmi.Name)
+		updatedVMI, err = c.client.GetVirtualMachineInstance(ctx, c.namespace, name)
 		if err != nil {
 			return false, err
 		}
@@ -175,23 +173,19 @@ func (c *Checkup) waitForVMIToBoot(ctx context.Context) error {
 	}
 	const pollInterval = 5 * time.Second
 	if err := wait.PollImmediateUntilWithContext(ctx, pollInterval, conditionFn); err != nil {
-		return fmt.Errorf("failed to wait for VMI %q to boot: %v", vmiFullName, err)
+		return nil, fmt.Errorf("failed to wait for VMI %q to boot: %v", vmiFullName, err)
 	}
 
 	log.Printf("VMI %q had successfully booted", vmiFullName)
-	c.vmi = updatedVMI
-	return nil
+
+	return updatedVMI, nil
 }
 
-func (c *Checkup) deleteVMI(ctx context.Context) error {
-	if c.vmi == nil {
-		return fmt.Errorf("failed to delete VMI, object doesn't exist")
-	}
-
-	vmiFullName := ObjectFullName(c.vmi.Namespace, c.vmi.Name)
+func (c *Checkup) deleteVMI(ctx context.Context, name string) error {
+	vmiFullName := ObjectFullName(c.namespace, name)
 
 	log.Printf("Trying to delete VMI: %q", vmiFullName)
-	if err := c.client.DeleteVirtualMachineInstance(ctx, c.vmi.Namespace, c.vmi.Name); err != nil {
+	if err := c.client.DeleteVirtualMachineInstance(ctx, c.namespace, name); err != nil {
 		log.Printf("Failed to delete VMI: %q", vmiFullName)
 		return err
 	}
@@ -199,12 +193,12 @@ func (c *Checkup) deleteVMI(ctx context.Context) error {
 	return nil
 }
 
-func (c *Checkup) waitForVMIDeletion(ctx context.Context) error {
-	vmiFullName := ObjectFullName(c.vmi.Namespace, c.vmi.Name)
+func (c *Checkup) waitForVMIDeletion(ctx context.Context, name string) error {
+	vmiFullName := ObjectFullName(c.namespace, name)
 	log.Printf("Waiting for VMI %q to be deleted...", vmiFullName)
 
 	conditionFn := func(ctx context.Context) (bool, error) {
-		_, err := c.client.GetVirtualMachineInstance(ctx, c.vmi.Namespace, c.vmi.Name)
+		_, err := c.client.GetVirtualMachineInstance(ctx, c.namespace, name)
 		if k8serrors.IsNotFound(err) {
 			return true, nil
 		}
@@ -220,16 +214,19 @@ func (c *Checkup) waitForVMIDeletion(ctx context.Context) error {
 	return nil
 }
 
-func (c *Checkup) cleanupVMI() {
+func (c *Checkup) cleanupVMI(name string) {
 	const setupCleanupTimeout = 30 * time.Second
 
-	log.Printf("setup failed, cleanup VMI '%s/%s'", c.vmi.Namespace, c.vmi.Name)
+	vmiFullName := ObjectFullName(c.namespace, name)
+	log.Printf("setup failed, cleanup VMI %q", vmiFullName)
+
 	delCtx, cancel := context.WithTimeout(context.Background(), setupCleanupTimeout)
 	defer cancel()
-	_ = c.deleteVMI(delCtx)
 
-	if derr := c.waitForVMIDeletion(delCtx); derr != nil {
-		log.Printf("Failed to cleanup VMI '%s/%s': %v", c.vmi.Namespace, c.vmi.Name, derr)
+	_ = c.deleteVMI(delCtx, c.vmiUnderTest.Name)
+
+	if err := c.waitForVMIDeletion(delCtx, name); err != nil {
+		log.Printf("Failed to wait for VMI %q disposal: %v", vmiFullName, err)
 	}
 }
 
@@ -254,7 +251,7 @@ func randomizeName(prefix string) string {
 	return fmt.Sprintf("%s-%s", prefix, k8srand.String(randomStringLen))
 }
 
-func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
+func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 	const (
 		CPUSocketsCount   = 1
 		CPUCoresCount     = 4
@@ -280,7 +277,7 @@ func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 			checkupConfig.PodUID)}
 	}
 
-	return vmi.New(randomizeName(VMINamePrefix),
+	return vmi.New(randomizeName(VMIUnderTestNamePrefix),
 		vmi.WithOwnerReference(checkupConfig.PodName, checkupConfig.PodUID),
 		vmi.WithLabels(labels),
 		vmi.WithAffinity(affinity),

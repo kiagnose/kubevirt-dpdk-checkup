@@ -91,9 +91,9 @@ func New(client vmiSerialConsoleClient, namespace string, cfg config.Config) Exe
 	}
 }
 
-func (e Executor) Execute(ctx context.Context, vmiName string) (status.Results, error) {
-	if err := console.LoginToCentOS(e.client, e.namespace, vmiName, e.vmiUsername, e.vmiPassword); err != nil {
-		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, vmiName, err)
+func (e Executor) Execute(ctx context.Context, vmiUnderTestName string) (status.Results, error) {
+	if err := console.LoginToCentOS(e.client, e.namespace, vmiUnderTestName, e.vmiUsername, e.vmiPassword); err != nil {
+		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, vmiUnderTestName, err)
 	}
 
 	const (
@@ -102,12 +102,12 @@ func (e Executor) Execute(ctx context.Context, vmiName string) (status.Results, 
 	)
 
 	log.Printf("Starting testpmd in VMI...")
-	if err := e.runTestpmd(vmiName); err != nil {
+	if err := e.runTestpmd(vmiUnderTestName); err != nil {
 		return status.Results{}, err
 	}
 
 	log.Printf("Clearing testpmd stats in VMI...")
-	if err := e.clearStatsTestpmd(vmiName); err != nil {
+	if err := e.clearStatsTestpmd(vmiUnderTestName); err != nil {
 		return status.Results{}, err
 	}
 
@@ -125,7 +125,7 @@ func (e Executor) Execute(ctx context.Context, vmiName string) (status.Results, 
 	log.Printf("get testpmd stats in DPDK VMI...")
 	var testPmdStats [testPmdPortStatsSize]testPmdPortStats
 	var err error
-	if testPmdStats, err = e.getStatsTestpmd(vmiName); err != nil {
+	if testPmdStats, err = e.getStatsTestpmd(vmiUnderTestName); err != nil {
 		return status.Results{}, err
 	}
 	results.DPDKPacketsRxDropped = testPmdStats[testPmdPortStatsSummary].RXDropped
