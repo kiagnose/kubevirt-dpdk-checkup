@@ -27,6 +27,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/rand"
+
 	kvcorev1 "kubevirt.io/api/core/v1"
 )
 
@@ -248,6 +250,12 @@ func CloudInit(username, password string) string {
 	sb.WriteString("  expire: false")
 
 	return sb.String()
+}
+
+func RandomizeName(prefix string) string {
+	const randomStringLen = 5
+
+	return fmt.Sprintf("%s-%s", prefix, rand.String(randomStringLen))
 }
 
 func Pointer[T any](v T) *T {
