@@ -23,7 +23,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	k8scorev1 "k8s.io/api/core/v1"
@@ -234,17 +233,6 @@ func ObjectFullName(namespace, name string) string {
 	return fmt.Sprintf("%s/%s", namespace, name)
 }
 
-func CloudInit(username, password string) string {
-	sb := strings.Builder{}
-	sb.WriteString("#cloud-config\n")
-	sb.WriteString(fmt.Sprintf("user: %s\n", username))
-	sb.WriteString(fmt.Sprintf("password: %s\n", password))
-	sb.WriteString("chpasswd:\n")
-	sb.WriteString("  expire: false")
-
-	return sb.String()
-}
-
 func randomizeName(prefix string) string {
 	const randomStringLen = 5
 
@@ -295,7 +283,7 @@ func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstan
 		vmi.WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds),
 		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMContainerDiskImage),
 		vmi.WithVirtIODisk(rootDiskName),
-		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword)),
+		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, vmi.CloudInit(config.VMIUsername, config.VMIPassword)),
 		vmi.WithVirtIODisk(cloudInitDiskName),
 	)
 }
