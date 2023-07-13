@@ -60,7 +60,6 @@ type Checkup struct {
 
 const (
 	VMIUnderTestNamePrefix = "vmi-under-test"
-	DPDKCheckupUIDLabelKey = "kubevirt-dpdk-checkup/uid"
 )
 
 func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config, executor testExecutor) *Checkup {
@@ -248,13 +247,13 @@ func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstan
 	)
 
 	labels := map[string]string{
-		DPDKCheckupUIDLabelKey: checkupConfig.PodUID,
+		vmi.DPDKCheckupUIDLabelKey: checkupConfig.PodUID,
 	}
 	var affinity *k8scorev1.Affinity
 	if checkupConfig.DPDKNodeLabelSelector != "" {
 		affinity = &k8scorev1.Affinity{NodeAffinity: kaffinity.NewRequiredNodeAffinity(checkupConfig.DPDKNodeLabelSelector)}
 	} else {
-		affinity = &k8scorev1.Affinity{PodAntiAffinity: kaffinity.NewPreferredPodAntiAffinity(DPDKCheckupUIDLabelKey,
+		affinity = &k8scorev1.Affinity{PodAntiAffinity: kaffinity.NewPreferredPodAntiAffinity(vmi.DPDKCheckupUIDLabelKey,
 			checkupConfig.PodUID)}
 	}
 
