@@ -20,6 +20,9 @@
 package vmi
 
 import (
+	"fmt"
+	"strings"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -234,6 +237,17 @@ func WithAffinity(affinity *corev1.Affinity) Option {
 			vmi.Spec.Affinity = affinity
 		}
 	}
+}
+
+func CloudInit(username, password string) string {
+	sb := strings.Builder{}
+	sb.WriteString("#cloud-config\n")
+	sb.WriteString(fmt.Sprintf("user: %s\n", username))
+	sb.WriteString(fmt.Sprintf("password: %s\n", password))
+	sb.WriteString("chpasswd:\n")
+	sb.WriteString("  expire: false")
+
+	return sb.String()
 }
 
 func Pointer[T any](v T) *T {
