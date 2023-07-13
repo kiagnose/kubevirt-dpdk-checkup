@@ -65,6 +65,48 @@ type DPDKVMIConfig struct {
 	Password                        string
 }
 
+func NewDPDKVMI(vmiConfig DPDKVMIConfig) *kvcorev1.VirtualMachineInstance {
+	const (
+		CPUSocketsCount   = 1
+		CPUCoresCount     = 4
+		CPUTreadsCount    = 2
+		hugePageSize      = "1Gi"
+		guestMemory       = "4Gi"
+		rootDiskName      = "rootdisk"
+		cloudInitDiskName = "cloudinitdisk"
+		eastNetworkName   = "nic-east"
+		westNetworkName   = "nic-west"
+
+		terminationGracePeriodSeconds = 0
+	)
+
+	labels := map[string]string{
+		DPDKCheckupUIDLabelKey: vmiConfig.OwnerUID,
+	}
+
+	return New(RandomizeName(vmiConfig.NamePrefix),
+		WithOwnerReference(vmiConfig.OwnerName, vmiConfig.OwnerUID),
+		WithLabels(labels),
+		WithAffinity(vmiConfig.Affinity),
+		WithoutCRIOCPULoadBalancing(),
+		WithoutCRIOCPUQuota(),
+		WithoutCRIOIRQLoadBalancing(),
+		WithDedicatedCPU(CPUSocketsCount, CPUCoresCount, CPUTreadsCount),
+		WithSRIOVInterface(eastNetworkName, vmiConfig.NICEastMACAddress, vmiConfig.NICEastPCIAddress),
+		WithMultusNetwork(eastNetworkName, vmiConfig.NetworkAttachmentDefinitionName),
+		WithSRIOVInterface(westNetworkName, vmiConfig.NICWestMACAddress, vmiConfig.NICWestPCIAddress),
+		WithMultusNetwork(westNetworkName, vmiConfig.NetworkAttachmentDefinitionName),
+		WithNetworkInterfaceMultiQueue(),
+		WithRandomNumberGenerator(),
+		WithMemory(hugePageSize, guestMemory),
+		WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds),
+		WithContainerDisk(rootDiskName, vmiConfig.ContainerDiskImage),
+		WithVirtIODisk(rootDiskName),
+		WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(vmiConfig.Username, vmiConfig.Password)),
+		WithVirtIODisk(cloudInitDiskName),
+	)
+}
+
 type Option func(vmi *kvcorev1.VirtualMachineInstance)
 
 func New(name string, options ...Option) *kvcorev1.VirtualMachineInstance {
