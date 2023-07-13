@@ -246,9 +246,6 @@ func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstan
 		terminationGracePeriodSeconds = 0
 	)
 
-	labels := map[string]string{
-		vmi.DPDKCheckupUIDLabelKey: checkupConfig.PodUID,
-	}
 	var affinity *k8scorev1.Affinity
 	if checkupConfig.DPDKNodeLabelSelector != "" {
 		affinity = &k8scorev1.Affinity{NodeAffinity: kaffinity.NewRequiredNodeAffinity(checkupConfig.DPDKNodeLabelSelector)}
@@ -257,25 +254,44 @@ func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstan
 			checkupConfig.PodUID)}
 	}
 
-	return vmi.New(vmi.RandomizeName(VMIUnderTestNamePrefix),
-		vmi.WithOwnerReference(checkupConfig.PodName, checkupConfig.PodUID),
+	vmiConfig := vmi.DPDKVMIConfig{
+		NamePrefix:                      VMIUnderTestNamePrefix,
+		OwnerName:                       checkupConfig.PodName,
+		OwnerUID:                        checkupConfig.PodUID,
+		Affinity:                        affinity,
+		ContainerDiskImage:              checkupConfig.VMContainerDiskImage,
+		NetworkAttachmentDefinitionName: checkupConfig.NetworkAttachmentDefinitionName,
+		NICEastMACAddress:               checkupConfig.DPDKEastMacAddress.String(),
+		NICEastPCIAddress:               config.VMIEastNICPCIAddress,
+		NICWestMACAddress:               checkupConfig.DPDKWestMacAddress.String(),
+		NICWestPCIAddress:               config.VMIWestNICPCIAddress,
+		Username:                        config.VMIUsername,
+		Password:                        config.VMIPassword,
+	}
+
+	labels := map[string]string{
+		vmi.DPDKCheckupUIDLabelKey: vmiConfig.OwnerUID,
+	}
+
+	return vmi.New(vmi.RandomizeName(vmiConfig.NamePrefix),
+		vmi.WithOwnerReference(vmiConfig.OwnerName, vmiConfig.OwnerUID),
 		vmi.WithLabels(labels),
-		vmi.WithAffinity(affinity),
+		vmi.WithAffinity(vmiConfig.Affinity),
 		vmi.WithoutCRIOCPULoadBalancing(),
 		vmi.WithoutCRIOCPUQuota(),
 		vmi.WithoutCRIOIRQLoadBalancing(),
 		vmi.WithDedicatedCPU(CPUSocketsCount, CPUCoresCount, CPUTreadsCount),
-		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.DPDKEastMacAddress.String(), config.VMIEastNICPCIAddress),
-		vmi.WithMultusNetwork(eastNetworkName, checkupConfig.NetworkAttachmentDefinitionName),
-		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.DPDKWestMacAddress.String(), config.VMIWestNICPCIAddress),
-		vmi.WithMultusNetwork(westNetworkName, checkupConfig.NetworkAttachmentDefinitionName),
+		vmi.WithSRIOVInterface(eastNetworkName, vmiConfig.NICEastMACAddress, vmiConfig.NICEastPCIAddress),
+		vmi.WithMultusNetwork(eastNetworkName, vmiConfig.NetworkAttachmentDefinitionName),
+		vmi.WithSRIOVInterface(westNetworkName, vmiConfig.NICWestMACAddress, vmiConfig.NICWestPCIAddress),
+		vmi.WithMultusNetwork(westNetworkName, vmiConfig.NetworkAttachmentDefinitionName),
 		vmi.WithNetworkInterfaceMultiQueue(),
 		vmi.WithRandomNumberGenerator(),
 		vmi.WithMemory(hugePageSize, guestMemory),
 		vmi.WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds),
-		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMContainerDiskImage),
+		vmi.WithContainerDisk(rootDiskName, vmiConfig.ContainerDiskImage),
 		vmi.WithVirtIODisk(rootDiskName),
-		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, vmi.CloudInit(config.VMIUsername, config.VMIPassword)),
+		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, vmi.CloudInit(vmiConfig.Username, vmiConfig.Password)),
 		vmi.WithVirtIODisk(cloudInitDiskName),
 	)
 }
