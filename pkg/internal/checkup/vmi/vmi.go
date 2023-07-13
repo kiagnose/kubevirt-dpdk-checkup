@@ -50,6 +50,21 @@ const DPDKCheckupUIDLabelKey = "kubevirt-dpdk-checkup/uid"
 
 const Disable = "disable"
 
+type DPDKVMIConfig struct {
+	NamePrefix                      string
+	OwnerName                       string
+	OwnerUID                        string
+	Affinity                        *corev1.Affinity
+	ContainerDiskImage              string
+	NetworkAttachmentDefinitionName string
+	NICEastMACAddress               string
+	NICEastPCIAddress               string
+	NICWestMACAddress               string
+	NICWestPCIAddress               string
+	Username                        string
+	Password                        string
+}
+
 type Option func(vmi *kvcorev1.VirtualMachineInstance)
 
 func New(name string, options ...Option) *kvcorev1.VirtualMachineInstance {
