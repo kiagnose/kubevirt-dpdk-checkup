@@ -23,12 +23,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
 	k8scorev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	k8srand "k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	kvcorev1 "kubevirt.io/api/core/v1"
@@ -62,7 +60,6 @@ type Checkup struct {
 
 const (
 	VMIUnderTestNamePrefix = "vmi-under-test"
-	DPDKCheckupUIDLabelKey = "kubevirt-dpdk-checkup/uid"
 )
 
 func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config, executor testExecutor) *Checkup {
@@ -234,68 +231,35 @@ func ObjectFullName(namespace, name string) string {
 	return fmt.Sprintf("%s/%s", namespace, name)
 }
 
-func CloudInit(username, password string) string {
-	sb := strings.Builder{}
-	sb.WriteString("#cloud-config\n")
-	sb.WriteString(fmt.Sprintf("user: %s\n", username))
-	sb.WriteString(fmt.Sprintf("password: %s\n", password))
-	sb.WriteString("chpasswd:\n")
-	sb.WriteString("  expire: false")
-
-	return sb.String()
-}
-
-func randomizeName(prefix string) string {
-	const randomStringLen = 5
-
-	return fmt.Sprintf("%s-%s", prefix, k8srand.String(randomStringLen))
-}
-
 func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
-	const (
-		CPUSocketsCount   = 1
-		CPUCoresCount     = 4
-		CPUTreadsCount    = 2
-		hugePageSize      = "1Gi"
-		guestMemory       = "4Gi"
-		rootDiskName      = "rootdisk"
-		cloudInitDiskName = "cloudinitdisk"
-		eastNetworkName   = "nic-east"
-		westNetworkName   = "nic-west"
-
-		terminationGracePeriodSeconds = 0
-	)
-
-	labels := map[string]string{
-		DPDKCheckupUIDLabelKey: checkupConfig.PodUID,
-	}
 	var affinity *k8scorev1.Affinity
 	if checkupConfig.DPDKNodeLabelSelector != "" {
-		affinity = &k8scorev1.Affinity{NodeAffinity: kaffinity.NewRequiredNodeAffinity(checkupConfig.DPDKNodeLabelSelector)}
+		affinity = &k8scorev1.Affinity{
+			NodeAffinity: kaffinity.NewRequiredNodeAffinity(checkupConfig.DPDKNodeLabelSelector),
+		}
 	} else {
-		affinity = &k8scorev1.Affinity{PodAntiAffinity: kaffinity.NewPreferredPodAntiAffinity(DPDKCheckupUIDLabelKey,
-			checkupConfig.PodUID)}
+		affinity = &k8scorev1.Affinity{
+			PodAntiAffinity: kaffinity.NewPreferredPodAntiAffinity(
+				vmi.DPDKCheckupUIDLabelKey,
+				checkupConfig.PodUID,
+			),
+		}
 	}
 
-	return vmi.New(randomizeName(VMIUnderTestNamePrefix),
-		vmi.WithOwnerReference(checkupConfig.PodName, checkupConfig.PodUID),
-		vmi.WithLabels(labels),
-		vmi.WithAffinity(affinity),
-		vmi.WithoutCRIOCPULoadBalancing(),
-		vmi.WithoutCRIOCPUQuota(),
-		vmi.WithoutCRIOIRQLoadBalancing(),
-		vmi.WithDedicatedCPU(CPUSocketsCount, CPUCoresCount, CPUTreadsCount),
-		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.DPDKEastMacAddress.String(), config.VMIEastNICPCIAddress),
-		vmi.WithMultusNetwork(eastNetworkName, checkupConfig.NetworkAttachmentDefinitionName),
-		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.DPDKWestMacAddress.String(), config.VMIWestNICPCIAddress),
-		vmi.WithMultusNetwork(westNetworkName, checkupConfig.NetworkAttachmentDefinitionName),
-		vmi.WithNetworkInterfaceMultiQueue(),
-		vmi.WithRandomNumberGenerator(),
-		vmi.WithMemory(hugePageSize, guestMemory),
-		vmi.WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds),
-		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMContainerDiskImage),
-		vmi.WithVirtIODisk(rootDiskName),
-		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword)),
-		vmi.WithVirtIODisk(cloudInitDiskName),
-	)
+	vmiConfig := vmi.DPDKVMIConfig{
+		NamePrefix:                      VMIUnderTestNamePrefix,
+		OwnerName:                       checkupConfig.PodName,
+		OwnerUID:                        checkupConfig.PodUID,
+		Affinity:                        affinity,
+		ContainerDiskImage:              checkupConfig.VMContainerDiskImage,
+		NetworkAttachmentDefinitionName: checkupConfig.NetworkAttachmentDefinitionName,
+		NICEastMACAddress:               checkupConfig.DPDKEastMacAddress.String(),
+		NICEastPCIAddress:               config.VMIEastNICPCIAddress,
+		NICWestMACAddress:               checkupConfig.DPDKWestMacAddress.String(),
+		NICWestPCIAddress:               config.VMIWestNICPCIAddress,
+		Username:                        config.VMIUsername,
+		Password:                        config.VMIPassword,
+	}
+
+	return vmi.NewDPDKVMI(vmiConfig)
 }

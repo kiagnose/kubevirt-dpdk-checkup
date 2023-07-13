@@ -165,17 +165,6 @@ func TestRunFailure(t *testing.T) {
 	assert.Equal(t, expectedResults, actualResults)
 }
 
-func TestCloudInitString(t *testing.T) {
-	actualString := checkup.CloudInit("user", "password")
-	expectedString := `#cloud-config
-user: user
-password: password
-chpasswd:
-  expire: false`
-
-	assert.Equal(t, expectedString, actualString)
-}
-
 type clientStub struct {
 	createdVMIs        map[string]*kvcorev1.VirtualMachineInstance
 	vmiCreationFailure error
