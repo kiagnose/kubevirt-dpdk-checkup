@@ -219,7 +219,7 @@ func (c *Checkup) cleanupVMI(name string) {
 	delCtx, cancel := context.WithTimeout(context.Background(), setupCleanupTimeout)
 	defer cancel()
 
-	_ = c.deleteVMI(delCtx, c.vmiUnderTest.Name)
+	_ = c.deleteVMI(delCtx, name)
 
 	if err := c.waitForVMIDeletion(delCtx, name); err != nil {
 		log.Printf("Failed to wait for VMI %q disposal: %v", vmiFullName, err)
