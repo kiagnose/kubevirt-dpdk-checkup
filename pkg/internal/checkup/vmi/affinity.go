@@ -17,7 +17,7 @@
  *
  */
 
-package affinity
+package vmi
 
 import (
 	k8scorev1 "k8s.io/api/core/v1"
