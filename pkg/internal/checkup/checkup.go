@@ -31,7 +31,6 @@ import (
 
 	kvcorev1 "kubevirt.io/api/core/v1"
 
-	kaffinity "github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/affinity"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/vmi"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/status"
@@ -235,11 +234,11 @@ func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstan
 	var affinity *k8scorev1.Affinity
 	if checkupConfig.DPDKNodeLabelSelector != "" {
 		affinity = &k8scorev1.Affinity{
-			NodeAffinity: kaffinity.NewRequiredNodeAffinity(checkupConfig.DPDKNodeLabelSelector),
+			NodeAffinity: vmi.NewRequiredNodeAffinity(checkupConfig.DPDKNodeLabelSelector),
 		}
 	} else {
 		affinity = &k8scorev1.Affinity{
-			PodAntiAffinity: kaffinity.NewPreferredPodAntiAffinity(
+			PodAntiAffinity: vmi.NewPreferredPodAntiAffinity(
 				vmi.DPDKCheckupUIDLabelKey,
 				checkupConfig.PodUID,
 			),
