@@ -30,11 +30,13 @@ import (
 
 	k8scorev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	kvcorev1 "kubevirt.io/api/core/v1"
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup"
+	checkupvmi "github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/vmi"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/status"
 )
@@ -72,6 +74,54 @@ func TestCheckupShouldSucceed(t *testing.T) {
 	expectedResults := status.Results{}
 
 	assert.Equal(t, expectedResults, actualResults)
+}
+
+func TestVMIAffinity(t *testing.T) {
+	t.Run("when node names are not specified", func(t *testing.T) {
+		testClient := newClientStub()
+		testConfig := newTestConfig()
+		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
+		assert.NoError(t, testCheckup.Setup(context.Background()))
+
+		vmiUnderTestName := testClient.VMIName(checkup.VMIUnderTestNamePrefix)
+		assert.NotEmpty(t, vmiUnderTestName)
+
+		trafficGenName := testClient.VMIName(checkup.TrafficGenNamePrefix)
+		assert.NotEmpty(t, trafficGenName)
+
+		assertPodAntiAffinityExists(t, testClient, vmiUnderTestName, testConfig.PodUID)
+		assertNodeAffinityDoesNotExist(t, testClient, vmiUnderTestName)
+
+		assertPodAntiAffinityExists(t, testClient, trafficGenName, testConfig.PodUID)
+		assertNodeAffinityDoesNotExist(t, testClient, trafficGenName)
+	})
+
+	t.Run("when node names are specified", func(t *testing.T) {
+		const (
+			vmiUnderTestNodeName = "node01"
+			trafficGenNodeName   = "node02"
+		)
+
+		testClient := newClientStub()
+		testConfig := newTestConfig()
+		testConfig.DPDKNodeLabelSelector = vmiUnderTestNodeName
+		testConfig.TrafficGeneratorNodeLabelSelector = trafficGenNodeName
+
+		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
+		assert.NoError(t, testCheckup.Setup(context.Background()))
+
+		vmiUnderTestName := testClient.VMIName(checkup.VMIUnderTestNamePrefix)
+		assert.NotEmpty(t, vmiUnderTestName)
+
+		trafficGenName := testClient.VMIName(checkup.TrafficGenNamePrefix)
+		assert.NotEmpty(t, trafficGenName)
+
+		assertNodeAffinityExists(t, testClient, vmiUnderTestName, vmiUnderTestNodeName)
+		assertPodAntiAffinityDoesNotExist(t, testClient, vmiUnderTestName)
+
+		assertNodeAffinityExists(t, testClient, trafficGenName, trafficGenNodeName)
+		assertPodAntiAffinityDoesNotExist(t, testClient, trafficGenName)
+	})
 }
 
 func TestSetupShouldFail(t *testing.T) {
@@ -164,6 +214,73 @@ func TestRunFailure(t *testing.T) {
 	expectedResults := status.Results{}
 
 	assert.Equal(t, expectedResults, actualResults)
+}
+
+func assertPodAntiAffinityExists(t *testing.T, testClient *clientStub, vmiName, ownerUID string) {
+	actualVMI, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
+	assert.NoError(t, err)
+
+	expectedAffinity := &k8scorev1.Affinity{
+		PodAntiAffinity: &k8scorev1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []k8scorev1.WeightedPodAffinityTerm{
+				{
+					Weight: 1,
+					PodAffinityTerm: k8scorev1.PodAffinityTerm{
+						TopologyKey: k8scorev1.LabelHostname,
+						LabelSelector: &k8smetav1.LabelSelector{
+							MatchExpressions: []k8smetav1.LabelSelectorRequirement{
+								{
+									Operator: k8smetav1.LabelSelectorOpIn,
+									Key:      checkupvmi.DPDKCheckupUIDLabelKey,
+									Values:   []string{ownerUID},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	assert.Equal(t, expectedAffinity, actualVMI.Spec.Affinity)
+}
+
+func assertPodAntiAffinityDoesNotExist(t *testing.T, testClient *clientStub, vmiName string) {
+	actualVmi, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
+	assert.NoError(t, err)
+
+	assert.Nil(t, actualVmi.Spec.Affinity.PodAntiAffinity)
+}
+
+func assertNodeAffinityExists(t *testing.T, testClient *clientStub, vmiName, nodeName string) {
+	actualVMI, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
+	assert.NoError(t, err)
+
+	expectedAffinity := &k8scorev1.Affinity{
+		NodeAffinity: &k8scorev1.NodeAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: &k8scorev1.NodeSelector{
+				NodeSelectorTerms: []k8scorev1.NodeSelectorTerm{
+					{
+						MatchExpressions: []k8scorev1.NodeSelectorRequirement{
+							{
+								Key:      k8scorev1.LabelHostname,
+								Operator: k8scorev1.NodeSelectorOpIn,
+								Values:   []string{nodeName}},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	assert.Equal(t, expectedAffinity, actualVMI.Spec.Affinity)
+}
+
+func assertNodeAffinityDoesNotExist(t *testing.T, testClient *clientStub, vmiName string) {
+	actualVmi, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
+	assert.NoError(t, err)
+
+	assert.Nil(t, actualVmi.Spec.Affinity.NodeAffinity)
 }
 
 type clientStub struct {
