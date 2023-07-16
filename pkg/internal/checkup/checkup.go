@@ -53,12 +53,14 @@ type Checkup struct {
 	namespace    string
 	params       config.Config
 	vmiUnderTest *kvcorev1.VirtualMachineInstance
+	trafficGen   *kvcorev1.VirtualMachineInstance
 	results      status.Results
 	executor     testExecutor
 }
 
 const (
 	VMIUnderTestNamePrefix = "vmi-under-test"
+	TrafficGenNamePrefix   = "dpdk-traffic-gen"
 )
 
 func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config, executor testExecutor) *Checkup {
@@ -67,6 +69,7 @@ func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config
 		namespace:    namespace,
 		params:       checkupConfig,
 		vmiUnderTest: newVMIUnderTest(checkupConfig),
+		trafficGen:   newTrafficGen(checkupConfig),
 		executor:     executor,
 	}
 }
@@ -84,6 +87,15 @@ func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
 		}
 	}()
 
+	if err = c.createVMI(ctx, c.trafficGen); err != nil {
+		return fmt.Errorf("%s: %w", errMessagePrefix, err)
+	}
+	defer func() {
+		if setupErr != nil {
+			c.cleanupVMI(c.trafficGen.Name)
+		}
+	}()
+
 	var updatedVMIUnderTest *kvcorev1.VirtualMachineInstance
 	updatedVMIUnderTest, err = c.waitForVMIToBoot(ctx, c.vmiUnderTest.Name)
 	if err != nil {
@@ -91,6 +103,14 @@ func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
 	}
 
 	c.vmiUnderTest = updatedVMIUnderTest
+
+	var updatedTrafficGen *kvcorev1.VirtualMachineInstance
+	updatedTrafficGen, err = c.waitForVMIToBoot(ctx, c.trafficGen.Name)
+	if err != nil {
+		return err
+	}
+
+	c.trafficGen = updatedTrafficGen
 
 	return nil
 }
@@ -103,6 +123,7 @@ func (c *Checkup) Run(ctx context.Context) error {
 		return err
 	}
 	c.results.DPDKVMNode = c.vmiUnderTest.Status.NodeName
+	c.results.TrafficGeneratorNode = c.trafficGen.Status.NodeName
 
 	if c.results.TrafficGeneratorOutErrorPackets != 0 || c.results.TrafficGeneratorInErrorPackets != 0 {
 		return fmt.Errorf("detected Error Packets on the traffic generator's side: Oerrors %d Ierrors %d",
@@ -129,7 +150,15 @@ func (c *Checkup) Teardown(ctx context.Context) error {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 
+	if err := c.deleteVMI(ctx, c.trafficGen.Name); err != nil {
+		return fmt.Errorf("%s: %w", errPrefix, err)
+	}
+
 	if err := c.waitForVMIDeletion(ctx, c.vmiUnderTest.Name); err != nil {
+		return fmt.Errorf("%s: %w", errPrefix, err)
+	}
+
+	if err := c.waitForVMIDeletion(ctx, c.trafficGen.Name); err != nil {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 
@@ -241,6 +270,25 @@ func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstan
 		NICEastMACAddress:               checkupConfig.DPDKEastMacAddress.String(),
 		NICEastPCIAddress:               config.VMIEastNICPCIAddress,
 		NICWestMACAddress:               checkupConfig.DPDKWestMacAddress.String(),
+		NICWestPCIAddress:               config.VMIWestNICPCIAddress,
+		Username:                        config.VMIUsername,
+		Password:                        config.VMIPassword,
+	}
+
+	return vmi.NewDPDKVMI(vmiConfig)
+}
+
+func newTrafficGen(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
+	vmiConfig := vmi.DPDKVMIConfig{
+		NamePrefix:                      TrafficGenNamePrefix,
+		OwnerName:                       checkupConfig.PodName,
+		OwnerUID:                        checkupConfig.PodUID,
+		Affinity:                        vmi.Affinity(checkupConfig.TrafficGeneratorNodeLabelSelector, checkupConfig.PodUID),
+		ContainerDiskImage:              checkupConfig.TrafficGeneratorImage,
+		NetworkAttachmentDefinitionName: checkupConfig.NetworkAttachmentDefinitionName,
+		NICEastMACAddress:               checkupConfig.TrafficGeneratorEastMacAddress.String(),
+		NICEastPCIAddress:               config.VMIEastNICPCIAddress,
+		NICWestMACAddress:               checkupConfig.TrafficGeneratorWestMacAddress.String(),
 		NICWestPCIAddress:               config.VMIWestNICPCIAddress,
 		Username:                        config.VMIUsername,
 		Password:                        config.VMIPassword,

@@ -60,11 +60,13 @@ func TestCheckupShouldSucceed(t *testing.T) {
 	vmiUnderTestName := testClient.VMIName(checkup.VMIUnderTestNamePrefix)
 	assert.NotEmpty(t, vmiUnderTestName)
 
+	trafficGenName := testClient.VMIName(checkup.TrafficGenNamePrefix)
+	assert.NotEmpty(t, trafficGenName)
+
 	assert.NoError(t, testCheckup.Run(context.Background()))
 	assert.NoError(t, testCheckup.Teardown(context.Background()))
 
-	_, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiUnderTestName)
-	assert.ErrorContains(t, err, "not found")
+	assert.Empty(t, testClient.createdVMIs)
 
 	actualResults := testCheckup.Results()
 	expectedResults := status.Results{}
@@ -156,8 +158,7 @@ func TestRunFailure(t *testing.T) {
 
 	assert.NoError(t, testCheckup.Teardown(context.Background()))
 
-	_, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiUnderTestName)
-	assert.ErrorContains(t, err, "not found")
+	assert.Empty(t, testClient.createdVMIs)
 
 	actualResults := testCheckup.Results()
 	expectedResults := status.Results{}
