@@ -17,16 +17,27 @@
  *
  */
 
-package affinity
+package vmi
 
 import (
 	k8scorev1 "k8s.io/api/core/v1"
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// NewRequiredNodeAffinity returns new node affinity with node selector of the given node name.
+func Affinity(nodeName, ownerUID string) *k8scorev1.Affinity {
+	var affinity k8scorev1.Affinity
+	if nodeName != "" {
+		affinity.NodeAffinity = newRequiredNodeAffinity(nodeName)
+	} else {
+		affinity.PodAntiAffinity = newPreferredPodAntiAffinity(DPDKCheckupUIDLabelKey, ownerUID)
+	}
+
+	return &affinity
+}
+
+// newRequiredNodeAffinity returns new node affinity with node selector of the given node name.
 // Adding it to a VMI will make sure it will schedule on the given node name.
-func NewRequiredNodeAffinity(nodeName string) *k8scorev1.NodeAffinity {
+func newRequiredNodeAffinity(nodeName string) *k8scorev1.NodeAffinity {
 	req := k8scorev1.NodeSelectorRequirement{
 		Key:      k8scorev1.LabelHostname,
 		Operator: k8scorev1.NodeSelectorOpIn,
@@ -44,9 +55,9 @@ func NewRequiredNodeAffinity(nodeName string) *k8scorev1.NodeAffinity {
 	}
 }
 
-// NewPreferredPodAntiAffinity returns new pod anti-affinity with label selector of the given label key and value.
+// newPreferredPodAntiAffinity returns new pod anti-affinity with label selector of the given label key and value.
 // Adding it to a VMI will make sure it won't schedule on the same node as other VMIs with the given label.
-func NewPreferredPodAntiAffinity(labelKey, labelVal string) *k8scorev1.PodAntiAffinity {
+func newPreferredPodAntiAffinity(labelKey, labelVal string) *k8scorev1.PodAntiAffinity {
 	req := k8smetav1.LabelSelectorRequirement{
 		Operator: k8smetav1.LabelSelectorOpIn,
 		Key:      labelKey,
