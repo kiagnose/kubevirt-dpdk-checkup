@@ -1,6 +1,6 @@
 module github.com/kiagnose/kubevirt-dpdk-checkup
 
-go 1.19
+go 1.20
 
 require (
 	github.com/google/goexpect v0.0.0-20210430020637-ab937bf7fd6f
