@@ -231,25 +231,11 @@ func ObjectFullName(namespace, name string) string {
 }
 
 func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
-	var affinity *k8scorev1.Affinity
-	if checkupConfig.DPDKNodeLabelSelector != "" {
-		affinity = &k8scorev1.Affinity{
-			NodeAffinity: vmi.NewRequiredNodeAffinity(checkupConfig.DPDKNodeLabelSelector),
-		}
-	} else {
-		affinity = &k8scorev1.Affinity{
-			PodAntiAffinity: vmi.NewPreferredPodAntiAffinity(
-				vmi.DPDKCheckupUIDLabelKey,
-				checkupConfig.PodUID,
-			),
-		}
-	}
-
 	vmiConfig := vmi.DPDKVMIConfig{
 		NamePrefix:                      VMIUnderTestNamePrefix,
 		OwnerName:                       checkupConfig.PodName,
 		OwnerUID:                        checkupConfig.PodUID,
-		Affinity:                        affinity,
+		Affinity:                        vmi.Affinity(checkupConfig.DPDKNodeLabelSelector, checkupConfig.PodUID),
 		ContainerDiskImage:              checkupConfig.VMContainerDiskImage,
 		NetworkAttachmentDefinitionName: checkupConfig.NetworkAttachmentDefinitionName,
 		NICEastMACAddress:               checkupConfig.DPDKEastMacAddress.String(),
