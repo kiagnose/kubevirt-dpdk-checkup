@@ -254,6 +254,11 @@ func newKubeVirtDPDKCheckerRole() *rbacv1.Role {
 				Resources: []string{"virtualmachineinstances/console"},
 				Verbs:     []string{"get"},
 			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"configmaps"},
+				Verbs:     []string{"create", "delete"},
+			},
 		},
 	}
 }
