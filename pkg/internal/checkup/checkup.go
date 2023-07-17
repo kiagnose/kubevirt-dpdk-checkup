@@ -31,6 +31,7 @@ import (
 
 	kvcorev1 "kubevirt.io/api/core/v1"
 
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/configmap"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/vmi"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/status"
@@ -42,6 +43,7 @@ type kubeVirtVMIClient interface {
 		vmi *kvcorev1.VirtualMachineInstance) (*kvcorev1.VirtualMachineInstance, error)
 	GetVirtualMachineInstance(ctx context.Context, namespace, name string) (*kvcorev1.VirtualMachineInstance, error)
 	DeleteVirtualMachineInstance(ctx context.Context, namespace, name string) error
+	CreateConfigMap(ctx context.Context, namespace string, configMap *k8scorev1.ConfigMap) (*k8scorev1.ConfigMap, error)
 }
 
 type testExecutor interface {
@@ -49,34 +51,41 @@ type testExecutor interface {
 }
 
 type Checkup struct {
-	client       kubeVirtVMIClient
-	namespace    string
-	params       config.Config
-	vmiUnderTest *kvcorev1.VirtualMachineInstance
-	trafficGen   *kvcorev1.VirtualMachineInstance
-	results      status.Results
-	executor     testExecutor
+	client              kubeVirtVMIClient
+	namespace           string
+	params              config.Config
+	vmiUnderTest        *kvcorev1.VirtualMachineInstance
+	trafficGen          *kvcorev1.VirtualMachineInstance
+	trafficGenConfigMap *k8scorev1.ConfigMap
+	results             status.Results
+	executor            testExecutor
 }
 
 const (
-	VMIUnderTestNamePrefix = "vmi-under-test"
-	TrafficGenNamePrefix   = "dpdk-traffic-gen"
+	VMIUnderTestNamePrefix        = "vmi-under-test"
+	TrafficGenNamePrefix          = "dpdk-traffic-gen"
+	TrafficGenConfigMapNamePrefix = "dpdk-traffic-gen-config"
 )
 
 func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config, executor testExecutor) *Checkup {
 	return &Checkup{
-		client:       client,
-		namespace:    namespace,
-		params:       checkupConfig,
-		vmiUnderTest: newVMIUnderTest(checkupConfig),
-		trafficGen:   newTrafficGen(checkupConfig),
-		executor:     executor,
+		client:              client,
+		namespace:           namespace,
+		params:              checkupConfig,
+		vmiUnderTest:        newVMIUnderTest(checkupConfig),
+		trafficGen:          newTrafficGen(checkupConfig),
+		trafficGenConfigMap: newTrafficGenConfigMap(checkupConfig),
+		executor:            executor,
 	}
 }
 
 func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
 	const errMessagePrefix = "setup"
 	var err error
+
+	if err = c.createTrafficGenCM(ctx); err != nil {
+		return fmt.Errorf("%s: %w", errMessagePrefix, err)
+	}
 
 	if err = c.createVMI(ctx, c.vmiUnderTest); err != nil {
 		return fmt.Errorf("%s: %w", errMessagePrefix, err)
@@ -169,6 +178,13 @@ func (c *Checkup) Results() status.Results {
 	return c.results
 }
 
+func (c *Checkup) createTrafficGenCM(ctx context.Context) error {
+	log.Printf("Creating ConfigMap %q...", ObjectFullName(c.namespace, c.trafficGenConfigMap.Name))
+
+	_, err := c.client.CreateConfigMap(ctx, c.namespace, c.trafficGenConfigMap)
+	return err
+}
+
 func (c *Checkup) createVMI(ctx context.Context, vmiToCreate *kvcorev1.VirtualMachineInstance) error {
 	log.Printf("Creating VMI %q...", ObjectFullName(c.namespace, vmiToCreate.Name))
 
@@ -257,6 +273,10 @@ func (c *Checkup) cleanupVMI(name string) {
 
 func ObjectFullName(namespace, name string) string {
 	return fmt.Sprintf("%s/%s", namespace, name)
+}
+
+func newTrafficGenConfigMap(checkupConfig config.Config) *k8scorev1.ConfigMap {
+	return configmap.New(TrafficGenConfigMapNamePrefix, checkupConfig.PodName, checkupConfig.PodUID)
 }
 
 func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {

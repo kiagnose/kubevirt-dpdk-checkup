@@ -59,6 +59,8 @@ func TestCheckupShouldSucceed(t *testing.T) {
 
 	assert.NoError(t, testCheckup.Setup(context.Background()))
 
+	assert.NotEmpty(t, testClient.createdConfigMaps)
+
 	vmiUnderTestName := testClient.VMIName(checkup.VMIUnderTestNamePrefix)
 	assert.NotEmpty(t, vmiUnderTestName)
 
@@ -125,6 +127,18 @@ func TestVMIAffinity(t *testing.T) {
 }
 
 func TestSetupShouldFail(t *testing.T) {
+	t.Run("when Traffic gen ConfigMap creation fails", func(t *testing.T) {
+		expectedConfigMapCreationError := errors.New("failed to create ConfigMap")
+
+		testClient := newClientStub()
+		testConfig := newTestConfig()
+		testClient.configMapCreationFailure = expectedConfigMapCreationError
+		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
+
+		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedConfigMapCreationError.Error())
+		assert.Empty(t, testClient.createdVMIs)
+	})
+
 	t.Run("when VMI creation fails", func(t *testing.T) {
 		expectedVMICreationFailure := errors.New("failed to create VMI")
 
@@ -284,15 +298,18 @@ func assertNodeAffinityDoesNotExist(t *testing.T, testClient *clientStub, vmiNam
 }
 
 type clientStub struct {
-	createdVMIs        map[string]*kvcorev1.VirtualMachineInstance
-	vmiCreationFailure error
-	vmiReadFailure     error
-	vmiDeletionFailure error
+	createdVMIs              map[string]*kvcorev1.VirtualMachineInstance
+	vmiCreationFailure       error
+	vmiReadFailure           error
+	vmiDeletionFailure       error
+	createdConfigMaps        map[string]*k8scorev1.ConfigMap
+	configMapCreationFailure error
 }
 
 func newClientStub() *clientStub {
 	return &clientStub{
-		createdVMIs: map[string]*kvcorev1.VirtualMachineInstance{},
+		createdVMIs:       map[string]*kvcorev1.VirtualMachineInstance{},
+		createdConfigMaps: map[string]*k8scorev1.ConfigMap{},
 	}
 }
 
@@ -344,6 +361,19 @@ func (cs *clientStub) DeleteVirtualMachineInstance(_ context.Context, namespace,
 	delete(cs.createdVMIs, vmiFullName)
 
 	return nil
+}
+
+func (cs *clientStub) CreateConfigMap(_ context.Context, namespace string, configMap *k8scorev1.ConfigMap) (*k8scorev1.ConfigMap, error) {
+	if cs.configMapCreationFailure != nil {
+		return nil, cs.configMapCreationFailure
+	}
+
+	configMap.Namespace = namespace
+
+	configMapFullName := checkup.ObjectFullName(configMap.Namespace, configMap.Name)
+	cs.createdConfigMaps[configMapFullName] = configMap
+
+	return configMap, nil
 }
 
 func (cs *clientStub) VMIName(namePrefix string) string {
