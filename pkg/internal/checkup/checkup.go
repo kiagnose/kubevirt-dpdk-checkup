@@ -44,6 +44,7 @@ type kubeVirtVMIClient interface {
 	GetVirtualMachineInstance(ctx context.Context, namespace, name string) (*kvcorev1.VirtualMachineInstance, error)
 	DeleteVirtualMachineInstance(ctx context.Context, namespace, name string) error
 	CreateConfigMap(ctx context.Context, namespace string, configMap *k8scorev1.ConfigMap) (*k8scorev1.ConfigMap, error)
+	DeleteConfigMap(ctx context.Context, namespace, name string) error
 }
 
 type testExecutor interface {
@@ -163,6 +164,10 @@ func (c *Checkup) Teardown(ctx context.Context) error {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 
+	if err := c.deleteTrafficGenCM(ctx); err != nil {
+		return fmt.Errorf("%s: %w", errPrefix, err)
+	}
+
 	if err := c.waitForVMIDeletion(ctx, c.vmiUnderTest.Name); err != nil {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
@@ -183,6 +188,12 @@ func (c *Checkup) createTrafficGenCM(ctx context.Context) error {
 
 	_, err := c.client.CreateConfigMap(ctx, c.namespace, c.trafficGenConfigMap)
 	return err
+}
+
+func (c *Checkup) deleteTrafficGenCM(ctx context.Context) error {
+	log.Printf("Deleting ConfigMap %q...", ObjectFullName(c.namespace, c.trafficGenConfigMap.Name))
+
+	return c.client.DeleteConfigMap(ctx, c.namespace, c.trafficGenConfigMap.Name)
 }
 
 func (c *Checkup) createVMI(ctx context.Context, vmiToCreate *kvcorev1.VirtualMachineInstance) error {
