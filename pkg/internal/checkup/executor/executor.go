@@ -43,9 +43,9 @@ type Executor struct {
 	namespace                        string
 	vmiUsername                      string
 	vmiPassword                      string
-	vmiEastNICPCIAddress             string
+	vmiUnderTestEastNICPCIAddress    string
 	vmiEastEthPeerMACAddress         string
-	vmiWestNICPCIAddress             string
+	vmiUnderTestWestNICPCIAddress    string
 	vmiWestEthPeerMACAddress         string
 	testDuration                     time.Duration
 	verbosePrintsEnabled             bool
@@ -58,9 +58,9 @@ func New(client vmiSerialConsoleClient, namespace string, cfg config.Config) Exe
 		namespace:                        namespace,
 		vmiUsername:                      config.VMIUsername,
 		vmiPassword:                      config.VMIPassword,
-		vmiEastNICPCIAddress:             config.VMIEastNICPCIAddress,
+		vmiUnderTestEastNICPCIAddress:    config.VMIEastNICPCIAddress,
 		vmiEastEthPeerMACAddress:         cfg.TrafficGeneratorEastMacAddress.String(),
-		vmiWestNICPCIAddress:             config.VMIWestNICPCIAddress,
+		vmiUnderTestWestNICPCIAddress:    config.VMIWestNICPCIAddress,
 		vmiWestEthPeerMACAddress:         cfg.TrafficGeneratorWestMacAddress.String(),
 		testDuration:                     cfg.TestDuration,
 		verbosePrintsEnabled:             cfg.Verbose,
@@ -84,8 +84,8 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 		trafficDestPort   = 1
 	)
 
-	testpmdConsole := testpmd.NewTestpmdConsole(e.vmiSerialClient, e.namespace, e.vmiEastNICPCIAddress, e.vmiEastEthPeerMACAddress,
-		e.vmiWestNICPCIAddress, e.vmiWestEthPeerMACAddress, e.verbosePrintsEnabled)
+	testpmdConsole := testpmd.NewTestpmdConsole(e.vmiSerialClient, e.namespace, e.vmiUnderTestEastNICPCIAddress, e.vmiEastEthPeerMACAddress,
+		e.vmiUnderTestWestNICPCIAddress, e.vmiWestEthPeerMACAddress, e.verbosePrintsEnabled)
 
 	log.Printf("Starting testpmd in VMI...")
 	if err := testpmdConsole.Run(vmiUnderTestName); err != nil {
