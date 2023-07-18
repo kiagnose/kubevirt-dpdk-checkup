@@ -45,7 +45,7 @@ type kubeVirtVMIClient interface {
 }
 
 type testExecutor interface {
-	Execute(ctx context.Context, vmiUnderTestName string) (status.Results, error)
+	Execute(ctx context.Context, vmiUnderTestName, trafficGenVMIName string) (status.Results, error)
 }
 
 type Checkup struct {
@@ -118,7 +118,7 @@ func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
 func (c *Checkup) Run(ctx context.Context) error {
 	var err error
 
-	c.results, err = c.executor.Execute(ctx, c.vmiUnderTest.Name)
+	c.results, err = c.executor.Execute(ctx, c.vmiUnderTest.Name, c.trafficGen.Name)
 	if err != nil {
 		return err
 	}
