@@ -42,7 +42,7 @@ func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstan
 		NamePrefix:                      VMIUnderTestNamePrefix,
 		OwnerName:                       checkupConfig.PodName,
 		OwnerUID:                        checkupConfig.PodUID,
-		Affinity:                        vmi.Affinity(checkupConfig.DPDKNodeLabelSelector, checkupConfig.PodUID),
+		Affinity:                        Affinity(checkupConfig.DPDKNodeLabelSelector, checkupConfig.PodUID),
 		ContainerDiskImage:              checkupConfig.VMContainerDiskImage,
 		NetworkAttachmentDefinitionName: checkupConfig.NetworkAttachmentDefinitionName,
 		NICEastMACAddress:               checkupConfig.DPDKEastMacAddress.String(),
@@ -61,7 +61,7 @@ func newTrafficGen(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance
 		NamePrefix:                      TrafficGenNamePrefix,
 		OwnerName:                       checkupConfig.PodName,
 		OwnerUID:                        checkupConfig.PodUID,
-		Affinity:                        vmi.Affinity(checkupConfig.TrafficGeneratorNodeLabelSelector, checkupConfig.PodUID),
+		Affinity:                        Affinity(checkupConfig.TrafficGeneratorNodeLabelSelector, checkupConfig.PodUID),
 		ContainerDiskImage:              checkupConfig.TrafficGeneratorImage,
 		NetworkAttachmentDefinitionName: checkupConfig.NetworkAttachmentDefinitionName,
 		NICEastMACAddress:               checkupConfig.TrafficGeneratorEastMacAddress.String(),
@@ -130,6 +130,17 @@ func NewDPDKVMI(vmiConfig DPDKVMIConfig) *kvcorev1.VirtualMachineInstance {
 		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(vmiConfig.Username, vmiConfig.Password)),
 		vmi.WithVirtIODisk(cloudInitDiskName),
 	)
+}
+
+func Affinity(nodeName, ownerUID string) *k8scorev1.Affinity {
+	var affinity k8scorev1.Affinity
+	if nodeName != "" {
+		affinity.NodeAffinity = vmi.NewRequiredNodeAffinity(nodeName)
+	} else {
+		affinity.PodAntiAffinity = vmi.NewPreferredPodAntiAffinity(vmi.DPDKCheckupUIDLabelKey, ownerUID)
+	}
+
+	return &affinity
 }
 
 func CloudInit(username, password string) string {
