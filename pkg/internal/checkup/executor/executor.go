@@ -31,7 +31,7 @@ import (
 
 	"kubevirt.io/client-go/kubecli"
 
-	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/console"
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/executor/console"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/trex"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/status"
