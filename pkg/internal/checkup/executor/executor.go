@@ -29,7 +29,7 @@ import (
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/executor/console"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/executor/testpmd"
-	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/trex"
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/executor/trex"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/status"
 )
