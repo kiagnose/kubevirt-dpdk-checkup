@@ -24,17 +24,6 @@ import (
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func Affinity(nodeName, ownerUID string) *k8scorev1.Affinity {
-	var affinity k8scorev1.Affinity
-	if nodeName != "" {
-		affinity.NodeAffinity = NewRequiredNodeAffinity(nodeName)
-	} else {
-		affinity.PodAntiAffinity = NewPreferredPodAntiAffinity(DPDKCheckupUIDLabelKey, ownerUID)
-	}
-
-	return &affinity
-}
-
 // NewRequiredNodeAffinity returns new node affinity with node selector of the given node name.
 // Adding it to a VMI will make sure it will schedule on the given node name.
 func NewRequiredNodeAffinity(nodeName string) *k8scorev1.NodeAffinity {
