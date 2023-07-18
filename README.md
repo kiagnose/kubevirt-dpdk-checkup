@@ -46,6 +46,9 @@ rules:
   - apiGroups: [ "subresources.kubevirt.io" ]
     resources: [ "virtualmachineinstances/console" ]
     verbs: [ "get" ]
+  - apiGroups: [ "" ]
+    resources: [ "configmaps" ]
+    verbs: [ "create", "delete" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
