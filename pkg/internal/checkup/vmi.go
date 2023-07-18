@@ -24,8 +24,6 @@ import (
 	"strings"
 
 	k8scorev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/rand"
-
 	kvcorev1 "kubevirt.io/api/core/v1"
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/vmi"
@@ -53,7 +51,7 @@ const (
 	terminationGracePeriodSeconds = 0
 )
 
-func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
+func newVMIUnderTest(name string, checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 	optionsToApply := baseOptions(checkupConfig)
 
 	optionsToApply = append(optionsToApply,
@@ -64,10 +62,10 @@ func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstan
 		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword)),
 	)
 
-	return vmi.New(RandomizeName(VMIUnderTestNamePrefix), optionsToApply...)
+	return vmi.New(name, optionsToApply...)
 }
 
-func newTrafficGen(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
+func newTrafficGen(name string, checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 	optionsToApply := baseOptions(checkupConfig)
 
 	optionsToApply = append(optionsToApply,
@@ -78,7 +76,7 @@ func newTrafficGen(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance
 		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword)),
 	)
 
-	return vmi.New(RandomizeName(TrafficGenNamePrefix), optionsToApply...)
+	return vmi.New(name, optionsToApply...)
 }
 
 func baseOptions(checkupConfig config.Config) []vmi.Option {
@@ -124,10 +122,4 @@ func CloudInit(username, password string) string {
 	sb.WriteString("  expire: false")
 
 	return sb.String()
-}
-
-func RandomizeName(prefix string) string {
-	const randomStringLen = 5
-
-	return fmt.Sprintf("%s-%s", prefix, rand.String(randomStringLen))
 }

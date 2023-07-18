@@ -27,6 +27,7 @@ import (
 
 	k8scorev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	kvcorev1 "kubevirt.io/api/core/v1"
@@ -66,13 +67,16 @@ const (
 )
 
 func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config, executor testExecutor) *Checkup {
+	const randomStringLen = 5
+	randomSuffix := rand.String(randomStringLen)
+
 	return &Checkup{
 		client:              client,
 		namespace:           namespace,
 		params:              checkupConfig,
-		vmiUnderTest:        newVMIUnderTest(checkupConfig),
-		trafficGen:          newTrafficGen(checkupConfig),
-		trafficGenConfigMap: newTrafficGenConfigMap(checkupConfig),
+		vmiUnderTest:        newVMIUnderTest(vmiUnderTestName(randomSuffix), checkupConfig),
+		trafficGen:          newTrafficGen(trafficGenName(randomSuffix), checkupConfig),
+		trafficGenConfigMap: newTrafficGenConfigMap(trafficGenConfigMapName(randomSuffix), checkupConfig),
 		executor:            executor,
 	}
 }
@@ -283,6 +287,22 @@ func ObjectFullName(namespace, name string) string {
 	return fmt.Sprintf("%s/%s", namespace, name)
 }
 
-func newTrafficGenConfigMap(checkupConfig config.Config) *k8scorev1.ConfigMap {
-	return configmap.New(TrafficGenConfigMapNamePrefix, checkupConfig.PodName, checkupConfig.PodUID)
+func newTrafficGenConfigMap(name string, checkupConfig config.Config) *k8scorev1.ConfigMap {
+	return configmap.New(
+		name,
+		checkupConfig.PodName,
+		checkupConfig.PodUID,
+	)
+}
+
+func vmiUnderTestName(suffix string) string {
+	return VMIUnderTestNamePrefix + "-" + suffix
+}
+
+func trafficGenName(suffix string) string {
+	return TrafficGenNamePrefix + "-" + suffix
+}
+
+func trafficGenConfigMapName(suffix string) string {
+	return TrafficGenConfigMapNamePrefix + "-" + suffix
 }
