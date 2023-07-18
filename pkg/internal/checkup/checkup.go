@@ -32,7 +32,6 @@ import (
 	kvcorev1 "kubevirt.io/api/core/v1"
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/configmap"
-	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/vmi"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/status"
 )
@@ -63,8 +62,6 @@ type Checkup struct {
 }
 
 const (
-	VMIUnderTestNamePrefix        = "vmi-under-test"
-	TrafficGenNamePrefix          = "dpdk-traffic-gen"
 	TrafficGenConfigMapNamePrefix = "dpdk-traffic-gen-config"
 )
 
@@ -288,42 +285,4 @@ func ObjectFullName(namespace, name string) string {
 
 func newTrafficGenConfigMap(checkupConfig config.Config) *k8scorev1.ConfigMap {
 	return configmap.New(TrafficGenConfigMapNamePrefix, checkupConfig.PodName, checkupConfig.PodUID)
-}
-
-func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
-	vmiConfig := vmi.DPDKVMIConfig{
-		NamePrefix:                      VMIUnderTestNamePrefix,
-		OwnerName:                       checkupConfig.PodName,
-		OwnerUID:                        checkupConfig.PodUID,
-		Affinity:                        vmi.Affinity(checkupConfig.DPDKNodeLabelSelector, checkupConfig.PodUID),
-		ContainerDiskImage:              checkupConfig.VMContainerDiskImage,
-		NetworkAttachmentDefinitionName: checkupConfig.NetworkAttachmentDefinitionName,
-		NICEastMACAddress:               checkupConfig.DPDKEastMacAddress.String(),
-		NICEastPCIAddress:               config.VMIEastNICPCIAddress,
-		NICWestMACAddress:               checkupConfig.DPDKWestMacAddress.String(),
-		NICWestPCIAddress:               config.VMIWestNICPCIAddress,
-		Username:                        config.VMIUsername,
-		Password:                        config.VMIPassword,
-	}
-
-	return vmi.NewDPDKVMI(vmiConfig)
-}
-
-func newTrafficGen(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
-	vmiConfig := vmi.DPDKVMIConfig{
-		NamePrefix:                      TrafficGenNamePrefix,
-		OwnerName:                       checkupConfig.PodName,
-		OwnerUID:                        checkupConfig.PodUID,
-		Affinity:                        vmi.Affinity(checkupConfig.TrafficGeneratorNodeLabelSelector, checkupConfig.PodUID),
-		ContainerDiskImage:              checkupConfig.TrafficGeneratorImage,
-		NetworkAttachmentDefinitionName: checkupConfig.NetworkAttachmentDefinitionName,
-		NICEastMACAddress:               checkupConfig.TrafficGeneratorEastMacAddress.String(),
-		NICEastPCIAddress:               config.VMIEastNICPCIAddress,
-		NICWestMACAddress:               checkupConfig.TrafficGeneratorWestMacAddress.String(),
-		NICWestPCIAddress:               config.VMIWestNICPCIAddress,
-		Username:                        config.VMIUsername,
-		Password:                        config.VMIPassword,
-	}
-
-	return vmi.NewDPDKVMI(vmiConfig)
 }
