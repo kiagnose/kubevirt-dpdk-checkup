@@ -54,84 +54,54 @@ const (
 )
 
 func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
-	vmiConfig := DPDKVMIConfig{
-		NamePrefix:                      VMIUnderTestNamePrefix,
-		OwnerName:                       checkupConfig.PodName,
-		OwnerUID:                        checkupConfig.PodUID,
-		Affinity:                        Affinity(checkupConfig.DPDKNodeLabelSelector, checkupConfig.PodUID),
-		ContainerDiskImage:              checkupConfig.VMContainerDiskImage,
-		NetworkAttachmentDefinitionName: checkupConfig.NetworkAttachmentDefinitionName,
-		NICEastMACAddress:               checkupConfig.DPDKEastMacAddress.String(),
-		NICEastPCIAddress:               config.VMIEastNICPCIAddress,
-		NICWestMACAddress:               checkupConfig.DPDKWestMacAddress.String(),
-		NICWestPCIAddress:               config.VMIWestNICPCIAddress,
-		Username:                        config.VMIUsername,
-		Password:                        config.VMIPassword,
-	}
+	optionsToApply := baseOptions(checkupConfig)
 
-	return NewDPDKVMI(vmiConfig)
+	optionsToApply = append(optionsToApply,
+		vmi.WithAffinity(Affinity(checkupConfig.DPDKNodeLabelSelector, checkupConfig.PodUID)),
+		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.DPDKEastMacAddress.String(), config.VMIEastNICPCIAddress),
+		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.DPDKWestMacAddress.String(), config.VMIWestNICPCIAddress),
+		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMContainerDiskImage),
+		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword)),
+	)
+
+	return vmi.New(RandomizeName(VMIUnderTestNamePrefix), optionsToApply...)
 }
 
 func newTrafficGen(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
-	vmiConfig := DPDKVMIConfig{
-		NamePrefix:                      TrafficGenNamePrefix,
-		OwnerName:                       checkupConfig.PodName,
-		OwnerUID:                        checkupConfig.PodUID,
-		Affinity:                        Affinity(checkupConfig.TrafficGeneratorNodeLabelSelector, checkupConfig.PodUID),
-		ContainerDiskImage:              checkupConfig.TrafficGeneratorImage,
-		NetworkAttachmentDefinitionName: checkupConfig.NetworkAttachmentDefinitionName,
-		NICEastMACAddress:               checkupConfig.TrafficGeneratorEastMacAddress.String(),
-		NICEastPCIAddress:               config.VMIEastNICPCIAddress,
-		NICWestMACAddress:               checkupConfig.TrafficGeneratorWestMacAddress.String(),
-		NICWestPCIAddress:               config.VMIWestNICPCIAddress,
-		Username:                        config.VMIUsername,
-		Password:                        config.VMIPassword,
-	}
+	optionsToApply := baseOptions(checkupConfig)
 
-	return NewDPDKVMI(vmiConfig)
+	optionsToApply = append(optionsToApply,
+		vmi.WithAffinity(Affinity(checkupConfig.TrafficGeneratorNodeLabelSelector, checkupConfig.PodUID)),
+		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.TrafficGeneratorEastMacAddress.String(), config.VMIEastNICPCIAddress),
+		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.TrafficGeneratorWestMacAddress.String(), config.VMIWestNICPCIAddress),
+		vmi.WithContainerDisk(rootDiskName, checkupConfig.TrafficGeneratorImage),
+		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword)),
+	)
+
+	return vmi.New(RandomizeName(TrafficGenNamePrefix), optionsToApply...)
 }
 
-type DPDKVMIConfig struct {
-	NamePrefix                      string
-	OwnerName                       string
-	OwnerUID                        string
-	Affinity                        *k8scorev1.Affinity
-	ContainerDiskImage              string
-	NetworkAttachmentDefinitionName string
-	NICEastMACAddress               string
-	NICEastPCIAddress               string
-	NICWestMACAddress               string
-	NICWestPCIAddress               string
-	Username                        string
-	Password                        string
-}
-
-func NewDPDKVMI(vmiConfig DPDKVMIConfig) *kvcorev1.VirtualMachineInstance {
+func baseOptions(checkupConfig config.Config) []vmi.Option {
 	labels := map[string]string{
-		DPDKCheckupUIDLabelKey: vmiConfig.OwnerUID,
+		DPDKCheckupUIDLabelKey: checkupConfig.PodUID,
 	}
 
-	return vmi.New(RandomizeName(vmiConfig.NamePrefix),
-		vmi.WithOwnerReference(vmiConfig.OwnerName, vmiConfig.OwnerUID),
+	return []vmi.Option{
+		vmi.WithOwnerReference(checkupConfig.PodName, checkupConfig.PodUID),
 		vmi.WithLabels(labels),
-		vmi.WithAffinity(vmiConfig.Affinity),
 		vmi.WithoutCRIOCPULoadBalancing(),
 		vmi.WithoutCRIOCPUQuota(),
 		vmi.WithoutCRIOIRQLoadBalancing(),
 		vmi.WithDedicatedCPU(CPUSocketsCount, CPUCoresCount, CPUTreadsCount),
-		vmi.WithSRIOVInterface(eastNetworkName, vmiConfig.NICEastMACAddress, vmiConfig.NICEastPCIAddress),
-		vmi.WithMultusNetwork(eastNetworkName, vmiConfig.NetworkAttachmentDefinitionName),
-		vmi.WithSRIOVInterface(westNetworkName, vmiConfig.NICWestMACAddress, vmiConfig.NICWestPCIAddress),
-		vmi.WithMultusNetwork(westNetworkName, vmiConfig.NetworkAttachmentDefinitionName),
+		vmi.WithMemory(hugePageSize, guestMemory),
 		vmi.WithNetworkInterfaceMultiQueue(),
 		vmi.WithRandomNumberGenerator(),
-		vmi.WithMemory(hugePageSize, guestMemory),
 		vmi.WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds),
-		vmi.WithContainerDisk(rootDiskName, vmiConfig.ContainerDiskImage),
+		vmi.WithMultusNetwork(eastNetworkName, checkupConfig.NetworkAttachmentDefinitionName),
+		vmi.WithMultusNetwork(westNetworkName, checkupConfig.NetworkAttachmentDefinitionName),
 		vmi.WithVirtIODisk(rootDiskName),
-		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(vmiConfig.Username, vmiConfig.Password)),
 		vmi.WithVirtIODisk(cloudInitDiskName),
-	)
+	}
 }
 
 func Affinity(nodeName, ownerUID string) *k8scorev1.Affinity {
