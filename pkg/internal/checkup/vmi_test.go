@@ -28,7 +28,6 @@ import (
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup"
-	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/vmi"
 )
 
 func TestAffinityCalculation(t *testing.T) {
@@ -75,7 +74,7 @@ func TestAffinityCalculation(t *testing.T) {
 								MatchExpressions: []k8smetav1.LabelSelectorRequirement{
 									{
 										Operator: k8smetav1.LabelSelectorOpIn,
-										Key:      vmi.DPDKCheckupUIDLabelKey,
+										Key:      checkup.DPDKCheckupUIDLabelKey,
 										Values:   []string{ownerUID},
 									},
 								},
