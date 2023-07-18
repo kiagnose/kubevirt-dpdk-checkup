@@ -41,8 +41,6 @@ const (
 	CRIOIRQLoadBalancingAnnotation = "irq-load-balancing.crio.io"
 )
 
-const DPDKCheckupUIDLabelKey = "kubevirt-dpdk-checkup/uid"
-
 const Disable = "disable"
 
 type Option func(vmi *kvcorev1.VirtualMachineInstance)

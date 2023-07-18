@@ -37,6 +37,8 @@ const (
 	TrafficGenNamePrefix   = "dpdk-traffic-gen"
 )
 
+const DPDKCheckupUIDLabelKey = "kubevirt-dpdk-checkup/uid"
+
 func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 	vmiConfig := DPDKVMIConfig{
 		NamePrefix:                      VMIUnderTestNamePrefix,
@@ -106,7 +108,7 @@ func NewDPDKVMI(vmiConfig DPDKVMIConfig) *kvcorev1.VirtualMachineInstance {
 	)
 
 	labels := map[string]string{
-		vmi.DPDKCheckupUIDLabelKey: vmiConfig.OwnerUID,
+		DPDKCheckupUIDLabelKey: vmiConfig.OwnerUID,
 	}
 
 	return vmi.New(RandomizeName(vmiConfig.NamePrefix),
@@ -137,7 +139,7 @@ func Affinity(nodeName, ownerUID string) *k8scorev1.Affinity {
 	if nodeName != "" {
 		affinity.NodeAffinity = vmi.NewRequiredNodeAffinity(nodeName)
 	} else {
-		affinity.PodAntiAffinity = vmi.NewPreferredPodAntiAffinity(vmi.DPDKCheckupUIDLabelKey, ownerUID)
+		affinity.PodAntiAffinity = vmi.NewPreferredPodAntiAffinity(DPDKCheckupUIDLabelKey, ownerUID)
 	}
 
 	return &affinity
