@@ -39,6 +39,20 @@ const (
 
 const DPDKCheckupUIDLabelKey = "kubevirt-dpdk-checkup/uid"
 
+const (
+	CPUSocketsCount   = 1
+	CPUCoresCount     = 4
+	CPUTreadsCount    = 2
+	hugePageSize      = "1Gi"
+	guestMemory       = "4Gi"
+	rootDiskName      = "rootdisk"
+	cloudInitDiskName = "cloudinitdisk"
+	eastNetworkName   = "nic-east"
+	westNetworkName   = "nic-west"
+
+	terminationGracePeriodSeconds = 0
+)
+
 func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 	vmiConfig := DPDKVMIConfig{
 		NamePrefix:                      VMIUnderTestNamePrefix,
@@ -93,20 +107,6 @@ type DPDKVMIConfig struct {
 }
 
 func NewDPDKVMI(vmiConfig DPDKVMIConfig) *kvcorev1.VirtualMachineInstance {
-	const (
-		CPUSocketsCount   = 1
-		CPUCoresCount     = 4
-		CPUTreadsCount    = 2
-		hugePageSize      = "1Gi"
-		guestMemory       = "4Gi"
-		rootDiskName      = "rootdisk"
-		cloudInitDiskName = "cloudinitdisk"
-		eastNetworkName   = "nic-east"
-		westNetworkName   = "nic-west"
-
-		terminationGracePeriodSeconds = 0
-	)
-
 	labels := map[string]string{
 		DPDKCheckupUIDLabelKey: vmiConfig.OwnerUID,
 	}
