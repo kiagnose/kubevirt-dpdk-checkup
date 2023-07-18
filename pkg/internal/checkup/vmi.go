@@ -20,6 +20,12 @@
 package checkup
 
 import (
+	"fmt"
+	"strings"
+
+	k8scorev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
+
 	kvcorev1 "kubevirt.io/api/core/v1"
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/vmi"
@@ -32,7 +38,7 @@ const (
 )
 
 func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
-	vmiConfig := vmi.DPDKVMIConfig{
+	vmiConfig := DPDKVMIConfig{
 		NamePrefix:                      VMIUnderTestNamePrefix,
 		OwnerName:                       checkupConfig.PodName,
 		OwnerUID:                        checkupConfig.PodUID,
@@ -47,11 +53,11 @@ func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstan
 		Password:                        config.VMIPassword,
 	}
 
-	return vmi.NewDPDKVMI(vmiConfig)
+	return NewDPDKVMI(vmiConfig)
 }
 
 func newTrafficGen(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
-	vmiConfig := vmi.DPDKVMIConfig{
+	vmiConfig := DPDKVMIConfig{
 		NamePrefix:                      TrafficGenNamePrefix,
 		OwnerName:                       checkupConfig.PodName,
 		OwnerUID:                        checkupConfig.PodUID,
@@ -66,5 +72,79 @@ func newTrafficGen(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance
 		Password:                        config.VMIPassword,
 	}
 
-	return vmi.NewDPDKVMI(vmiConfig)
+	return NewDPDKVMI(vmiConfig)
+}
+
+type DPDKVMIConfig struct {
+	NamePrefix                      string
+	OwnerName                       string
+	OwnerUID                        string
+	Affinity                        *k8scorev1.Affinity
+	ContainerDiskImage              string
+	NetworkAttachmentDefinitionName string
+	NICEastMACAddress               string
+	NICEastPCIAddress               string
+	NICWestMACAddress               string
+	NICWestPCIAddress               string
+	Username                        string
+	Password                        string
+}
+
+func NewDPDKVMI(vmiConfig DPDKVMIConfig) *kvcorev1.VirtualMachineInstance {
+	const (
+		CPUSocketsCount   = 1
+		CPUCoresCount     = 4
+		CPUTreadsCount    = 2
+		hugePageSize      = "1Gi"
+		guestMemory       = "4Gi"
+		rootDiskName      = "rootdisk"
+		cloudInitDiskName = "cloudinitdisk"
+		eastNetworkName   = "nic-east"
+		westNetworkName   = "nic-west"
+
+		terminationGracePeriodSeconds = 0
+	)
+
+	labels := map[string]string{
+		vmi.DPDKCheckupUIDLabelKey: vmiConfig.OwnerUID,
+	}
+
+	return vmi.New(RandomizeName(vmiConfig.NamePrefix),
+		vmi.WithOwnerReference(vmiConfig.OwnerName, vmiConfig.OwnerUID),
+		vmi.WithLabels(labels),
+		vmi.WithAffinity(vmiConfig.Affinity),
+		vmi.WithoutCRIOCPULoadBalancing(),
+		vmi.WithoutCRIOCPUQuota(),
+		vmi.WithoutCRIOIRQLoadBalancing(),
+		vmi.WithDedicatedCPU(CPUSocketsCount, CPUCoresCount, CPUTreadsCount),
+		vmi.WithSRIOVInterface(eastNetworkName, vmiConfig.NICEastMACAddress, vmiConfig.NICEastPCIAddress),
+		vmi.WithMultusNetwork(eastNetworkName, vmiConfig.NetworkAttachmentDefinitionName),
+		vmi.WithSRIOVInterface(westNetworkName, vmiConfig.NICWestMACAddress, vmiConfig.NICWestPCIAddress),
+		vmi.WithMultusNetwork(westNetworkName, vmiConfig.NetworkAttachmentDefinitionName),
+		vmi.WithNetworkInterfaceMultiQueue(),
+		vmi.WithRandomNumberGenerator(),
+		vmi.WithMemory(hugePageSize, guestMemory),
+		vmi.WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds),
+		vmi.WithContainerDisk(rootDiskName, vmiConfig.ContainerDiskImage),
+		vmi.WithVirtIODisk(rootDiskName),
+		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(vmiConfig.Username, vmiConfig.Password)),
+		vmi.WithVirtIODisk(cloudInitDiskName),
+	)
+}
+
+func CloudInit(username, password string) string {
+	sb := strings.Builder{}
+	sb.WriteString("#cloud-config\n")
+	sb.WriteString(fmt.Sprintf("user: %s\n", username))
+	sb.WriteString(fmt.Sprintf("password: %s\n", password))
+	sb.WriteString("chpasswd:\n")
+	sb.WriteString("  expire: false")
+
+	return sb.String()
+}
+
+func RandomizeName(prefix string) string {
+	const randomStringLen = 5
+
+	return fmt.Sprintf("%s-%s", prefix, rand.String(randomStringLen))
 }

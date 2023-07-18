@@ -17,18 +17,18 @@
  *
  */
 
-package vmi_test
+package checkup_test
 
 import (
 	"testing"
 
 	assert "github.com/stretchr/testify/require"
 
-	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/vmi"
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup"
 )
 
 func TestCloudInitString(t *testing.T) {
-	actualString := vmi.CloudInit("user", "password")
+	actualString := checkup.CloudInit("user", "password")
 	expectedString := `#cloud-config
 user: user
 password: password
