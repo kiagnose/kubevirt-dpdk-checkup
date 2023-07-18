@@ -27,7 +27,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/trex"
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/executor/trex"
 )
 
 const (
