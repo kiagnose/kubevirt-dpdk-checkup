@@ -143,10 +143,12 @@ func CloudInit(username, password string, bootCommands []string) string {
 
 func trafficGenBootCommands(configDiskSerial string) []string {
 	const configMountDirectory = "/mnt/app-config"
+	const testScriptsDirectory = "/opt/tests"
 
 	return []string{
 		fmt.Sprintf("sudo mkdir %s", configMountDirectory),
 		fmt.Sprintf("sudo mount /dev/$(lsblk --nodeps -no name,serial | grep %s | cut -f1 -d' ') %s", configDiskSerial, configMountDirectory),
 		fmt.Sprintf("sudo cp %s/%s /etc", configMountDirectory, trex.CfgFileName),
+		fmt.Sprintf("sudo mkdir -p %s", testScriptsDirectory),
 	}
 }
