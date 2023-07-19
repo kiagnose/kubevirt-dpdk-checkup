@@ -26,6 +26,7 @@ import (
 	k8scorev1 "k8s.io/api/core/v1"
 	kvcorev1 "kubevirt.io/api/core/v1"
 
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/trex"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/vmi"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 )
@@ -146,5 +147,6 @@ func trafficGenBootCommands(configDiskSerial string) []string {
 	return []string{
 		fmt.Sprintf("sudo mkdir %s", configMountDirectory),
 		fmt.Sprintf("sudo mount /dev/$(lsblk --nodeps -no name,serial | grep %s | cut -f1 -d' ') %s", configDiskSerial, configMountDirectory),
+		fmt.Sprintf("sudo cp %s/%s /etc", configMountDirectory, trex.CfgFileName),
 	}
 }
