@@ -33,6 +33,7 @@ import (
 	kvcorev1 "kubevirt.io/api/core/v1"
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/configmap"
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/trex"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/status"
 )
@@ -290,10 +291,17 @@ func ObjectFullName(namespace, name string) string {
 }
 
 func newTrafficGenConfigMap(name string, checkupConfig config.Config) *k8scorev1.ConfigMap {
+	trexConfig := trex.NewConfig(checkupConfig)
+	trafficGenConfigData := map[string]string{
+		trex.CfgFileName:                trexConfig.GenerateCfgFile(),
+		trex.StreamPyFileName:           trexConfig.GenerateStreamPyFile(),
+		trex.StreamPeerParamsPyFileName: trexConfig.GenerateStreamAddrPyFile(),
+	}
 	return configmap.New(
 		name,
 		checkupConfig.PodName,
 		checkupConfig.PodUID,
+		trafficGenConfigData,
 	)
 }
 
