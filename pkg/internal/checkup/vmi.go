@@ -59,13 +59,16 @@ func newVMIUnderTest(name string, checkupConfig config.Config) *kvcorev1.Virtual
 		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.DPDKEastMacAddress.String(), config.VMIEastNICPCIAddress),
 		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.DPDKWestMacAddress.String(), config.VMIWestNICPCIAddress),
 		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMContainerDiskImage),
-		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword)),
+		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword, nil)),
 	)
 
 	return vmi.New(name, optionsToApply...)
 }
 
-func newTrafficGen(name string, checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
+func newTrafficGen(name string, checkupConfig config.Config, configMapName string) *kvcorev1.VirtualMachineInstance {
+	const configDiskSerial = "DEADBEEF"
+	const configVolumeName = "trex-config"
+
 	optionsToApply := baseOptions(checkupConfig)
 
 	optionsToApply = append(optionsToApply,
@@ -73,7 +76,12 @@ func newTrafficGen(name string, checkupConfig config.Config) *kvcorev1.VirtualMa
 		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.TrafficGeneratorEastMacAddress.String(), config.VMIEastNICPCIAddress),
 		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.TrafficGeneratorWestMacAddress.String(), config.VMIWestNICPCIAddress),
 		vmi.WithContainerDisk(rootDiskName, checkupConfig.TrafficGeneratorImage),
-		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword)),
+		vmi.WithCloudInitNoCloudVolume(
+			cloudInitDiskName,
+			CloudInit(config.VMIUsername, config.VMIPassword, trafficGenBootCommands(configDiskSerial)),
+		),
+		vmi.WithConfigMapVolume(configVolumeName, configMapName),
+		vmi.WithConfigMapDisk(configVolumeName, configDiskSerial),
 	)
 
 	return vmi.New(name, optionsToApply...)
@@ -113,13 +121,30 @@ func Affinity(nodeName, ownerUID string) *k8scorev1.Affinity {
 	return &affinity
 }
 
-func CloudInit(username, password string) string {
+func CloudInit(username, password string, bootCommands []string) string {
 	sb := strings.Builder{}
 	sb.WriteString("#cloud-config\n")
 	sb.WriteString(fmt.Sprintf("user: %s\n", username))
 	sb.WriteString(fmt.Sprintf("password: %s\n", password))
 	sb.WriteString("chpasswd:\n")
-	sb.WriteString("  expire: false")
+	sb.WriteString("  expire: false\n")
+
+	if len(bootCommands) != 0 {
+		sb.WriteString("bootcmd:\n")
+
+		for _, command := range bootCommands {
+			sb.WriteString(fmt.Sprintf("  - %q\n", command))
+		}
+	}
 
 	return sb.String()
+}
+
+func trafficGenBootCommands(configDiskSerial string) []string {
+	const configMountDirectory = "/mnt/app-config"
+
+	return []string{
+		fmt.Sprintf("sudo mkdir %s", configMountDirectory),
+		fmt.Sprintf("sudo mount /dev/$(lsblk --nodeps -no name,serial | grep %s | cut -f1 -d' ') %s", configDiskSerial, configMountDirectory),
+	}
 }

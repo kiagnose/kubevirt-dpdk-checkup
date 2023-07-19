@@ -128,6 +128,17 @@ func WithVirtIODisk(name string) Option {
 	}
 }
 
+func WithConfigMapDisk(name, serial string) Option {
+	return func(vmi *kvcorev1.VirtualMachineInstance) {
+		vmi.Spec.Domain.Devices.Disks = append(vmi.Spec.Domain.Devices.Disks,
+			kvcorev1.Disk{
+				Name:   name,
+				Serial: serial,
+			},
+		)
+	}
+}
+
 func WithSRIOVInterface(name, macAddress, pciAddress string) Option {
 	return func(vmi *kvcorev1.VirtualMachineInstance) {
 		vmi.Spec.Domain.Devices.Interfaces = append(vmi.Spec.Domain.Devices.Interfaces, kvcorev1.Interface{
@@ -196,6 +207,20 @@ func WithContainerDisk(volumeName, imageName string) Option {
 		}
 
 		vmi.Spec.Volumes = append(vmi.Spec.Volumes, newVolume)
+	}
+}
+
+func WithConfigMapVolume(name, configMapName string) Option {
+	return func(vmi *kvcorev1.VirtualMachineInstance) {
+		vmi.Spec.Volumes = append(vmi.Spec.Volumes, kvcorev1.Volume{
+			Name: name,
+			VolumeSource: kvcorev1.VolumeSource{
+				ConfigMap: &kvcorev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{Name: configMapName},
+					Optional:             Pointer(false),
+				},
+			},
+		})
 	}
 }
 

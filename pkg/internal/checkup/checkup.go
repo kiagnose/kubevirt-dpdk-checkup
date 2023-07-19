@@ -70,13 +70,15 @@ func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config
 	const randomStringLen = 5
 	randomSuffix := rand.String(randomStringLen)
 
+	trafficGenCMName := trafficGenConfigMapName(randomSuffix)
+
 	return &Checkup{
 		client:              client,
 		namespace:           namespace,
 		params:              checkupConfig,
 		vmiUnderTest:        newVMIUnderTest(vmiUnderTestName(randomSuffix), checkupConfig),
-		trafficGen:          newTrafficGen(trafficGenName(randomSuffix), checkupConfig),
-		trafficGenConfigMap: newTrafficGenConfigMap(trafficGenConfigMapName(randomSuffix), checkupConfig),
+		trafficGen:          newTrafficGen(trafficGenName(randomSuffix), checkupConfig, trafficGenCMName),
+		trafficGenConfigMap: newTrafficGenConfigMap(trafficGenCMName, checkupConfig),
 		executor:            executor,
 	}
 }
