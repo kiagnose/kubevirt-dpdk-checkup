@@ -27,12 +27,12 @@ import (
 
 	k8scorev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	kvcorev1 "kubevirt.io/api/core/v1"
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/configmap"
-	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/vmi"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/status"
 )
@@ -63,19 +63,20 @@ type Checkup struct {
 }
 
 const (
-	VMIUnderTestNamePrefix        = "vmi-under-test"
-	TrafficGenNamePrefix          = "dpdk-traffic-gen"
 	TrafficGenConfigMapNamePrefix = "dpdk-traffic-gen-config"
 )
 
 func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config, executor testExecutor) *Checkup {
+	const randomStringLen = 5
+	randomSuffix := rand.String(randomStringLen)
+
 	return &Checkup{
 		client:              client,
 		namespace:           namespace,
 		params:              checkupConfig,
-		vmiUnderTest:        newVMIUnderTest(checkupConfig),
-		trafficGen:          newTrafficGen(checkupConfig),
-		trafficGenConfigMap: newTrafficGenConfigMap(checkupConfig),
+		vmiUnderTest:        newVMIUnderTest(vmiUnderTestName(randomSuffix), checkupConfig),
+		trafficGen:          newTrafficGen(trafficGenName(randomSuffix), checkupConfig),
+		trafficGenConfigMap: newTrafficGenConfigMap(trafficGenConfigMapName(randomSuffix), checkupConfig),
 		executor:            executor,
 	}
 }
@@ -286,44 +287,22 @@ func ObjectFullName(namespace, name string) string {
 	return fmt.Sprintf("%s/%s", namespace, name)
 }
 
-func newTrafficGenConfigMap(checkupConfig config.Config) *k8scorev1.ConfigMap {
-	return configmap.New(TrafficGenConfigMapNamePrefix, checkupConfig.PodName, checkupConfig.PodUID)
+func newTrafficGenConfigMap(name string, checkupConfig config.Config) *k8scorev1.ConfigMap {
+	return configmap.New(
+		name,
+		checkupConfig.PodName,
+		checkupConfig.PodUID,
+	)
 }
 
-func newVMIUnderTest(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
-	vmiConfig := vmi.DPDKVMIConfig{
-		NamePrefix:                      VMIUnderTestNamePrefix,
-		OwnerName:                       checkupConfig.PodName,
-		OwnerUID:                        checkupConfig.PodUID,
-		Affinity:                        vmi.Affinity(checkupConfig.DPDKNodeLabelSelector, checkupConfig.PodUID),
-		ContainerDiskImage:              checkupConfig.VMContainerDiskImage,
-		NetworkAttachmentDefinitionName: checkupConfig.NetworkAttachmentDefinitionName,
-		NICEastMACAddress:               checkupConfig.DPDKEastMacAddress.String(),
-		NICEastPCIAddress:               config.VMIEastNICPCIAddress,
-		NICWestMACAddress:               checkupConfig.DPDKWestMacAddress.String(),
-		NICWestPCIAddress:               config.VMIWestNICPCIAddress,
-		Username:                        config.VMIUsername,
-		Password:                        config.VMIPassword,
-	}
-
-	return vmi.NewDPDKVMI(vmiConfig)
+func vmiUnderTestName(suffix string) string {
+	return VMIUnderTestNamePrefix + "-" + suffix
 }
 
-func newTrafficGen(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
-	vmiConfig := vmi.DPDKVMIConfig{
-		NamePrefix:                      TrafficGenNamePrefix,
-		OwnerName:                       checkupConfig.PodName,
-		OwnerUID:                        checkupConfig.PodUID,
-		Affinity:                        vmi.Affinity(checkupConfig.TrafficGeneratorNodeLabelSelector, checkupConfig.PodUID),
-		ContainerDiskImage:              checkupConfig.TrafficGeneratorImage,
-		NetworkAttachmentDefinitionName: checkupConfig.NetworkAttachmentDefinitionName,
-		NICEastMACAddress:               checkupConfig.TrafficGeneratorEastMacAddress.String(),
-		NICEastPCIAddress:               config.VMIEastNICPCIAddress,
-		NICWestMACAddress:               checkupConfig.TrafficGeneratorWestMacAddress.String(),
-		NICWestPCIAddress:               config.VMIWestNICPCIAddress,
-		Username:                        config.VMIUsername,
-		Password:                        config.VMIPassword,
-	}
+func trafficGenName(suffix string) string {
+	return TrafficGenNamePrefix + "-" + suffix
+}
 
-	return vmi.NewDPDKVMI(vmiConfig)
+func trafficGenConfigMapName(suffix string) string {
+	return TrafficGenConfigMapNamePrefix + "-" + suffix
 }

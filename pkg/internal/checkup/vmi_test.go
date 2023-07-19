@@ -17,7 +17,7 @@
  *
  */
 
-package vmi_test
+package checkup_test
 
 import (
 	"testing"
@@ -27,7 +27,7 @@ import (
 	k8scorev1 "k8s.io/api/core/v1"
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/vmi"
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup"
 )
 
 func TestAffinityCalculation(t *testing.T) {
@@ -36,7 +36,7 @@ func TestAffinityCalculation(t *testing.T) {
 	t.Run("When node affinity is expected", func(t *testing.T) {
 		nodeName := "node01"
 
-		actualAffinity := vmi.Affinity(nodeName, ownerUID)
+		actualAffinity := checkup.Affinity(nodeName, ownerUID)
 
 		expectedAffinity := &k8scorev1.Affinity{
 			NodeAffinity: &k8scorev1.NodeAffinity{
@@ -61,7 +61,7 @@ func TestAffinityCalculation(t *testing.T) {
 	t.Run("When pod anti-affinity is expected", func(t *testing.T) {
 		var nodeName string
 
-		actualAffinity := vmi.Affinity(nodeName, ownerUID)
+		actualAffinity := checkup.Affinity(nodeName, ownerUID)
 
 		expectedAffinity := &k8scorev1.Affinity{
 			PodAntiAffinity: &k8scorev1.PodAntiAffinity{
@@ -74,7 +74,7 @@ func TestAffinityCalculation(t *testing.T) {
 								MatchExpressions: []k8smetav1.LabelSelectorRequirement{
 									{
 										Operator: k8smetav1.LabelSelectorOpIn,
-										Key:      vmi.DPDKCheckupUIDLabelKey,
+										Key:      checkup.DPDKCheckupUIDLabelKey,
 										Values:   []string{ownerUID},
 									},
 								},
@@ -87,4 +87,15 @@ func TestAffinityCalculation(t *testing.T) {
 
 		assert.Equal(t, expectedAffinity, actualAffinity)
 	})
+}
+
+func TestCloudInitString(t *testing.T) {
+	actualString := checkup.CloudInit("user", "password")
+	expectedString := `#cloud-config
+user: user
+password: password
+chpasswd:
+  expire: false`
+
+	assert.Equal(t, expectedString, actualString)
 }

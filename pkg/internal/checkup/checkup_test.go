@@ -36,7 +36,6 @@ import (
 	kvcorev1 "kubevirt.io/api/core/v1"
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup"
-	checkupvmi "github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/vmi"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/status"
 )
@@ -263,7 +262,7 @@ func assertPodAntiAffinityExists(t *testing.T, testClient *clientStub, vmiName, 
 							MatchExpressions: []k8smetav1.LabelSelectorRequirement{
 								{
 									Operator: k8smetav1.LabelSelectorOpIn,
-									Key:      checkupvmi.DPDKCheckupUIDLabelKey,
+									Key:      checkup.DPDKCheckupUIDLabelKey,
 									Values:   []string{ownerUID},
 								},
 							},

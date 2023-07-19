@@ -20,15 +20,10 @@
 package vmi
 
 import (
-	"fmt"
-	"strings"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/rand"
-
 	kvcorev1 "kubevirt.io/api/core/v1"
 )
 
@@ -46,66 +41,7 @@ const (
 	CRIOIRQLoadBalancingAnnotation = "irq-load-balancing.crio.io"
 )
 
-const DPDKCheckupUIDLabelKey = "kubevirt-dpdk-checkup/uid"
-
 const Disable = "disable"
-
-type DPDKVMIConfig struct {
-	NamePrefix                      string
-	OwnerName                       string
-	OwnerUID                        string
-	Affinity                        *corev1.Affinity
-	ContainerDiskImage              string
-	NetworkAttachmentDefinitionName string
-	NICEastMACAddress               string
-	NICEastPCIAddress               string
-	NICWestMACAddress               string
-	NICWestPCIAddress               string
-	Username                        string
-	Password                        string
-}
-
-func NewDPDKVMI(vmiConfig DPDKVMIConfig) *kvcorev1.VirtualMachineInstance {
-	const (
-		CPUSocketsCount   = 1
-		CPUCoresCount     = 4
-		CPUTreadsCount    = 2
-		hugePageSize      = "1Gi"
-		guestMemory       = "4Gi"
-		rootDiskName      = "rootdisk"
-		cloudInitDiskName = "cloudinitdisk"
-		eastNetworkName   = "nic-east"
-		westNetworkName   = "nic-west"
-
-		terminationGracePeriodSeconds = 0
-	)
-
-	labels := map[string]string{
-		DPDKCheckupUIDLabelKey: vmiConfig.OwnerUID,
-	}
-
-	return New(RandomizeName(vmiConfig.NamePrefix),
-		WithOwnerReference(vmiConfig.OwnerName, vmiConfig.OwnerUID),
-		WithLabels(labels),
-		WithAffinity(vmiConfig.Affinity),
-		WithoutCRIOCPULoadBalancing(),
-		WithoutCRIOCPUQuota(),
-		WithoutCRIOIRQLoadBalancing(),
-		WithDedicatedCPU(CPUSocketsCount, CPUCoresCount, CPUTreadsCount),
-		WithSRIOVInterface(eastNetworkName, vmiConfig.NICEastMACAddress, vmiConfig.NICEastPCIAddress),
-		WithMultusNetwork(eastNetworkName, vmiConfig.NetworkAttachmentDefinitionName),
-		WithSRIOVInterface(westNetworkName, vmiConfig.NICWestMACAddress, vmiConfig.NICWestPCIAddress),
-		WithMultusNetwork(westNetworkName, vmiConfig.NetworkAttachmentDefinitionName),
-		WithNetworkInterfaceMultiQueue(),
-		WithRandomNumberGenerator(),
-		WithMemory(hugePageSize, guestMemory),
-		WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds),
-		WithContainerDisk(rootDiskName, vmiConfig.ContainerDiskImage),
-		WithVirtIODisk(rootDiskName),
-		WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(vmiConfig.Username, vmiConfig.Password)),
-		WithVirtIODisk(cloudInitDiskName),
-	)
-}
 
 type Option func(vmi *kvcorev1.VirtualMachineInstance)
 
@@ -298,23 +234,6 @@ func WithAffinity(affinity *corev1.Affinity) Option {
 			vmi.Spec.Affinity = affinity
 		}
 	}
-}
-
-func CloudInit(username, password string) string {
-	sb := strings.Builder{}
-	sb.WriteString("#cloud-config\n")
-	sb.WriteString(fmt.Sprintf("user: %s\n", username))
-	sb.WriteString(fmt.Sprintf("password: %s\n", password))
-	sb.WriteString("chpasswd:\n")
-	sb.WriteString("  expire: false")
-
-	return sb.String()
-}
-
-func RandomizeName(prefix string) string {
-	const randomStringLen = 5
-
-	return fmt.Sprintf("%s-%s", prefix, rand.String(randomStringLen))
 }
 
 func Pointer[T any](v T) *T {
