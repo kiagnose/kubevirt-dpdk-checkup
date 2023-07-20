@@ -293,6 +293,7 @@ func ObjectFullName(namespace, name string) string {
 func newTrafficGenConfigMap(name string, checkupConfig config.Config) *k8scorev1.ConfigMap {
 	trexConfig := trex.NewConfig(checkupConfig)
 	trafficGenConfigData := map[string]string{
+		trex.ExecutionScriptName:        trexConfig.GenerateExecutionScript(),
 		trex.CfgFileName:                trexConfig.GenerateCfgFile(),
 		trex.StreamPyFileName:           trexConfig.GenerateStreamPyFile(),
 		trex.StreamPeerParamsPyFileName: trexConfig.GenerateStreamAddrPyFile(),
