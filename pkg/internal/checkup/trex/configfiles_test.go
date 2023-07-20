@@ -119,6 +119,18 @@ ip_telco1 = '10.1.1.1'
 	assert.Equal(t, expectedAddrPyFile, addrPyFile)
 }
 
+func TestExecutionScript(t *testing.T) {
+	trexConfig := createSampleConfigs()
+
+	actualExecutionScript := trexConfig.GenerateExecutionScript()
+
+	expextedExecutionScript := `#!/usr/bin/env bash
+./t-rex-64 --no-ofed-check --no-scapy-server --no-hw-flow-stat -i -c 6 --iom 0
+`
+
+	assert.Equal(t, expextedExecutionScript, actualExecutionScript)
+}
+
 func createSampleConfigs() trex.Config {
 	trafficGeneratorEastMacAddress, _ := net.ParseMAC("00:00:00:00:00:00")
 	trafficGeneratorWestMacAddress, _ := net.ParseMAC("00:00:00:00:00:01")
