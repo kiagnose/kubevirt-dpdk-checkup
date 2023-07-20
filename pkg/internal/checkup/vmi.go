@@ -148,6 +148,7 @@ func trafficGenBootCommands(configDiskSerial string) []string {
 	return []string{
 		fmt.Sprintf("sudo mkdir %s", configMountDirectory),
 		fmt.Sprintf("sudo mount /dev/$(lsblk --nodeps -no name,serial | grep %s | cut -f1 -d' ') %s", configDiskSerial, configMountDirectory),
+		fmt.Sprintf("sudo cp %s/%s  /etc/systemd/system", configMountDirectory, trex.SystemdUnitFileName),
 		fmt.Sprintf("sudo cp %s/%s %s", configMountDirectory, trex.ExecutionScriptName, trex.BinDirectory),
 		fmt.Sprintf("sudo chmod 744 %s/%s", trex.BinDirectory, trex.ExecutionScriptName),
 		fmt.Sprintf("sudo cp %s/%s /etc", configMountDirectory, trex.CfgFileName),
