@@ -33,6 +33,7 @@ const (
 	StreamPeerParamsPyFileName = "testpmd_addr.py"
 	ExecutionScriptName        = "run_trex_daemon"
 	BinDirectory               = "/opt/trex"
+	SystemdUnitFileName        = "trex.service"
 )
 
 type Config struct {
