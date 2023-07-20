@@ -84,6 +84,11 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 		trafficDestPort   = 1
 	)
 
+	log.Printf("Starting traffic generator Server Service...")
+	if err := trex.StartTrexService(e.vmiSerialClient, e.namespace, trafficGenVMIName); err != nil {
+		return status.Results{}, fmt.Errorf("failed to Start to Trex Service on VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
+	}
+
 	testpmdConsole := testpmd.NewTestpmdConsole(e.vmiSerialClient, e.namespace, e.vmiUnderTestEastNICPCIAddress, e.trafficGenEastMACAddress,
 		e.vmiUnderTestWestNICPCIAddress, e.trafficGenWestMACAddress, e.verbosePrintsEnabled)
 
