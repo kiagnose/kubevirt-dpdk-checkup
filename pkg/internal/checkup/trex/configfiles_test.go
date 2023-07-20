@@ -63,8 +63,8 @@ func TestGetTestpmdStreamPyFile(t *testing.T) {
 from testpmd_addr import *
 
 # Wild local MACs
-mac_localport0=00:00:00:00:00:00
-mac_localport1=00:00:00:00:00:01
+mac_localport0="00:00:00:00:00:00"
+mac_localport1="00:00:00:00:00:01"
 
 class STLS1(object):
 

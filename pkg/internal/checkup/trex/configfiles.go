@@ -98,8 +98,8 @@ func (t Config) GenerateStreamPyFile() string {
 from testpmd_addr import *
 
 # Wild local MACs
-mac_localport0=%s
-mac_localport1=%s
+mac_localport0=%q
+mac_localport1=%q
 
 class STLS1(object):
 
