@@ -21,6 +21,7 @@ package trex
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 )
@@ -157,4 +158,13 @@ ip_telco1 = '10.1.1.1'
 		c.DPDKEastMacAddress,
 		c.DPDKWestMacAddress,
 	)
+}
+
+func (c Config) GenerateExecutionScript() string {
+	sb := strings.Builder{}
+
+	sb.WriteString("#!/usr/bin/env bash\n")
+	sb.WriteString(fmt.Sprintf("./t-rex-64 --no-ofed-check --no-scapy-server --no-hw-flow-stat -i -c %s --iom 0\n", c.numOfTrafficCPUs))
+
+	return sb.String()
 }
