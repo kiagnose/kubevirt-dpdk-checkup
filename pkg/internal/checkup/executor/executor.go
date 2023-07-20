@@ -89,6 +89,13 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 		return status.Results{}, fmt.Errorf("failed to Start to Trex Service on VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
 	}
 
+	trexClient := trex.NewClient(e.vmiSerialClient, e.namespace, e.verbosePrintsEnabled)
+
+	log.Printf("Waiting until traffic generator Server Service is ready...")
+	if err := trexClient.WaitForServerToBeReady(ctx, trafficGenVMIName); err != nil {
+		return status.Results{}, fmt.Errorf("failed to Start to Trex Service on VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
+	}
+
 	testpmdConsole := testpmd.NewTestpmdConsole(e.vmiSerialClient, e.namespace, e.vmiUnderTestEastNICPCIAddress, e.trafficGenEastMACAddress,
 		e.vmiUnderTestWestNICPCIAddress, e.trafficGenWestMACAddress, e.verbosePrintsEnabled)
 
