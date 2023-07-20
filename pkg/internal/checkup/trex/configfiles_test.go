@@ -109,9 +109,9 @@ func TestGetTestpmdStreamAddrPyFile(t *testing.T) {
 	addrPyFile := cfgs.GenerateStreamAddrPyFile()
 
 	const expectedAddrPyFile = `# wild first XL710 mac
-mac_telco0 = 00:00:00:00:00:02
+mac_telco0 = "00:00:00:00:00:02"
 # wild second XL710 mac
-mac_telco1 = 00:00:00:00:00:03
+mac_telco1 = "00:00:00:00:00:03"
 # we don’t care of the IP in this phase
 ip_telco0  = '10.0.0.1'
 ip_telco1 = '10.1.1.1'
