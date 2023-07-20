@@ -21,6 +21,8 @@ package trex
 
 import (
 	"fmt"
+	"path"
+	"strings"
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 )
@@ -29,6 +31,9 @@ const (
 	CfgFileName                = "trex_cfg.yaml"
 	StreamPyFileName           = "testpmd.py"
 	StreamPeerParamsPyFileName = "testpmd_addr.py"
+	ExecutionScriptName        = "run_trex_daemon"
+	BinDirectory               = "/opt/trex"
+	SystemdUnitFileName        = "trex.service"
 )
 
 type Config struct {
@@ -63,7 +68,7 @@ func NewConfig(cfg config.Config) Config {
 	}
 }
 
-func (t Config) GenerateCfgFile() string {
+func (c Config) GenerateCfgFile() string {
 	const cfgTemplate = `- port_limit: 2
   version: 2
   interfaces:
@@ -85,14 +90,14 @@ func (t Config) GenerateCfgFile() string {
 	return fmt.Sprintf(cfgTemplate,
 		config.VMIEastNICPCIAddress,
 		config.VMIWestNICPCIAddress,
-		t.portBandwidthGB,
-		t.masterCPU,
-		t.latencyCPU,
-		t.trafficCPUs,
+		c.portBandwidthGB,
+		c.masterCPU,
+		c.latencyCPU,
+		c.trafficCPUs,
 	)
 }
 
-func (t Config) GenerateStreamPyFile() string {
+func (c Config) GenerateStreamPyFile() string {
 	const streamPyTemplate = `from trex_stl_lib.api import *
 
 from testpmd_addr import *
@@ -138,13 +143,13 @@ def register():
 `
 
 	return fmt.Sprintf(streamPyTemplate,
-		t.trafficGeneratorEastMacAddress,
-		t.trafficGeneratorWestMacAddress,
-		t.numOfTrafficCPUs,
+		c.trafficGeneratorEastMacAddress,
+		c.trafficGeneratorWestMacAddress,
+		c.numOfTrafficCPUs,
 	)
 }
 
-func (t Config) GenerateStreamAddrPyFile() string {
+func (c Config) GenerateStreamAddrPyFile() string {
 	const streamAddrPyTemplate = `# wild first XL710 mac
 mac_telco0 = %q
 # wild second XL710 mac
@@ -154,7 +159,31 @@ ip_telco0  = '10.0.0.1'
 ip_telco1 = '10.1.1.1'
 `
 	return fmt.Sprintf(streamAddrPyTemplate,
-		t.DPDKEastMacAddress,
-		t.DPDKWestMacAddress,
+		c.DPDKEastMacAddress,
+		c.DPDKWestMacAddress,
 	)
+}
+
+func (c Config) GenerateExecutionScript() string {
+	sb := strings.Builder{}
+
+	sb.WriteString("#!/usr/bin/env bash\n")
+	sb.WriteString(fmt.Sprintf("./t-rex-64 --no-ofed-check --no-scapy-server --no-hw-flow-stat -i -c %s --iom 0\n", c.numOfTrafficCPUs))
+
+	return sb.String()
+}
+
+func GenerateSystemdUnitFile() string {
+	sb := strings.Builder{}
+
+	sb.WriteString("[Unit]\n")
+	sb.WriteString("Description=TRex Server\n")
+	sb.WriteString("[Service]\n")
+	sb.WriteString(fmt.Sprintf("WorkingDirectory=%s\n", BinDirectory))
+	sb.WriteString(fmt.Sprintf("ExecStart=%s\n", path.Join(BinDirectory, ExecutionScriptName)))
+	sb.WriteString("Restart=no\n")
+	sb.WriteString("User=root\n")
+	sb.WriteString("Group=root\n")
+
+	return sb.String()
 }
