@@ -98,8 +98,8 @@ func (t Config) GenerateStreamPyFile() string {
 from testpmd_addr import *
 
 # Wild local MACs
-mac_localport0=%s
-mac_localport1=%s
+mac_localport0=%q
+mac_localport1=%q
 
 class STLS1(object):
 
@@ -146,9 +146,9 @@ def register():
 
 func (t Config) GenerateStreamAddrPyFile() string {
 	const streamAddrPyTemplate = `# wild first XL710 mac
-mac_telco0 = %s
+mac_telco0 = %q
 # wild second XL710 mac
-mac_telco1 = %s
+mac_telco1 = %q
 # we don’t care of the IP in this phase
 ip_telco0  = '10.0.0.1'
 ip_telco1 = '10.1.1.1'
