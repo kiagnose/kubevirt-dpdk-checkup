@@ -30,6 +30,7 @@ const (
 	CfgFileName                = "trex_cfg.yaml"
 	StreamPyFileName           = "testpmd.py"
 	StreamPeerParamsPyFileName = "testpmd_addr.py"
+	ExecutionScriptName        = "run_trex_daemon"
 )
 
 type Config struct {
