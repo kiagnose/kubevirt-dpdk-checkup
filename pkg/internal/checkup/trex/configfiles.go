@@ -21,6 +21,7 @@ package trex
 
 import (
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
@@ -167,6 +168,21 @@ func (c Config) GenerateExecutionScript() string {
 
 	sb.WriteString("#!/usr/bin/env bash\n")
 	sb.WriteString(fmt.Sprintf("./t-rex-64 --no-ofed-check --no-scapy-server --no-hw-flow-stat -i -c %s --iom 0\n", c.numOfTrafficCPUs))
+
+	return sb.String()
+}
+
+func GenerateSystemdUnitFile() string {
+	sb := strings.Builder{}
+
+	sb.WriteString("[Unit]\n")
+	sb.WriteString("Description=TRex Server\n")
+	sb.WriteString("[Service]\n")
+	sb.WriteString(fmt.Sprintf("WorkingDirectory=%s\n", BinDirectory))
+	sb.WriteString(fmt.Sprintf("ExecStart=%s\n", path.Join(BinDirectory, ExecutionScriptName)))
+	sb.WriteString("Restart=no\n")
+	sb.WriteString("User=root\n")
+	sb.WriteString("Group=root\n")
 
 	return sb.String()
 }

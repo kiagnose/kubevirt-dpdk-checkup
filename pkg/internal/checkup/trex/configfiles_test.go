@@ -131,6 +131,21 @@ func TestExecutionScript(t *testing.T) {
 	assert.Equal(t, expextedExecutionScript, actualExecutionScript)
 }
 
+func TestSystemdUnitFile(t *testing.T) {
+	actualSystemdUnitFile := trex.GenerateSystemdUnitFile()
+
+	expectedSystemdUnitFile := `[Unit]
+Description=TRex Server
+[Service]
+WorkingDirectory=/opt/trex
+ExecStart=/opt/trex/run_trex_daemon
+Restart=no
+User=root
+Group=root
+`
+	assert.Equal(t, expectedSystemdUnitFile, actualSystemdUnitFile)
+}
+
 func createSampleConfigs() trex.Config {
 	trafficGeneratorEastMacAddress, _ := net.ParseMAC("00:00:00:00:00:00")
 	trafficGeneratorWestMacAddress, _ := net.ParseMAC("00:00:00:00:00:01")
