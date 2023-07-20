@@ -68,12 +68,12 @@ const (
 const testpmdPrompt = "testpmd> "
 
 func NewTestpmdConsole(vmiSerialClient vmiSerialConsoleClient, namespace, vmiUnderTestEastNICPCIAddress,
-	vmiEastEthPeerMACAddress, vmiUnderTestWestNICPCIAddress, vmiWestEthPeerMACAddress string, verbosePrintsEnabled bool) *TestpmdConsole {
+	trafficGenEastMACAddress, vmiUnderTestWestNICPCIAddress, trafficGenWestMACAddress string, verbosePrintsEnabled bool) *TestpmdConsole {
 	return &TestpmdConsole{
 		vmiSerialClient:          vmiSerialClient,
 		namespace:                namespace,
-		vmiEastEthPeerMACAddress: vmiEastEthPeerMACAddress,
-		vmiWestEthPeerMACAddress: vmiWestEthPeerMACAddress,
+		vmiEastEthPeerMACAddress: trafficGenEastMACAddress,
+		vmiWestEthPeerMACAddress: trafficGenWestMACAddress,
 		vmiEastNICPCIAddress:     vmiUnderTestEastNICPCIAddress,
 		vmiWestNICPCIAddress:     vmiUnderTestWestNICPCIAddress,
 		verbosePrintsEnabled:     verbosePrintsEnabled,

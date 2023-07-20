@@ -44,9 +44,9 @@ type Executor struct {
 	vmiUsername                      string
 	vmiPassword                      string
 	vmiUnderTestEastNICPCIAddress    string
-	vmiEastEthPeerMACAddress         string
+	trafficGenEastMACAddress         string
 	vmiUnderTestWestNICPCIAddress    string
-	vmiWestEthPeerMACAddress         string
+	trafficGenWestMACAddress         string
 	testDuration                     time.Duration
 	verbosePrintsEnabled             bool
 	trafficGeneratorPacketsPerSecond string
@@ -59,9 +59,9 @@ func New(client vmiSerialConsoleClient, namespace string, cfg config.Config) Exe
 		vmiUsername:                      config.VMIUsername,
 		vmiPassword:                      config.VMIPassword,
 		vmiUnderTestEastNICPCIAddress:    config.VMIEastNICPCIAddress,
-		vmiEastEthPeerMACAddress:         cfg.TrafficGeneratorEastMacAddress.String(),
+		trafficGenEastMACAddress:         cfg.TrafficGeneratorEastMacAddress.String(),
 		vmiUnderTestWestNICPCIAddress:    config.VMIWestNICPCIAddress,
-		vmiWestEthPeerMACAddress:         cfg.TrafficGeneratorWestMacAddress.String(),
+		trafficGenWestMACAddress:         cfg.TrafficGeneratorWestMacAddress.String(),
 		testDuration:                     cfg.TestDuration,
 		verbosePrintsEnabled:             cfg.Verbose,
 		trafficGeneratorPacketsPerSecond: cfg.TrafficGeneratorPacketsPerSecond,
@@ -84,8 +84,8 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 		trafficDestPort   = 1
 	)
 
-	testpmdConsole := testpmd.NewTestpmdConsole(e.vmiSerialClient, e.namespace, e.vmiUnderTestEastNICPCIAddress, e.vmiEastEthPeerMACAddress,
-		e.vmiUnderTestWestNICPCIAddress, e.vmiWestEthPeerMACAddress, e.verbosePrintsEnabled)
+	testpmdConsole := testpmd.NewTestpmdConsole(e.vmiSerialClient, e.namespace, e.vmiUnderTestEastNICPCIAddress, e.trafficGenEastMACAddress,
+		e.vmiUnderTestWestNICPCIAddress, e.trafficGenWestMACAddress, e.verbosePrintsEnabled)
 
 	log.Printf("Starting testpmd in VMI...")
 	if err := testpmdConsole.Run(vmiUnderTestName); err != nil {
