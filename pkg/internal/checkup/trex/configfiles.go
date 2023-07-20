@@ -63,7 +63,7 @@ func NewConfig(cfg config.Config) Config {
 	}
 }
 
-func (t Config) GenerateCfgFile() string {
+func (c Config) GenerateCfgFile() string {
 	const cfgTemplate = `- port_limit: 2
   version: 2
   interfaces:
@@ -85,14 +85,14 @@ func (t Config) GenerateCfgFile() string {
 	return fmt.Sprintf(cfgTemplate,
 		config.VMIEastNICPCIAddress,
 		config.VMIWestNICPCIAddress,
-		t.portBandwidthGB,
-		t.masterCPU,
-		t.latencyCPU,
-		t.trafficCPUs,
+		c.portBandwidthGB,
+		c.masterCPU,
+		c.latencyCPU,
+		c.trafficCPUs,
 	)
 }
 
-func (t Config) GenerateStreamPyFile() string {
+func (c Config) GenerateStreamPyFile() string {
 	const streamPyTemplate = `from trex_stl_lib.api import *
 
 from testpmd_addr import *
@@ -138,13 +138,13 @@ def register():
 `
 
 	return fmt.Sprintf(streamPyTemplate,
-		t.trafficGeneratorEastMacAddress,
-		t.trafficGeneratorWestMacAddress,
-		t.numOfTrafficCPUs,
+		c.trafficGeneratorEastMacAddress,
+		c.trafficGeneratorWestMacAddress,
+		c.numOfTrafficCPUs,
 	)
 }
 
-func (t Config) GenerateStreamAddrPyFile() string {
+func (c Config) GenerateStreamAddrPyFile() string {
 	const streamAddrPyTemplate = `# wild first XL710 mac
 mac_telco0 = %q
 # wild second XL710 mac
@@ -154,7 +154,7 @@ ip_telco0  = '10.0.0.1'
 ip_telco1 = '10.1.1.1'
 `
 	return fmt.Sprintf(streamAddrPyTemplate,
-		t.DPDKEastMacAddress,
-		t.DPDKWestMacAddress,
+		c.DPDKEastMacAddress,
+		c.DPDKWestMacAddress,
 	)
 }
