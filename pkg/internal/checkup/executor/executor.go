@@ -79,11 +79,6 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
 	}
 
-	const (
-		trafficSourcePort = 0
-		trafficDestPort   = 1
-	)
-
 	log.Printf("Starting traffic generator Server Service...")
 	if err := trex.StartTrexService(e.vmiSerialClient, e.namespace, trafficGenVMIName); err != nil {
 		return status.Results{}, fmt.Errorf("failed to Start to Trex Service on VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
@@ -120,11 +115,11 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 	var trafficGeneratorDstPortStats trex.PortStats
 
 	results.TrafficGeneratorOutErrorPackets = trafficGeneratorSrcPortStats.Result.Oerrors
-	log.Printf("traffic Generator port %d Packet output errors: %d", trafficSourcePort, results.TrafficGeneratorOutErrorPackets)
+	log.Printf("traffic Generator port %d Packet output errors: %d", trex.SourcePort, results.TrafficGeneratorOutErrorPackets)
 	results.TrafficGeneratorInErrorPackets = trafficGeneratorDstPortStats.Result.Ierrors
-	log.Printf("traffic Generator port %d Packet output errors: %d", trafficDestPort, results.TrafficGeneratorInErrorPackets)
+	log.Printf("traffic Generator port %d Packet output errors: %d", trex.DestPort, results.TrafficGeneratorInErrorPackets)
 	results.TrafficGeneratorTxPackets = trafficGeneratorSrcPortStats.Result.Opackets
-	log.Printf("traffic Generator packet sent via port %d: %d", trafficSourcePort, results.TrafficGeneratorTxPackets)
+	log.Printf("traffic Generator packet sent via port %d: %d", trex.SourcePort, results.TrafficGeneratorTxPackets)
 
 	log.Printf("get testpmd stats in DPDK VMI...")
 	var testPmdStats [testpmd.StatsArraySize]testpmd.PortStats

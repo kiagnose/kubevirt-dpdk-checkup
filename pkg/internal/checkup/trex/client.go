@@ -42,6 +42,13 @@ type Client struct {
 	verbosePrintsEnabled             bool
 }
 
+type PortIdx int
+
+const (
+	SourcePort PortIdx = iota
+	DestPort
+)
+
 const (
 	StreamsPyPath = "/opt/tests"
 )
