@@ -21,10 +21,12 @@ package executor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
 
+	"k8s.io/apimachinery/pkg/util/wait"
 	"kubevirt.io/client-go/kubecli"
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/executor/console"
@@ -115,7 +117,13 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 		return status.Results{}, fmt.Errorf("failed to run traffic from traffic generator VMI \"%s/%s\" side: %w",
 			e.namespace, trafficGenVMIName, err)
 	}
-	time.Sleep(e.testDuration)
+
+	var err error
+	trafficGeneratorMaxDropRate, err := e.monitorDropRates(ctx, trexClient, trafficGenVMIName)
+	if err != nil {
+		return status.Results{}, err
+	}
+	log.Printf("traffic Generator Max Drop Rate: %fBps", trafficGeneratorMaxDropRate)
 
 	results := status.Results{}
 	var trafficGeneratorSrcPortStats trex.PortStats
@@ -130,7 +138,6 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 
 	log.Printf("get testpmd stats in DPDK VMI...")
 	var testPmdStats [testpmd.StatsArraySize]testpmd.PortStats
-	var err error
 	if testPmdStats, err = testpmdConsole.GetStats(vmiUnderTestName); err != nil {
 		return status.Results{}, err
 	}
@@ -142,4 +149,31 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 	log.Printf("DPDK side test packets received (including dropped, excluding non-related packets): %d", results.DPDKRxTestPackets)
 
 	return results, nil
+}
+
+func (e Executor) monitorDropRates(ctx context.Context, trexClient trex.Client, vmiName string) (float64, error) {
+	const interval = 10 * time.Second
+
+	log.Printf("Monitoring traffic generator side drop rates every %ss during the test duration...", interval)
+	maxDropRateBps := float64(0)
+
+	ctxWithNewDeadline, cancel := context.WithTimeout(ctx, e.testDuration)
+	defer cancel()
+
+	conditionFn := func(ctx context.Context) (bool, error) {
+		statsGlobal, err := trexClient.GetGlobalStats(vmiName)
+		if statsGlobal.Result.MRxDropBps > maxDropRateBps {
+			maxDropRateBps = statsGlobal.Result.MRxDropBps
+		}
+		return false, err
+	}
+
+	if err := wait.PollImmediateUntilWithContext(ctxWithNewDeadline, interval, conditionFn); err != nil {
+		if !errors.Is(err, wait.ErrWaitTimeout) {
+			return 0, fmt.Errorf("failed to poll global stats in trex-console: %w", err)
+		}
+		log.Printf("finished polling for drop rates")
+	}
+
+	return maxDropRateBps, nil
 }
