@@ -35,20 +35,27 @@ import (
 )
 
 type Client struct {
-	vmiSerialClient      vmiSerialConsoleClient
-	namespace            string
-	verbosePrintsEnabled bool
+	vmiSerialClient                  vmiSerialConsoleClient
+	namespace                        string
+	trafficGeneratorPacketsPerSecond string
+	testDuration                     time.Duration
+	verbosePrintsEnabled             bool
 }
 
 const (
 	StreamsPyPath = "/opt/tests"
 )
 
-func NewClient(vmiSerialClient vmiSerialConsoleClient, namespace string, verbosePrintsEnabled bool) Client {
+func NewClient(vmiSerialClient vmiSerialConsoleClient,
+	namespace, trafficGeneratorPacketsPerSecond string,
+	testDuration time.Duration,
+	verbosePrintsEnabled bool) Client {
 	return Client{
-		vmiSerialClient:      vmiSerialClient,
-		namespace:            namespace,
-		verbosePrintsEnabled: verbosePrintsEnabled,
+		vmiSerialClient:                  vmiSerialClient,
+		namespace:                        namespace,
+		trafficGeneratorPacketsPerSecond: trafficGeneratorPacketsPerSecond,
+		testDuration:                     testDuration,
+		verbosePrintsEnabled:             verbosePrintsEnabled,
 	}
 }
 
