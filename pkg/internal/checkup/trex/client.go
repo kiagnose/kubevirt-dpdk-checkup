@@ -151,6 +151,21 @@ func (t Client) ClearStats(vmiName string) (string, error) {
 	return t.runTrexConsoleCmd(vmiName, "clear")
 }
 
+func (t Client) StartTraffic(vmiName string, port PortIdx) (string, error) {
+	startTrafficCmd := t.getStartTrafficCmd(port)
+	return t.runTrexConsoleCmd(vmiName, startTrafficCmd)
+}
+
+func (t Client) getStartTrafficCmd(port PortIdx) string {
+	sb := strings.Builder{}
+	sb.WriteString("start ")
+	sb.WriteString(fmt.Sprintf("-f %s/testpmd.py ", StreamsPyPath))
+	sb.WriteString(fmt.Sprintf("-m %spps ", t.trafficGeneratorPacketsPerSecond))
+	sb.WriteString(fmt.Sprintf("-p %d ", port))
+	sb.WriteString(fmt.Sprintf("-d %.0f", t.testDuration.Seconds()))
+	return sb.String()
+}
+
 func (t Client) runTrexConsoleCmd(vmiName, command string) (string, error) {
 	shellCommand := fmt.Sprintf("cd %s && echo %q | ./trex-console -q", BinDirectory, command)
 	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, vmiName,

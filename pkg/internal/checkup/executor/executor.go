@@ -110,6 +110,13 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 			e.namespace, trafficGenVMIName, err)
 	}
 
+	log.Printf("Running traffic for %s...", e.testDuration.String())
+	if _, err := trexClient.StartTraffic(trafficGenVMIName, trex.SourcePort); err != nil {
+		return status.Results{}, fmt.Errorf("failed to run traffic from traffic generator VMI \"%s/%s\" side: %w",
+			e.namespace, trafficGenVMIName, err)
+	}
+	time.Sleep(e.testDuration)
+
 	results := status.Results{}
 	var trafficGeneratorSrcPortStats trex.PortStats
 	var trafficGeneratorDstPortStats trex.PortStats
