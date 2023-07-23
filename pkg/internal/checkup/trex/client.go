@@ -129,6 +129,10 @@ func (t Client) getTrexServiceJournalctl(vmiName string) (string, error) {
 	return resp[0].Output, err
 }
 
+func (t Client) ClearStats(vmiName string) (string, error) {
+	return t.runTrexConsoleCmd(vmiName, "clear")
+}
+
 func (t Client) runTrexConsoleCmd(vmiName, command string) (string, error) {
 	shellCommand := fmt.Sprintf("cd %s && echo %q | ./trex-console -q", BinDirectory, command)
 	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, vmiName,

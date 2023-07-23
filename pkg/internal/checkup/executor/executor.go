@@ -109,6 +109,12 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 		return status.Results{}, err
 	}
 
+	log.Printf("Clearing Trex console stats before test...")
+	if _, err := trexClient.ClearStats(trafficGenVMIName); err != nil {
+		return status.Results{}, fmt.Errorf("failed to clear trex stats on traffic generator VMI \"%s/%s\" side: %w",
+			e.namespace, trafficGenVMIName, err)
+	}
+
 	results := status.Results{}
 	var trafficGeneratorSrcPortStats trex.PortStats
 	var trafficGeneratorDstPortStats trex.PortStats
