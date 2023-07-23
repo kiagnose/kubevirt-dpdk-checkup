@@ -40,6 +40,10 @@ type Client struct {
 	verbosePrintsEnabled bool
 }
 
+const (
+	StreamsPyPath = "/opt/tests"
+)
+
 func NewClient(vmiSerialClient vmiSerialConsoleClient, namespace string, verbosePrintsEnabled bool) Client {
 	return Client{
 		vmiSerialClient:      vmiSerialClient,
