@@ -130,7 +130,7 @@ func (t Client) getTrexServiceJournalctl(vmiName string) (string, error) {
 }
 
 func (t Client) runTrexConsoleCmd(vmiName, command string) (string, error) {
-	shellCommand := fmt.Sprintf("/bin/sh -c \"cd /opt/trex && echo %q | ./trex-console -q\"", command)
+	shellCommand := fmt.Sprintf("cd %s && echo %q | ./trex-console -q", BinDirectory, command)
 	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, vmiName,
 		[]expect.Batcher{
 			&expect.BSnd{S: shellCommand + "\n"},
