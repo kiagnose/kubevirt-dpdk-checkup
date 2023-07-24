@@ -131,6 +131,11 @@ func (c Client) ClearStats() (string, error) {
 	return c.runTrexConsoleCmd("clear")
 }
 
+func (c Client) StartTraffic(port PortIdx) (string, error) {
+	startTrafficCmd := c.getStartTrafficCmd(port)
+	return c.runTrexConsoleCmd(startTrafficCmd)
+}
+
 func (c Client) isServerRunning() bool {
 	const helpSubstring = "Console Commands"
 	resp, err := c.runTrexConsoleCmd("help")
@@ -178,11 +183,6 @@ func (c Client) getTrexServiceJournalctl() (string, error) {
 		batchTimeout,
 	)
 	return resp[0].Output, err
-}
-
-func (c Client) StartTraffic(port PortIdx) (string, error) {
-	startTrafficCmd := c.getStartTrafficCmd(port)
-	return c.runTrexConsoleCmd(startTrafficCmd)
 }
 
 func (c Client) getStartTrafficCmd(port PortIdx) string {
