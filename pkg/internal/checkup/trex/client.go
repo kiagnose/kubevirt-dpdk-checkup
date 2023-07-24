@@ -39,6 +39,7 @@ import (
 type Client struct {
 	vmiSerialClient                  vmiSerialConsoleClient
 	namespace                        string
+	vmiName                          string
 	trafficGeneratorPacketsPerSecond string
 	testDuration                     time.Duration
 	verbosePrintsEnabled             bool
@@ -56,19 +57,22 @@ const (
 )
 
 func NewClient(vmiSerialClient vmiSerialConsoleClient,
-	namespace, trafficGeneratorPacketsPerSecond string,
+	namespace,
+	vmiName,
+	trafficGeneratorPacketsPerSecond string,
 	testDuration time.Duration,
 	verbosePrintsEnabled bool) Client {
 	return Client{
 		vmiSerialClient:                  vmiSerialClient,
 		namespace:                        namespace,
+		vmiName:                          vmiName,
 		trafficGeneratorPacketsPerSecond: trafficGeneratorPacketsPerSecond,
 		testDuration:                     testDuration,
 		verbosePrintsEnabled:             verbosePrintsEnabled,
 	}
 }
 
-func (t Client) WaitForServerToBeReady(ctx context.Context, vmiName string) error {
+func (t Client) WaitForServerToBeReady(ctx context.Context) error {
 	const (
 		interval = 5 * time.Second
 		timeout  = time.Minute
@@ -77,7 +81,7 @@ func (t Client) WaitForServerToBeReady(ctx context.Context, vmiName string) erro
 	ctxWithNewDeadline, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	conditionFn := func(ctx context.Context) (bool, error) {
-		if t.isServerRunning(vmiName) {
+		if t.isServerRunning() {
 			log.Printf("trex-server is now ready")
 			return true, nil
 		}
@@ -91,7 +95,7 @@ func (t Client) WaitForServerToBeReady(ctx context.Context, vmiName string) erro
 			return err
 		}
 		if t.verbosePrintsEnabled {
-			if logErr := t.printTrexServiceFailLogs(vmiName); logErr != nil {
+			if logErr := t.printTrexServiceFailLogs(); logErr != nil {
 				return logErr
 			}
 		}
@@ -100,22 +104,22 @@ func (t Client) WaitForServerToBeReady(ctx context.Context, vmiName string) erro
 	return nil
 }
 
-func (t Client) isServerRunning(vmiName string) bool {
+func (t Client) isServerRunning() bool {
 	const helpSubstring = "Console Commands"
-	resp, err := t.runTrexConsoleCmd(vmiName, "help")
+	resp, err := t.runTrexConsoleCmd("help")
 	if err != nil || !strings.Contains(resp, helpSubstring) {
 		return false
 	}
 	return true
 }
 
-func (t Client) printTrexServiceFailLogs(vmiName string) error {
+func (t Client) printTrexServiceFailLogs() error {
 	var err error
-	trexServiceStatus, err := t.getTrexServiceStatus(vmiName)
+	trexServiceStatus, err := t.getTrexServiceStatus()
 	if err != nil {
 		return fmt.Errorf("failed gathering systemctl service status after trex-server timeout: %w", err)
 	}
-	trexJournalctlLogs, err := t.getTrexServiceJournalctl(vmiName)
+	trexJournalctlLogs, err := t.getTrexServiceJournalctl()
 	if err != nil {
 		return fmt.Errorf("failed gathering trex.service related joutnalctl logs after trex-server timeout: %w", err)
 	}
@@ -125,9 +129,9 @@ func (t Client) printTrexServiceFailLogs(vmiName string) error {
 	return nil
 }
 
-func (t Client) getTrexServiceStatus(vmiName string) (string, error) {
+func (t Client) getTrexServiceStatus() (string, error) {
 	command := fmt.Sprintf("systemctl status %s | cat", SystemdUnitFileName)
-	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, vmiName,
+	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, t.vmiName,
 		[]expect.Batcher{
 			&expect.BSnd{S: command + "\n"},
 			&expect.BExp{R: shellPrompt},
@@ -137,9 +141,9 @@ func (t Client) getTrexServiceStatus(vmiName string) (string, error) {
 	return resp[0].Output, err
 }
 
-func (t Client) getTrexServiceJournalctl(vmiName string) (string, error) {
+func (t Client) getTrexServiceJournalctl() (string, error) {
 	command := fmt.Sprintf("journalctl | grep %s", SystemdUnitFileName)
-	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, vmiName,
+	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, t.vmiName,
 		[]expect.Batcher{
 			&expect.BSnd{S: command + "\n"},
 			&expect.BExp{R: shellPrompt},
@@ -149,13 +153,13 @@ func (t Client) getTrexServiceJournalctl(vmiName string) (string, error) {
 	return resp[0].Output, err
 }
 
-func (t Client) ClearStats(vmiName string) (string, error) {
-	return t.runTrexConsoleCmd(vmiName, "clear")
+func (t Client) ClearStats() (string, error) {
+	return t.runTrexConsoleCmd("clear")
 }
 
-func (t Client) StartTraffic(vmiName string, port PortIdx) (string, error) {
+func (t Client) StartTraffic(port PortIdx) (string, error) {
 	startTrafficCmd := t.getStartTrafficCmd(port)
-	return t.runTrexConsoleCmd(vmiName, startTrafficCmd)
+	return t.runTrexConsoleCmd(startTrafficCmd)
 }
 
 func (t Client) getStartTrafficCmd(port PortIdx) string {
@@ -168,12 +172,12 @@ func (t Client) getStartTrafficCmd(port PortIdx) string {
 	return sb.String()
 }
 
-func (t Client) GetGlobalStats(vmiName string) (GlobalStats, error) {
+func (t Client) GetGlobalStats() (GlobalStats, error) {
 	const (
 		globalStatsCommand    = "stats -g"
 		globalStatsRequestKey = "get_global_stats"
 	)
-	globalStatsJSONString, err := t.runTrexConsoleCmdWithJSONResponse(vmiName, globalStatsCommand, globalStatsRequestKey)
+	globalStatsJSONString, err := t.runTrexConsoleCmdWithJSONResponse(globalStatsCommand, globalStatsRequestKey)
 	if err != nil {
 		return GlobalStats{}, fmt.Errorf("failed to get global stats json: %w", err)
 	}
@@ -190,11 +194,11 @@ func (t Client) GetGlobalStats(vmiName string) (GlobalStats, error) {
 	return gs, nil
 }
 
-func (t Client) GetPortStats(vmiName string, port PortIdx) (PortStats, error) {
+func (t Client) GetPortStats(port PortIdx) (PortStats, error) {
 	const (
 		portStatsRequestKey = "get_port_stats"
 	)
-	portStatsJSONString, err := t.runTrexConsoleCmdWithJSONResponse(vmiName, fmt.Sprintf("stats --port %d -p", port), portStatsRequestKey)
+	portStatsJSONString, err := t.runTrexConsoleCmdWithJSONResponse(fmt.Sprintf("stats --port %d -p", port), portStatsRequestKey)
 	if err != nil {
 		return PortStats{}, fmt.Errorf("failed to get global stats json: %w", err)
 	}
@@ -211,9 +215,9 @@ func (t Client) GetPortStats(vmiName string, port PortIdx) (PortStats, error) {
 	return ps, nil
 }
 
-func (t Client) runTrexConsoleCmd(vmiName, command string) (string, error) {
+func (t Client) runTrexConsoleCmd(command string) (string, error) {
 	shellCommand := fmt.Sprintf("cd %s && echo %q | ./trex-console -q", BinDirectory, command)
-	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, vmiName,
+	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, t.vmiName,
 		[]expect.Batcher{
 			&expect.BSnd{S: shellCommand + "\n"},
 			&expect.BExp{R: shellPrompt},
@@ -227,12 +231,12 @@ func (t Client) runTrexConsoleCmd(vmiName, command string) (string, error) {
 	return cleanStdout(resp[0].Output), nil
 }
 
-func (t Client) runTrexConsoleCmdWithJSONResponse(vmiName, command, requestKey string) (string, error) {
+func (t Client) runTrexConsoleCmdWithJSONResponse(command, requestKey string) (string, error) {
 	const verboseOn = "verbose on;"
 	trexConsoleCommand := verboseOn + command
 	shellCommand := fmt.Sprintf("cd %s && echo %q | ./trex-console -q", BinDirectory, trexConsoleCommand)
 
-	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, vmiName,
+	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, t.vmiName,
 		[]expect.Batcher{
 			&expect.BSnd{S: shellCommand + "\n"},
 			&expect.BExp{R: shellPrompt},

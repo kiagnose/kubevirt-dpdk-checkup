@@ -86,10 +86,17 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 		return status.Results{}, fmt.Errorf("failed to Start to Trex Service on VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
 	}
 
-	trexClient := trex.NewClient(e.vmiSerialClient, e.namespace, e.trafficGeneratorPacketsPerSecond, e.testDuration, e.verbosePrintsEnabled)
+	trexClient := trex.NewClient(
+		e.vmiSerialClient,
+		e.namespace,
+		trafficGenVMIName,
+		e.trafficGeneratorPacketsPerSecond,
+		e.testDuration,
+		e.verbosePrintsEnabled,
+	)
 
 	log.Printf("Waiting until traffic generator Server Service is ready...")
-	if err := trexClient.WaitForServerToBeReady(ctx, trafficGenVMIName); err != nil {
+	if err := trexClient.WaitForServerToBeReady(ctx); err != nil {
 		return status.Results{}, fmt.Errorf("failed to Start to Trex Service on VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
 	}
 
@@ -107,40 +114,40 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 	}
 
 	log.Printf("Clearing Trex console stats before test...")
-	if _, err := trexClient.ClearStats(trafficGenVMIName); err != nil {
+	if _, err := trexClient.ClearStats(); err != nil {
 		return status.Results{}, fmt.Errorf("failed to clear trex stats on traffic generator VMI \"%s/%s\" side: %w",
 			e.namespace, trafficGenVMIName, err)
 	}
 
 	log.Printf("Running traffic for %s...", e.testDuration.String())
-	if _, err := trexClient.StartTraffic(trafficGenVMIName, trex.SourcePort); err != nil {
+	if _, err := trexClient.StartTraffic(trex.SourcePort); err != nil {
 		return status.Results{}, fmt.Errorf("failed to run traffic from traffic generator VMI \"%s/%s\" side: %w",
 			e.namespace, trafficGenVMIName, err)
 	}
 
 	var err error
-	trafficGeneratorMaxDropRate, err := e.monitorDropRates(ctx, trexClient, trafficGenVMIName)
+	trafficGeneratorMaxDropRate, err := e.monitorDropRates(ctx, trexClient)
 	if err != nil {
 		return status.Results{}, err
 	}
 	log.Printf("traffic Generator Max Drop Rate: %fBps", trafficGeneratorMaxDropRate)
 
-	return calculateStats(trexClient, testpmdConsole, trafficGenVMIName, vmiUnderTestName)
+	return calculateStats(trexClient, testpmdConsole, vmiUnderTestName)
 }
 
 func calculateStats(trexClient trex.Client,
 	testpmdConsole *testpmd.TestpmdConsole,
-	trafficGenVMIName, vmiUnderTestName string) (status.Results, error) {
+	vmiUnderTestName string) (status.Results, error) {
 	var err error
 	results := status.Results{}
 	var trafficGeneratorSrcPortStats trex.PortStats
-	trafficGeneratorSrcPortStats, err = trexClient.GetPortStats(trafficGenVMIName, trex.SourcePort)
+	trafficGeneratorSrcPortStats, err = trexClient.GetPortStats(trex.SourcePort)
 	if err != nil {
 		return status.Results{}, err
 	}
 
 	var trafficGeneratorDstPortStats trex.PortStats
-	trafficGeneratorDstPortStats, err = trexClient.GetPortStats(trafficGenVMIName, trex.DestPort)
+	trafficGeneratorDstPortStats, err = trexClient.GetPortStats(trex.DestPort)
 	if err != nil {
 		return status.Results{}, err
 	}
@@ -167,7 +174,7 @@ func calculateStats(trexClient trex.Client,
 	return results, nil
 }
 
-func (e Executor) monitorDropRates(ctx context.Context, trexClient trex.Client, vmiName string) (float64, error) {
+func (e Executor) monitorDropRates(ctx context.Context, trexClient trex.Client) (float64, error) {
 	const interval = 10 * time.Second
 
 	log.Printf("Monitoring traffic generator side drop rates every %ss during the test duration...", interval)
@@ -177,7 +184,7 @@ func (e Executor) monitorDropRates(ctx context.Context, trexClient trex.Client, 
 	defer cancel()
 
 	conditionFn := func(ctx context.Context) (bool, error) {
-		statsGlobal, err := trexClient.GetGlobalStats(vmiName)
+		statsGlobal, err := trexClient.GetGlobalStats()
 		if statsGlobal.Result.MRxDropBps > maxDropRateBps {
 			maxDropRateBps = statsGlobal.Result.MRxDropBps
 		}
