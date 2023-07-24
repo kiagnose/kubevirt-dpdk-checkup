@@ -125,6 +125,10 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 	}
 	log.Printf("traffic Generator Max Drop Rate: %fBps", trafficGeneratorMaxDropRate)
 
+	return calculateStats(testpmdConsole, vmiUnderTestName)
+}
+
+func calculateStats(testpmdConsole *testpmd.TestpmdConsole, vmiUnderTestName string) (status.Results, error) {
 	results := status.Results{}
 	var trafficGeneratorSrcPortStats trex.PortStats
 	var trafficGeneratorDstPortStats trex.PortStats
@@ -138,6 +142,7 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 
 	log.Printf("get testpmd stats in DPDK VMI...")
 	var testPmdStats [testpmd.StatsArraySize]testpmd.PortStats
+	var err error
 	if testPmdStats, err = testpmdConsole.GetStats(vmiUnderTestName); err != nil {
 		return status.Results{}, err
 	}
