@@ -125,13 +125,25 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 	}
 	log.Printf("traffic Generator Max Drop Rate: %fBps", trafficGeneratorMaxDropRate)
 
-	return calculateStats(testpmdConsole, vmiUnderTestName)
+	return calculateStats(trexClient, testpmdConsole, trafficGenVMIName, vmiUnderTestName)
 }
 
-func calculateStats(testpmdConsole *testpmd.TestpmdConsole, vmiUnderTestName string) (status.Results, error) {
+func calculateStats(trexClient trex.Client,
+	testpmdConsole *testpmd.TestpmdConsole,
+	trafficGenVMIName, vmiUnderTestName string) (status.Results, error) {
+	var err error
 	results := status.Results{}
 	var trafficGeneratorSrcPortStats trex.PortStats
+	trafficGeneratorSrcPortStats, err = trexClient.GetPortStats(trafficGenVMIName, trex.SourcePort)
+	if err != nil {
+		return status.Results{}, err
+	}
+
 	var trafficGeneratorDstPortStats trex.PortStats
+	trafficGeneratorDstPortStats, err = trexClient.GetPortStats(trafficGenVMIName, trex.DestPort)
+	if err != nil {
+		return status.Results{}, err
+	}
 
 	results.TrafficGeneratorOutErrorPackets = trafficGeneratorSrcPortStats.Result.Oerrors
 	log.Printf("traffic Generator port %d Packet output errors: %d", trex.SourcePort, results.TrafficGeneratorOutErrorPackets)
@@ -142,7 +154,6 @@ func calculateStats(testpmdConsole *testpmd.TestpmdConsole, vmiUnderTestName str
 
 	log.Printf("get testpmd stats in DPDK VMI...")
 	var testPmdStats [testpmd.StatsArraySize]testpmd.PortStats
-	var err error
 	if testPmdStats, err = testpmdConsole.GetStats(vmiUnderTestName); err != nil {
 		return status.Results{}, err
 	}
