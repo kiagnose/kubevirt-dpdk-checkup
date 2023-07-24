@@ -33,8 +33,14 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	"kubevirt.io/client-go/kubecli"
+
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/executor/console"
 )
+
+type vmiSerialConsoleClient interface {
+	VMISerialConsole(namespace, name string, timeout time.Duration) (kubecli.StreamInterface, error)
+}
 
 type Client struct {
 	vmiSerialClient                  vmiSerialConsoleClient
@@ -56,6 +62,11 @@ const (
 	StreamsPyPath = "/opt/tests"
 )
 
+const (
+	shellPrompt  = "# "
+	batchTimeout = 30 * time.Second
+)
+
 func NewClient(vmiSerialClient vmiSerialConsoleClient,
 	namespace,
 	vmiName,
@@ -70,6 +81,18 @@ func NewClient(vmiSerialClient vmiSerialConsoleClient,
 		testDuration:                     testDuration,
 		verbosePrintsEnabled:             verbosePrintsEnabled,
 	}
+}
+
+func (c Client) StartServer() error {
+	command := "systemctl start " + SystemdUnitFileName
+	_, err := console.SafeExpectBatchWithResponse(c.vmiSerialClient, c.namespace, c.vmiName,
+		[]expect.Batcher{
+			&expect.BSnd{S: command + "\n"},
+			&expect.BExp{R: shellPrompt},
+		},
+		batchTimeout,
+	)
+	return err
 }
 
 func (c Client) WaitForServerToBeReady(ctx context.Context) error {
