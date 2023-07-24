@@ -127,6 +127,10 @@ func (c Client) WaitForServerToBeReady(ctx context.Context) error {
 	return nil
 }
 
+func (c Client) ClearStats() (string, error) {
+	return c.runTrexConsoleCmd("clear")
+}
+
 func (c Client) isServerRunning() bool {
 	const helpSubstring = "Console Commands"
 	resp, err := c.runTrexConsoleCmd("help")
@@ -174,10 +178,6 @@ func (c Client) getTrexServiceJournalctl() (string, error) {
 		batchTimeout,
 	)
 	return resp[0].Output, err
-}
-
-func (c Client) ClearStats() (string, error) {
-	return c.runTrexConsoleCmd("clear")
 }
 
 func (c Client) StartTraffic(port PortIdx) (string, error) {
