@@ -190,6 +190,27 @@ func (t Client) GetGlobalStats(vmiName string) (GlobalStats, error) {
 	return gs, nil
 }
 
+func (t Client) GetPortStats(vmiName string, port PortIdx) (PortStats, error) {
+	const (
+		portStatsRequestKey = "get_port_stats"
+	)
+	portStatsJSONString, err := t.runTrexConsoleCmdWithJSONResponse(vmiName, fmt.Sprintf("stats --port %d -p", port), portStatsRequestKey)
+	if err != nil {
+		return PortStats{}, fmt.Errorf("failed to get global stats json: %w", err)
+	}
+
+	if t.verbosePrintsEnabled {
+		log.Printf("GetPortStats JSON: %s", portStatsJSONString)
+	}
+
+	var ps PortStats
+	err = json.Unmarshal([]byte(portStatsJSONString), &ps)
+	if err != nil {
+		return PortStats{}, fmt.Errorf("failed to unmarshal port %d stats json: %w", port, err)
+	}
+	return ps, nil
+}
+
 func (t Client) runTrexConsoleCmd(vmiName, command string) (string, error) {
 	shellCommand := fmt.Sprintf("cd %s && echo %q | ./trex-console -q", BinDirectory, command)
 	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, vmiName,
