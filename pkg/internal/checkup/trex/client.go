@@ -158,6 +158,27 @@ func (c Client) GetGlobalStats() (GlobalStats, error) {
 	return gs, nil
 }
 
+func (c Client) GetPortStats(port PortIdx) (PortStats, error) {
+	const (
+		portStatsRequestKey = "get_port_stats"
+	)
+	portStatsJSONString, err := c.runTrexConsoleCmdWithJSONResponse(fmt.Sprintf("stats --port %d -p", port), portStatsRequestKey)
+	if err != nil {
+		return PortStats{}, fmt.Errorf("failed to get global stats json: %w", err)
+	}
+
+	if c.verbosePrintsEnabled {
+		log.Printf("GetPortStats JSON: %s", portStatsJSONString)
+	}
+
+	var ps PortStats
+	err = json.Unmarshal([]byte(portStatsJSONString), &ps)
+	if err != nil {
+		return PortStats{}, fmt.Errorf("failed to unmarshal port %d stats json: %w", port, err)
+	}
+	return ps, nil
+}
+
 func (c Client) isServerRunning() bool {
 	const helpSubstring = "Console Commands"
 	resp, err := c.runTrexConsoleCmd("help")
@@ -215,27 +236,6 @@ func (c Client) getStartTrafficCmd(port PortIdx) string {
 	sb.WriteString(fmt.Sprintf("-p %d ", port))
 	sb.WriteString(fmt.Sprintf("-d %.0f", c.testDuration.Seconds()))
 	return sb.String()
-}
-
-func (c Client) GetPortStats(port PortIdx) (PortStats, error) {
-	const (
-		portStatsRequestKey = "get_port_stats"
-	)
-	portStatsJSONString, err := c.runTrexConsoleCmdWithJSONResponse(fmt.Sprintf("stats --port %d -p", port), portStatsRequestKey)
-	if err != nil {
-		return PortStats{}, fmt.Errorf("failed to get global stats json: %w", err)
-	}
-
-	if c.verbosePrintsEnabled {
-		log.Printf("GetPortStats JSON: %s", portStatsJSONString)
-	}
-
-	var ps PortStats
-	err = json.Unmarshal([]byte(portStatsJSONString), &ps)
-	if err != nil {
-		return PortStats{}, fmt.Errorf("failed to unmarshal port %d stats json: %w", port, err)
-	}
-	return ps, nil
 }
 
 func (c Client) runTrexConsoleCmd(command string) (string, error) {
