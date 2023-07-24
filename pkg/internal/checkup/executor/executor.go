@@ -21,10 +21,12 @@ package executor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
 
+	"k8s.io/apimachinery/pkg/util/wait"
 	"kubevirt.io/client-go/kubecli"
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/executor/console"
@@ -79,17 +81,12 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
 	}
 
-	const (
-		trafficSourcePort = 0
-		trafficDestPort   = 1
-	)
-
 	log.Printf("Starting traffic generator Server Service...")
 	if err := trex.StartTrexService(e.vmiSerialClient, e.namespace, trafficGenVMIName); err != nil {
 		return status.Results{}, fmt.Errorf("failed to Start to Trex Service on VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
 	}
 
-	trexClient := trex.NewClient(e.vmiSerialClient, e.namespace, e.verbosePrintsEnabled)
+	trexClient := trex.NewClient(e.vmiSerialClient, e.namespace, e.trafficGeneratorPacketsPerSecond, e.testDuration, e.verbosePrintsEnabled)
 
 	log.Printf("Waiting until traffic generator Server Service is ready...")
 	if err := trexClient.WaitForServerToBeReady(ctx, trafficGenVMIName); err != nil {
@@ -109,20 +106,38 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 		return status.Results{}, err
 	}
 
+	log.Printf("Clearing Trex console stats before test...")
+	if _, err := trexClient.ClearStats(trafficGenVMIName); err != nil {
+		return status.Results{}, fmt.Errorf("failed to clear trex stats on traffic generator VMI \"%s/%s\" side: %w",
+			e.namespace, trafficGenVMIName, err)
+	}
+
+	log.Printf("Running traffic for %s...", e.testDuration.String())
+	if _, err := trexClient.StartTraffic(trafficGenVMIName, trex.SourcePort); err != nil {
+		return status.Results{}, fmt.Errorf("failed to run traffic from traffic generator VMI \"%s/%s\" side: %w",
+			e.namespace, trafficGenVMIName, err)
+	}
+
+	var err error
+	trafficGeneratorMaxDropRate, err := e.monitorDropRates(ctx, trexClient, trafficGenVMIName)
+	if err != nil {
+		return status.Results{}, err
+	}
+	log.Printf("traffic Generator Max Drop Rate: %fBps", trafficGeneratorMaxDropRate)
+
 	results := status.Results{}
 	var trafficGeneratorSrcPortStats trex.PortStats
 	var trafficGeneratorDstPortStats trex.PortStats
 
 	results.TrafficGeneratorOutErrorPackets = trafficGeneratorSrcPortStats.Result.Oerrors
-	log.Printf("traffic Generator port %d Packet output errors: %d", trafficSourcePort, results.TrafficGeneratorOutErrorPackets)
+	log.Printf("traffic Generator port %d Packet output errors: %d", trex.SourcePort, results.TrafficGeneratorOutErrorPackets)
 	results.TrafficGeneratorInErrorPackets = trafficGeneratorDstPortStats.Result.Ierrors
-	log.Printf("traffic Generator port %d Packet output errors: %d", trafficDestPort, results.TrafficGeneratorInErrorPackets)
+	log.Printf("traffic Generator port %d Packet output errors: %d", trex.DestPort, results.TrafficGeneratorInErrorPackets)
 	results.TrafficGeneratorTxPackets = trafficGeneratorSrcPortStats.Result.Opackets
-	log.Printf("traffic Generator packet sent via port %d: %d", trafficSourcePort, results.TrafficGeneratorTxPackets)
+	log.Printf("traffic Generator packet sent via port %d: %d", trex.SourcePort, results.TrafficGeneratorTxPackets)
 
 	log.Printf("get testpmd stats in DPDK VMI...")
 	var testPmdStats [testpmd.StatsArraySize]testpmd.PortStats
-	var err error
 	if testPmdStats, err = testpmdConsole.GetStats(vmiUnderTestName); err != nil {
 		return status.Results{}, err
 	}
@@ -134,4 +149,31 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 	log.Printf("DPDK side test packets received (including dropped, excluding non-related packets): %d", results.DPDKRxTestPackets)
 
 	return results, nil
+}
+
+func (e Executor) monitorDropRates(ctx context.Context, trexClient trex.Client, vmiName string) (float64, error) {
+	const interval = 10 * time.Second
+
+	log.Printf("Monitoring traffic generator side drop rates every %ss during the test duration...", interval)
+	maxDropRateBps := float64(0)
+
+	ctxWithNewDeadline, cancel := context.WithTimeout(ctx, e.testDuration)
+	defer cancel()
+
+	conditionFn := func(ctx context.Context) (bool, error) {
+		statsGlobal, err := trexClient.GetGlobalStats(vmiName)
+		if statsGlobal.Result.MRxDropBps > maxDropRateBps {
+			maxDropRateBps = statsGlobal.Result.MRxDropBps
+		}
+		return false, err
+	}
+
+	if err := wait.PollImmediateUntilWithContext(ctxWithNewDeadline, interval, conditionFn); err != nil {
+		if !errors.Is(err, wait.ErrWaitTimeout) {
+			return 0, fmt.Errorf("failed to poll global stats in trex-console: %w", err)
+		}
+		log.Printf("finished polling for drop rates")
+	}
+
+	return maxDropRateBps, nil
 }

@@ -144,7 +144,6 @@ func CloudInit(username, password string, bootCommands []string) string {
 
 func trafficGenBootCommands(configDiskSerial string) []string {
 	const configMountDirectory = "/mnt/app-config"
-	const testScriptsDirectory = "/opt/tests"
 
 	return []string{
 		fmt.Sprintf("mkdir %s", configMountDirectory),
@@ -153,7 +152,7 @@ func trafficGenBootCommands(configDiskSerial string) []string {
 		fmt.Sprintf("cp %s %s", path.Join(configMountDirectory, trex.ExecutionScriptName), trex.BinDirectory),
 		fmt.Sprintf("chmod 744 %s", path.Join(trex.BinDirectory, trex.ExecutionScriptName)),
 		fmt.Sprintf("cp %s /etc", path.Join(configMountDirectory, trex.CfgFileName)),
-		fmt.Sprintf("mkdir -p %s", testScriptsDirectory),
-		fmt.Sprintf("cp %s/*.py %s", configMountDirectory, testScriptsDirectory),
+		fmt.Sprintf("mkdir -p %s", trex.StreamsPyPath),
+		fmt.Sprintf("cp %s/*.py %s", configMountDirectory, trex.StreamsPyPath),
 	}
 }
