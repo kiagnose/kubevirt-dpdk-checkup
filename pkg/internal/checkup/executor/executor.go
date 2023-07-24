@@ -81,11 +81,6 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
 	}
 
-	log.Printf("Starting traffic generator Server Service...")
-	if err := trex.StartTrexService(e.vmiSerialClient, e.namespace, trafficGenVMIName); err != nil {
-		return status.Results{}, fmt.Errorf("failed to Start to Trex Service on VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
-	}
-
 	trexClient := trex.NewClient(
 		e.vmiSerialClient,
 		e.namespace,
@@ -94,6 +89,11 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 		e.testDuration,
 		e.verbosePrintsEnabled,
 	)
+
+	log.Printf("Starting traffic generator Server Service...")
+	if err := trexClient.StartServer(); err != nil {
+		return status.Results{}, fmt.Errorf("failed to Start to Trex Service on VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
+	}
 
 	log.Printf("Waiting until traffic generator Server Service is ready...")
 	if err := trexClient.WaitForServerToBeReady(ctx); err != nil {
