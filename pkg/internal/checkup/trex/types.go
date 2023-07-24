@@ -41,10 +41,10 @@ type GlobalStatsResult struct {
 	MSocketUtil             float64 `json:"m_socket_util"`
 	MTotalAllocError        int64   `json:"m_total_alloc_error"`
 	MTotalClients           int64   `json:"m_total_clients"`
-	MTotalNatActive         int64   `json:"m_total_nat_active "`
+	MTotalNatActive         int64   `json:"m_total_nat_active"`
 	MTotalNatLearnError     int64   `json:"m_total_nat_learn_error"`
 	MTotalNatNoFid          int64   `json:"m_total_nat_no_fid "`
-	MTotalNatOpen           int64   `json:"m_total_nat_open   "`
+	MTotalNatOpen           int64   `json:"m_total_nat_open"`
 	MTotalNatSynWait        int64   `json:"m_total_nat_syn_wait"`
 	MTotalNatTimeOut        int64   `json:"m_total_nat_time_out"`
 	MTotalNatTimeOutWaitAck int64   `json:"m_total_nat_time_out_wait_ack"`
