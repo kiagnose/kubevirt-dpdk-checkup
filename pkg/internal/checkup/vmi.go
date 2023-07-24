@@ -21,6 +21,7 @@ package checkup
 
 import (
 	"fmt"
+	"path"
 	"strings"
 
 	k8scorev1 "k8s.io/api/core/v1"
@@ -148,10 +149,10 @@ func trafficGenBootCommands(configDiskSerial string) []string {
 	return []string{
 		fmt.Sprintf("mkdir %s", configMountDirectory),
 		fmt.Sprintf("mount /dev/$(lsblk --nodeps -no name,serial | grep %s | cut -f1 -d' ') %s", configDiskSerial, configMountDirectory),
-		fmt.Sprintf("cp %s/%s  /etc/systemd/system", configMountDirectory, trex.SystemdUnitFileName),
-		fmt.Sprintf("cp %s/%s %s", configMountDirectory, trex.ExecutionScriptName, trex.BinDirectory),
-		fmt.Sprintf("chmod 744 %s/%s", trex.BinDirectory, trex.ExecutionScriptName),
-		fmt.Sprintf("cp %s/%s /etc", configMountDirectory, trex.CfgFileName),
+		fmt.Sprintf("cp %s /etc/systemd/system", path.Join(configMountDirectory, trex.SystemdUnitFileName)),
+		fmt.Sprintf("cp %s %s", path.Join(configMountDirectory, trex.ExecutionScriptName), trex.BinDirectory),
+		fmt.Sprintf("chmod 744 %s", path.Join(trex.BinDirectory, trex.ExecutionScriptName)),
+		fmt.Sprintf("cp %s /etc", path.Join(configMountDirectory, trex.CfgFileName)),
 		fmt.Sprintf("mkdir -p %s", testScriptsDirectory),
 		fmt.Sprintf("cp %s/*.py %s", configMountDirectory, testScriptsDirectory),
 	}
