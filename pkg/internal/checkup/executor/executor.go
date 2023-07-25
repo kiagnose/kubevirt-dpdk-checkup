@@ -100,16 +100,24 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 		return status.Results{}, fmt.Errorf("failed to Start to Trex Service on VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
 	}
 
-	testpmdConsole := testpmd.NewTestpmdConsole(e.vmiSerialClient, e.namespace, e.vmiUnderTestEastNICPCIAddress, e.trafficGenEastMACAddress,
-		e.vmiUnderTestWestNICPCIAddress, e.trafficGenWestMACAddress, e.verbosePrintsEnabled)
+	testpmdConsole := testpmd.NewTestpmdConsole(
+		e.vmiSerialClient,
+		e.namespace,
+		vmiUnderTestName,
+		e.vmiUnderTestEastNICPCIAddress,
+		e.trafficGenEastMACAddress,
+		e.vmiUnderTestWestNICPCIAddress,
+		e.trafficGenWestMACAddress,
+		e.verbosePrintsEnabled,
+	)
 
 	log.Printf("Starting testpmd in VMI...")
-	if err := testpmdConsole.Run(vmiUnderTestName); err != nil {
+	if err := testpmdConsole.Run(); err != nil {
 		return status.Results{}, err
 	}
 
 	log.Printf("Clearing testpmd stats in VMI...")
-	if err := testpmdConsole.ClearStats(vmiUnderTestName); err != nil {
+	if err := testpmdConsole.ClearStats(); err != nil {
 		return status.Results{}, err
 	}
 
@@ -132,12 +140,10 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 	}
 	log.Printf("traffic Generator Max Drop Rate: %fBps", trafficGeneratorMaxDropRate)
 
-	return calculateStats(trexClient, testpmdConsole, vmiUnderTestName)
+	return calculateStats(trexClient, testpmdConsole)
 }
 
-func calculateStats(trexClient trex.Client,
-	testpmdConsole *testpmd.TestpmdConsole,
-	vmiUnderTestName string) (status.Results, error) {
+func calculateStats(trexClient trex.Client, testpmdConsole *testpmd.TestpmdConsole) (status.Results, error) {
 	var err error
 	results := status.Results{}
 	var trafficGeneratorSrcPortStats trex.PortStats
@@ -161,7 +167,7 @@ func calculateStats(trexClient trex.Client,
 
 	log.Printf("get testpmd stats in DPDK VMI...")
 	var testPmdStats [testpmd.StatsArraySize]testpmd.PortStats
-	if testPmdStats, err = testpmdConsole.GetStats(vmiUnderTestName); err != nil {
+	if testPmdStats, err = testpmdConsole.GetStats(); err != nil {
 		return status.Results{}, err
 	}
 	results.DPDKPacketsRxDropped = testPmdStats[testpmd.StatsSummary].RXDropped
