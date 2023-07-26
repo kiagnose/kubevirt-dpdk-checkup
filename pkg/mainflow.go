@@ -52,7 +52,7 @@ func Run(rawEnv map[string]string, namespace string) error {
 
 	printConfig(cfg)
 
-	dpdkCheckupExecutor := executor.New(c, c, namespace, cfg)
+	dpdkCheckupExecutor := executor.New(c, namespace, cfg)
 	l := launcher.New(
 		checkup.New(c, namespace, cfg, dpdkCheckupExecutor),
 		reporter.New(c, baseConfig.ConfigMapNamespace, baseConfig.ConfigMapName),
@@ -67,7 +67,6 @@ func Run(rawEnv map[string]string, namespace string) error {
 func printConfig(checkupConfig config.Config) {
 	log.Println("Using the following config:")
 	log.Printf("%q: %q", config.NetworkAttachmentDefinitionNameParamName, checkupConfig.NetworkAttachmentDefinitionName)
-	log.Printf("%q: %q", config.TrafficGeneratorRuntimeClassNameParamName, checkupConfig.TrafficGeneratorRuntimeClassName)
 	log.Printf("%q: %q", config.TrafficGeneratorImageParamName, checkupConfig.TrafficGeneratorImage)
 	log.Printf("%q: %q", config.TrafficGeneratorNodeLabelSelectorParamName, checkupConfig.TrafficGeneratorNodeLabelSelector)
 	log.Printf("%q: %q", config.TrafficGeneratorPacketsPerSecondParamName, checkupConfig.TrafficGeneratorPacketsPerSecond)

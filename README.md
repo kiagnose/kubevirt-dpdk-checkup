@@ -4,7 +4,7 @@ checkup validating DPDK readiness of cluster, using the Kiagnose engine
 
 ## Permissions
 
-You need to be a cluster-admin in order to execute this checkup.
+You need to be a namespace-admin in order to execute this checkup.
 The checkup requires the following permissions:
 
 ```yaml
@@ -47,14 +47,8 @@ rules:
     resources: [ "virtualmachineinstances/console" ]
     verbs: [ "get" ]
   - apiGroups: [ "" ]
-    resources: [ "pods" ]
-    verbs: [ "create", "get", "delete" ]
-  - apiGroups: [ "" ]
-    resources: [ "pods/exec" ]
-    verbs: [ "create" ]
-  - apiGroups: [ "k8s.cni.cncf.io" ]
-    resources: [ "network-attachment-definitions" ]
-    verbs: [ "get" ]
+    resources: [ "configmaps" ]
+    verbs: [ "create", "delete" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -67,49 +61,6 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: kubevirt-dpdk-checker
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: dpdk-checkup-traffic-gen-sa
-```
-
-If the checkup should run on an OpenShift cluster, apply the following `SecurityContextConstraints` object:
-
-```yaml
-apiVersion: security.openshift.io/v1
-kind: SecurityContextConstraints
-metadata:
-  name: dpdk-checkup-traffic-gen
-allowHostDirVolumePlugin: true
-allowHostIPC: false
-allowHostNetwork: false
-allowHostPID: false
-allowHostPorts: false
-allowPrivilegeEscalation: false
-allowPrivilegedContainer: false
-allowedCapabilities:
-- IPC_LOCK
-- NET_ADMIN
-- NET_RAW
-- SYS_RESOURCE
-defaultAddCapabilities: null
-fsGroup:
-  type: RunAsAny
-groups: []
-readOnlyRootFilesystem: false
-requiredDropCapabilities: null
-runAsUser:
-  type: RunAsAny
-seLinuxContext:
-  type: RunAsAny
-seccompProfiles:
-- runtime/default
-- unconfined
-supplementalGroups:
-  type: RunAsAny
-users:
-- system:serviceaccount:dpdk-checkup-ns:dpdk-checkup-traffic-gen-sa
 ```
 
 ## Configuration
@@ -118,7 +69,6 @@ users:
 |---------------------------------------------|-------------------------------------------------------------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------|
 | spec.timeout                                | How much time before the checkup will try to close itself                                                         | True         |                                                                                     |
 | spec.param.networkAttachmentDefinitionName  | NetworkAttachmentDefinition name of the SR-IOV NICs connected                                                     | True         | Assumed to be in the same namespace                                                 |
-| spec.param.trafficGeneratorRuntimeClassName | [Runtime Class](https://kubernetes.io/docs/concepts/containers/runtime-class/) the traffic generator pod will use | True         |                                                                                     |
 | spec.param.trafficGeneratorImage            | Traffic generator's container image                                                                               | False        | Defaults to the U/S image `quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main` |
 | spec.param.trafficGeneratorNodeSelector     | Node Name on which the traffic generator Pod will be scheduled to                                                 | False        | Assumed to be configured to Nodes that allow DPDK traffic                           |
 | spec.param.trafficGeneratorPacketsPerSecond | Amount of packets per second. format: <amount>[/k/m] k-kilo; m-million                                            | False        | Defaults to 14m                                                                     |
@@ -142,7 +92,6 @@ metadata:
 data:
   spec.timeout: 10m
   spec.param.networkAttachmentDefinitionName: <network-name>
-  spec.param.trafficGeneratorRuntimeClassName: <runtimeclass-name>
 ```
 
 ## Execution

@@ -21,15 +21,17 @@ package executor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
 
+	"k8s.io/apimachinery/pkg/util/wait"
 	"kubevirt.io/client-go/kubecli"
 
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/executor/console"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/executor/testpmd"
-	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/executor/trex"
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/trex"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/status"
 )
@@ -38,109 +40,134 @@ type vmiSerialConsoleClient interface {
 	VMISerialConsole(namespace, name string, timeout time.Duration) (kubecli.StreamInterface, error)
 }
 
-type podExecuteClient interface {
-	ExecuteCommandOnPod(ctx context.Context, namespace, name, containerName string, command []string) (stdout, stderr string, err error)
-}
-
 type Executor struct {
 	vmiSerialClient                  vmiSerialConsoleClient
-	podClient                        podExecuteClient
 	namespace                        string
 	vmiUsername                      string
 	vmiPassword                      string
-	vmiEastNICPCIAddress             string
-	vmiEastEthPeerMACAddress         string
-	vmiWestNICPCIAddress             string
-	vmiWestEthPeerMACAddress         string
+	vmiUnderTestEastNICPCIAddress    string
+	trafficGenEastMACAddress         string
+	vmiUnderTestWestNICPCIAddress    string
+	trafficGenWestMACAddress         string
 	testDuration                     time.Duration
 	verbosePrintsEnabled             bool
 	trafficGeneratorPacketsPerSecond string
 }
 
-func New(client vmiSerialConsoleClient, podClient podExecuteClient, namespace string, cfg config.Config) Executor {
+func New(client vmiSerialConsoleClient, namespace string, cfg config.Config) Executor {
 	return Executor{
 		vmiSerialClient:                  client,
-		podClient:                        podClient,
 		namespace:                        namespace,
 		vmiUsername:                      config.VMIUsername,
 		vmiPassword:                      config.VMIPassword,
-		vmiEastNICPCIAddress:             config.VMIEastNICPCIAddress,
-		vmiEastEthPeerMACAddress:         cfg.TrafficGeneratorEastMacAddress.String(),
-		vmiWestNICPCIAddress:             config.VMIWestNICPCIAddress,
-		vmiWestEthPeerMACAddress:         cfg.TrafficGeneratorWestMacAddress.String(),
+		vmiUnderTestEastNICPCIAddress:    config.VMIEastNICPCIAddress,
+		trafficGenEastMACAddress:         cfg.TrafficGeneratorEastMacAddress.String(),
+		vmiUnderTestWestNICPCIAddress:    config.VMIWestNICPCIAddress,
+		trafficGenWestMACAddress:         cfg.TrafficGeneratorWestMacAddress.String(),
 		testDuration:                     cfg.TestDuration,
 		verbosePrintsEnabled:             cfg.Verbose,
 		trafficGeneratorPacketsPerSecond: cfg.TrafficGeneratorPacketsPerSecond,
 	}
 }
 
-func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerName string) (status.Results, error) {
-	if err := console.LoginToCentOS(e.vmiSerialClient, e.namespace, vmiName, e.vmiUsername, e.vmiPassword); err != nil {
-		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, vmiName, err)
+func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMIName string) (status.Results, error) {
+	log.Printf("Login to VMI under test...")
+	if err := console.LoginToCentOS(e.vmiSerialClient, e.namespace, vmiUnderTestName, e.vmiUsername, e.vmiPassword); err != nil {
+		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, vmiUnderTestName, err)
 	}
 
-	trexClient := trex.NewClient(e.podClient, e.namespace, podName, podContainerName, e.verbosePrintsEnabled)
+	log.Printf("Login to traffic generator...")
+	if err := console.LoginToCentOS(e.vmiSerialClient, e.namespace, trafficGenVMIName, e.vmiUsername, e.vmiPassword); err != nil {
+		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
+	}
 
-	testpmdConsole := testpmd.NewTestpmdConsole(e.vmiSerialClient, e.namespace, e.vmiEastNICPCIAddress, e.vmiEastEthPeerMACAddress,
-		e.vmiWestNICPCIAddress, e.vmiWestEthPeerMACAddress, e.verbosePrintsEnabled)
+	trexClient := trex.NewClient(
+		e.vmiSerialClient,
+		e.namespace,
+		trafficGenVMIName,
+		e.trafficGeneratorPacketsPerSecond,
+		e.testDuration,
+		e.verbosePrintsEnabled,
+	)
+
+	log.Printf("Starting traffic generator Server Service...")
+	if err := trexClient.StartServer(); err != nil {
+		return status.Results{}, fmt.Errorf("failed to Start to Trex Service on VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
+	}
+
+	log.Printf("Waiting until traffic generator Server Service is ready...")
+	if err := trexClient.WaitForServerToBeReady(ctx); err != nil {
+		return status.Results{}, fmt.Errorf("failed to Start to Trex Service on VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
+	}
+
+	testpmdConsole := testpmd.NewTestpmdConsole(
+		e.vmiSerialClient,
+		e.namespace,
+		vmiUnderTestName,
+		e.vmiUnderTestEastNICPCIAddress,
+		e.trafficGenEastMACAddress,
+		e.vmiUnderTestWestNICPCIAddress,
+		e.trafficGenWestMACAddress,
+		e.verbosePrintsEnabled,
+	)
 
 	log.Printf("Starting testpmd in VMI...")
-	if err := testpmdConsole.Run(vmiName); err != nil {
+	if err := testpmdConsole.Run(); err != nil {
 		return status.Results{}, err
 	}
 
 	log.Printf("Clearing testpmd stats in VMI...")
-	if err := testpmdConsole.ClearStats(vmiName); err != nil {
+	if err := testpmdConsole.ClearStats(); err != nil {
 		return status.Results{}, err
 	}
 
 	log.Printf("Clearing Trex console stats before test...")
-	_, err := trexClient.ClearStats(ctx)
-	if err != nil {
-		return status.Results{}, fmt.Errorf("failed to clear trex stats on pod \"%s/%s\" side: %w", e.namespace, podName, err)
+	if _, err := trexClient.ClearStats(); err != nil {
+		return status.Results{}, fmt.Errorf("failed to clear trex stats on traffic generator VMI \"%s/%s\" side: %w",
+			e.namespace, trafficGenVMIName, err)
 	}
-
-	const (
-		trafficSourcePort = 0
-		trafficDestPort   = 1
-	)
 
 	log.Printf("Running traffic for %s...", e.testDuration.String())
-	_, err = trexClient.StartTraffic(ctx, e.trafficGeneratorPacketsPerSecond, trafficSourcePort, e.testDuration)
-	if err != nil {
-		return status.Results{}, fmt.Errorf("failed to run traffic from trex-console on pod \"%s/%s\" side: %w",
-			e.namespace, podName, err)
+	if _, err := trexClient.StartTraffic(trex.SourcePort); err != nil {
+		return status.Results{}, fmt.Errorf("failed to run traffic from traffic generator VMI \"%s/%s\" side: %w",
+			e.namespace, trafficGenVMIName, err)
 	}
 
-	results := status.Results{}
-	trafficGeneratorMaxDropRate, err := trexClient.MonitorDropRates(ctx, e.testDuration)
-	log.Printf("traffic Generator Max Drop Rate: %fBps", trafficGeneratorMaxDropRate)
+	var err error
+	trafficGeneratorMaxDropRate, err := e.monitorDropRates(ctx, trexClient)
 	if err != nil {
 		return status.Results{}, err
 	}
+	log.Printf("traffic Generator Max Drop Rate: %fBps", trafficGeneratorMaxDropRate)
 
+	return calculateStats(trexClient, testpmdConsole)
+}
+
+func calculateStats(trexClient trex.Client, testpmdConsole *testpmd.TestpmdConsole) (status.Results, error) {
+	var err error
+	results := status.Results{}
 	var trafficGeneratorSrcPortStats trex.PortStats
-	trafficGeneratorSrcPortStats, err = trexClient.GetPortStats(ctx, trafficSourcePort)
+	trafficGeneratorSrcPortStats, err = trexClient.GetPortStats(trex.SourcePort)
 	if err != nil {
 		return status.Results{}, err
 	}
 
 	var trafficGeneratorDstPortStats trex.PortStats
-	trafficGeneratorDstPortStats, err = trexClient.GetPortStats(ctx, trafficDestPort)
+	trafficGeneratorDstPortStats, err = trexClient.GetPortStats(trex.DestPort)
 	if err != nil {
 		return status.Results{}, err
 	}
 
 	results.TrafficGeneratorOutErrorPackets = trafficGeneratorSrcPortStats.Result.Oerrors
-	log.Printf("traffic Generator port %d Packet output errors: %d", trafficSourcePort, results.TrafficGeneratorOutErrorPackets)
+	log.Printf("traffic Generator port %d Packet output errors: %d", trex.SourcePort, results.TrafficGeneratorOutErrorPackets)
 	results.TrafficGeneratorInErrorPackets = trafficGeneratorDstPortStats.Result.Ierrors
-	log.Printf("traffic Generator port %d Packet output errors: %d", trafficDestPort, results.TrafficGeneratorInErrorPackets)
+	log.Printf("traffic Generator port %d Packet output errors: %d", trex.DestPort, results.TrafficGeneratorInErrorPackets)
 	results.TrafficGeneratorTxPackets = trafficGeneratorSrcPortStats.Result.Opackets
-	log.Printf("traffic Generator packet sent via port %d: %d", trafficSourcePort, results.TrafficGeneratorTxPackets)
+	log.Printf("traffic Generator packet sent via port %d: %d", trex.SourcePort, results.TrafficGeneratorTxPackets)
 
 	log.Printf("get testpmd stats in DPDK VMI...")
 	var testPmdStats [testpmd.StatsArraySize]testpmd.PortStats
-	if testPmdStats, err = testpmdConsole.GetStats(vmiName); err != nil {
+	if testPmdStats, err = testpmdConsole.GetStats(); err != nil {
 		return status.Results{}, err
 	}
 	results.DPDKPacketsRxDropped = testPmdStats[testpmd.StatsSummary].RXDropped
@@ -151,4 +178,31 @@ func (e Executor) Execute(ctx context.Context, vmiName, podName, podContainerNam
 	log.Printf("DPDK side test packets received (including dropped, excluding non-related packets): %d", results.DPDKRxTestPackets)
 
 	return results, nil
+}
+
+func (e Executor) monitorDropRates(ctx context.Context, trexClient trex.Client) (float64, error) {
+	const interval = 10 * time.Second
+
+	log.Printf("Monitoring traffic generator side drop rates every %ss during the test duration...", interval)
+	maxDropRateBps := float64(0)
+
+	ctxWithNewDeadline, cancel := context.WithTimeout(ctx, e.testDuration)
+	defer cancel()
+
+	conditionFn := func(ctx context.Context) (bool, error) {
+		statsGlobal, err := trexClient.GetGlobalStats()
+		if statsGlobal.Result.MRxDropBps > maxDropRateBps {
+			maxDropRateBps = statsGlobal.Result.MRxDropBps
+		}
+		return false, err
+	}
+
+	if err := wait.PollImmediateUntilWithContext(ctxWithNewDeadline, interval, conditionFn); err != nil {
+		if !errors.Is(err, wait.ErrWaitTimeout) {
+			return 0, fmt.Errorf("failed to poll global stats in trex-console: %w", err)
+		}
+		log.Printf("finished polling for drop rates")
+	}
+
+	return maxDropRateBps, nil
 }

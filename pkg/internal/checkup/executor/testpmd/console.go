@@ -40,6 +40,7 @@ type vmiSerialConsoleClient interface {
 type TestpmdConsole struct {
 	vmiSerialClient          vmiSerialConsoleClient
 	namespace                string
+	vmiName                  string
 	vmiEastNICPCIAddress     string
 	vmiEastEthPeerMACAddress string
 	vmiWestNICPCIAddress     string
@@ -67,25 +68,32 @@ const (
 
 const testpmdPrompt = "testpmd> "
 
-func NewTestpmdConsole(vmiSerialClient vmiSerialConsoleClient, namespace, vmiEastNICPCIAddress,
-	vmiEastEthPeerMACAddress, vmiWestNICPCIAddress, vmiWestEthPeerMACAddress string, verbosePrintsEnabled bool) *TestpmdConsole {
+func NewTestpmdConsole(vmiSerialClient vmiSerialConsoleClient,
+	namespace,
+	vmiName,
+	vmiUnderTestEastNICPCIAddress,
+	trafficGenEastMACAddress,
+	vmiUnderTestWestNICPCIAddress,
+	trafficGenWestMACAddress string,
+	verbosePrintsEnabled bool) *TestpmdConsole {
 	return &TestpmdConsole{
 		vmiSerialClient:          vmiSerialClient,
 		namespace:                namespace,
-		vmiEastEthPeerMACAddress: vmiEastEthPeerMACAddress,
-		vmiWestEthPeerMACAddress: vmiWestEthPeerMACAddress,
-		vmiEastNICPCIAddress:     vmiEastNICPCIAddress,
-		vmiWestNICPCIAddress:     vmiWestNICPCIAddress,
+		vmiName:                  vmiName,
+		vmiEastEthPeerMACAddress: trafficGenEastMACAddress,
+		vmiWestEthPeerMACAddress: trafficGenWestMACAddress,
+		vmiEastNICPCIAddress:     vmiUnderTestEastNICPCIAddress,
+		vmiWestNICPCIAddress:     vmiUnderTestWestNICPCIAddress,
 		verbosePrintsEnabled:     verbosePrintsEnabled,
 	}
 }
 
-func (t TestpmdConsole) Run(vmiName string) error {
+func (t TestpmdConsole) Run() error {
 	const batchTimeout = 30 * time.Second
 
 	testpmdCmd := buildTestpmdCmd(t.vmiEastNICPCIAddress, t.vmiWestNICPCIAddress, t.vmiEastEthPeerMACAddress, t.vmiWestEthPeerMACAddress)
 
-	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, vmiName,
+	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, t.vmiName,
 		[]expect.Batcher{
 			&expect.BSnd{S: testpmdCmd + "\n"},
 			&expect.BExp{R: testpmdPrompt},
@@ -104,12 +112,12 @@ func (t TestpmdConsole) Run(vmiName string) error {
 	return nil
 }
 
-func (t TestpmdConsole) ClearStats(vmiName string) error {
+func (t TestpmdConsole) ClearStats() error {
 	const batchTimeout = 30 * time.Second
 
 	const testpmdCmd = "clear fwd stats all"
 
-	_, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, vmiName,
+	_, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, t.vmiName,
 		[]expect.Batcher{
 			&expect.BSnd{S: testpmdCmd + "\n"},
 			&expect.BExp{R: testpmdPrompt},
@@ -124,14 +132,14 @@ func (t TestpmdConsole) ClearStats(vmiName string) error {
 	return nil
 }
 
-func (t TestpmdConsole) GetStats(vmiName string) ([StatsArraySize]PortStats, error) {
+func (t TestpmdConsole) GetStats() ([StatsArraySize]PortStats, error) {
 	const batchTimeout = 30 * time.Second
 
 	const testpmdPromt = "testpmd> "
 
 	testpmdCmd := "show fwd stats all"
 
-	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, vmiName,
+	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, t.vmiName,
 		[]expect.Batcher{
 			&expect.BSnd{S: testpmdCmd + "\n"},
 			&expect.BExp{R: testpmdPromt},

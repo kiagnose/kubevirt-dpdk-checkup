@@ -37,7 +37,6 @@ import (
 
 const (
 	testServiceAccountName              = "dpdk-checkup-sa"
-	testTrafficGenServiceAccountName    = "dpdk-checkup-traffic-gen-sa"
 	testKiagnoseConfigMapAccessRoleName = "kiagnose-configmap-access"
 	testKubeVirtDPDKCheckerRoleName     = "kubevirt-dpdk-checker"
 	testConfigMapName                   = "dpdk-checkup-config"
@@ -52,7 +51,6 @@ var _ = Describe("Execute the checkup Job", func() {
 
 	BeforeEach(func() {
 		setupCheckupPermissions()
-		setupTrafficGeneratorPermissions()
 
 		var err error
 		configMap = newConfigMap()
@@ -105,10 +103,10 @@ var _ = Describe("Execute the checkup Job", func() {
 		Expect(configMap.Data).NotTo(BeNil())
 		Expect(configMap.Data["status.succeeded"]).To(Equal("true"), fmt.Sprintf("should succeed %+v", prettifyData(configMap.Data)))
 		Expect(configMap.Data["status.failureReason"]).To(BeEmpty(), fmt.Sprintf("should be empty %+v", prettifyData(configMap.Data)))
-		Expect(configMap.Data["status.result.trafficGeneratorNode"]).ToNot(BeEmpty(),
-			fmt.Sprintf("trafficGeneratorNode should not be empty %+v", prettifyData(configMap.Data)))
 		Expect(configMap.Data["status.result.DPDKVMNode"]).ToNot(BeEmpty(),
 			fmt.Sprintf("DPDKVMNode should not be empty %+v", prettifyData(configMap.Data)))
+		Expect(configMap.Data["status.result.trafficGeneratorNode"]).ToNot(BeEmpty(),
+			fmt.Sprintf("trafficGeneratorNode should not be empty %+v", prettifyData(configMap.Data)))
 	})
 })
 
@@ -217,30 +215,6 @@ func setupCheckupPermissions() {
 	})
 }
 
-func setupTrafficGeneratorPermissions() {
-	var (
-		err                            error
-		trafficGeneratorServiceAccount *corev1.ServiceAccount
-	)
-
-	trafficGeneratorServiceAccount = newServiceAccount(testTrafficGenServiceAccountName)
-	trafficGeneratorServiceAccount, err = virtClient.CoreV1().ServiceAccounts(testNamespace).Create(
-		context.Background(),
-		trafficGeneratorServiceAccount,
-		metav1.CreateOptions{},
-	)
-	Expect(err).NotTo(HaveOccurred())
-
-	DeferCleanup(func() {
-		err = virtClient.CoreV1().ServiceAccounts(trafficGeneratorServiceAccount.Namespace).Delete(
-			context.Background(),
-			trafficGeneratorServiceAccount.Name,
-			metav1.DeleteOptions{},
-		)
-		Expect(err).NotTo(HaveOccurred())
-	})
-}
-
 func newServiceAccount(serviceAccountName string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
@@ -282,18 +256,8 @@ func newKubeVirtDPDKCheckerRole() *rbacv1.Role {
 			},
 			{
 				APIGroups: []string{""},
-				Resources: []string{"pods"},
-				Verbs:     []string{"create", "get", "delete"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"pods/exec"},
-				Verbs:     []string{"create"},
-			},
-			{
-				APIGroups: []string{"k8s.cni.cncf.io"},
-				Resources: []string{"network-attachment-definitions"},
-				Verbs:     []string{"get"},
+				Resources: []string{"configmaps"},
+				Verbs:     []string{"create", "delete"},
 			},
 		},
 	}
@@ -325,12 +289,11 @@ func newConfigMap() *corev1.ConfigMap {
 		},
 		Data: map[string]string{
 			"spec.timeout": "10m",
-			"spec.param.networkAttachmentDefinitionName":  networkAttachmentDefinitionName,
-			"spec.param.trafficGeneratorRuntimeClassName": runtimeClassName,
-			"spec.param.trafficGeneratorImage":            trafficGeneratorImage,
-			"spec.param.vmContainerDiskImage":             vmContainerDiskImage,
-			"spec.param.testDuration":                     "1m",
-			"spec.param.verbose":                          "true",
+			"spec.param.networkAttachmentDefinitionName": networkAttachmentDefinitionName,
+			"spec.param.trafficGeneratorImage":           trafficGeneratorImage,
+			"spec.param.vmContainerDiskImage":            vmContainerDiskImage,
+			"spec.param.testDuration":                    "1m",
+			"spec.param.verbose":                         "true",
 		},
 	}
 }

@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - traffic-gen-in-vm
     tags:
       - 'v*.*.*'
 
@@ -25,9 +26,5 @@ jobs:
           ${CRI_BIN} login -u ${{ secrets.QUAY_USER }} -p ${{ secrets.QUAY_TOKEN }} quay.io
       - name: Build checkup image
         run: make build
-      - name: Build traffic-gen image
-        run: make build-traffic-gen
       - name: Push checkup image
         run: make push
-      - name: Push traffic-gen image
-        run: make push-traffic-gen

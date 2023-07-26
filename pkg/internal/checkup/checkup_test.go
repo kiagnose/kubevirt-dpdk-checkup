@@ -26,12 +26,11 @@ import (
 	"strings"
 	"testing"
 
-	networkv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
 	assert "github.com/stretchr/testify/require"
 
 	k8scorev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	kvcorev1 "kubevirt.io/api/core/v1"
@@ -48,8 +47,8 @@ const (
 	testNetworkAttachmentDefinitionName = "dpdk-network"
 	trafficGeneratorEastMacAddress      = "DE:AD:BE:EF:00:01"
 	trafficGeneratorWestMacAddress      = "DE:AD:BE:EF:01:00"
-	dpdkEastMacAddress                  = "DE:AD:BE:EF:00:02"
-	dpdkWestMacAddress                  = "DE:AD:BE:EF:02:00"
+	vmiUnderTestEastMacAddress          = "DE:AD:BE:EF:00:02"
+	vmiUnderTestWestMacAddress          = "DE:AD:BE:EF:02:00"
 )
 
 func TestCheckupShouldSucceed(t *testing.T) {
@@ -59,20 +58,19 @@ func TestCheckupShouldSucceed(t *testing.T) {
 
 	assert.NoError(t, testCheckup.Setup(context.Background()))
 
-	vmiName := testClient.VMIName()
-	assert.NotEmpty(t, vmiName)
+	assert.NotEmpty(t, testClient.createdConfigMaps)
 
-	podName := testClient.TrafficGeneratorPodName()
-	assert.NotEmpty(t, podName)
+	vmiUnderTestName := testClient.VMIName(checkup.VMIUnderTestNamePrefix)
+	assert.NotEmpty(t, vmiUnderTestName)
+
+	trafficGenName := testClient.VMIName(checkup.TrafficGenNamePrefix)
+	assert.NotEmpty(t, trafficGenName)
 
 	assert.NoError(t, testCheckup.Run(context.Background()))
 	assert.NoError(t, testCheckup.Teardown(context.Background()))
 
-	_, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
-	assert.ErrorContains(t, err, "not found")
-
-	_, err = testClient.GetPod(context.Background(), testNamespace, podName)
-	assert.ErrorContains(t, err, "not found")
+	assert.Empty(t, testClient.createdVMIs)
+	assert.Empty(t, testClient.createdConfigMaps)
 
 	actualResults := testCheckup.Results()
 	expectedResults := status.Results{}
@@ -80,7 +78,67 @@ func TestCheckupShouldSucceed(t *testing.T) {
 	assert.Equal(t, expectedResults, actualResults)
 }
 
+func TestVMIAffinity(t *testing.T) {
+	t.Run("when node names are not specified", func(t *testing.T) {
+		testClient := newClientStub()
+		testConfig := newTestConfig()
+		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
+		assert.NoError(t, testCheckup.Setup(context.Background()))
+
+		vmiUnderTestName := testClient.VMIName(checkup.VMIUnderTestNamePrefix)
+		assert.NotEmpty(t, vmiUnderTestName)
+
+		trafficGenName := testClient.VMIName(checkup.TrafficGenNamePrefix)
+		assert.NotEmpty(t, trafficGenName)
+
+		assertPodAntiAffinityExists(t, testClient, vmiUnderTestName, testConfig.PodUID)
+		assertNodeAffinityDoesNotExist(t, testClient, vmiUnderTestName)
+
+		assertPodAntiAffinityExists(t, testClient, trafficGenName, testConfig.PodUID)
+		assertNodeAffinityDoesNotExist(t, testClient, trafficGenName)
+	})
+
+	t.Run("when node names are specified", func(t *testing.T) {
+		const (
+			vmiUnderTestNodeName = "node01"
+			trafficGenNodeName   = "node02"
+		)
+
+		testClient := newClientStub()
+		testConfig := newTestConfig()
+		testConfig.DPDKNodeLabelSelector = vmiUnderTestNodeName
+		testConfig.TrafficGeneratorNodeLabelSelector = trafficGenNodeName
+
+		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
+		assert.NoError(t, testCheckup.Setup(context.Background()))
+
+		vmiUnderTestName := testClient.VMIName(checkup.VMIUnderTestNamePrefix)
+		assert.NotEmpty(t, vmiUnderTestName)
+
+		trafficGenName := testClient.VMIName(checkup.TrafficGenNamePrefix)
+		assert.NotEmpty(t, trafficGenName)
+
+		assertNodeAffinityExists(t, testClient, vmiUnderTestName, vmiUnderTestNodeName)
+		assertPodAntiAffinityDoesNotExist(t, testClient, vmiUnderTestName)
+
+		assertNodeAffinityExists(t, testClient, trafficGenName, trafficGenNodeName)
+		assertPodAntiAffinityDoesNotExist(t, testClient, trafficGenName)
+	})
+}
+
 func TestSetupShouldFail(t *testing.T) {
+	t.Run("when Traffic gen ConfigMap creation fails", func(t *testing.T) {
+		expectedConfigMapCreationError := errors.New("failed to create ConfigMap")
+
+		testClient := newClientStub()
+		testConfig := newTestConfig()
+		testClient.configMapCreationFailure = expectedConfigMapCreationError
+		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
+
+		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedConfigMapCreationError.Error())
+		assert.Empty(t, testClient.createdVMIs)
+	})
+
 	t.Run("when VMI creation fails", func(t *testing.T) {
 		expectedVMICreationFailure := errors.New("failed to create VMI")
 
@@ -91,7 +149,6 @@ func TestSetupShouldFail(t *testing.T) {
 
 		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedVMICreationFailure.Error())
 		assert.Empty(t, testClient.createdVMIs)
-		assert.Empty(t, testClient.createdPods)
 	})
 
 	t.Run("when wait for VMI to boot fails", func(t *testing.T) {
@@ -104,33 +161,6 @@ func TestSetupShouldFail(t *testing.T) {
 
 		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedVMIReadFailure.Error())
 		assert.Empty(t, testClient.createdVMIs)
-		assert.Empty(t, testClient.createdPods)
-	})
-
-	t.Run("when Pod creation fails", func(t *testing.T) {
-		expectedPodCreationFailure := errors.New("failed to create Pod")
-
-		testClient := newClientStub()
-		testConfig := newTestConfig()
-		testClient.podCreationFailure = expectedPodCreationFailure
-		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
-
-		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedPodCreationFailure.Error())
-		assert.Empty(t, testClient.createdVMIs)
-		assert.Empty(t, testClient.createdPods)
-	})
-
-	t.Run("when wait Pod Running fails on read", func(t *testing.T) {
-		expectedPodReadFailure := errors.New("failed to read Pod")
-
-		testClient := newClientStub()
-		testConfig := newTestConfig()
-		testClient.podReadFailure = expectedPodReadFailure
-		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
-
-		assert.ErrorContains(t, testCheckup.Setup(context.Background()), expectedPodReadFailure.Error())
-		assert.Empty(t, testClient.createdVMIs)
-		assert.Empty(t, testClient.createdPods)
 	})
 }
 
@@ -139,16 +169,12 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 		description        string
 		vmiReadFailure     error
 		vmiDeletionFailure error
-		podDeletionFailure error
-		podReadFailure     error
 		expectedFailure    string
 	}
 
 	const (
 		vmiReadFailureMsg     = "failed to delete VMI"
 		vmiDeletionFailureMsg = "failed to read VMI"
-		podReadFailureMsg     = "failed to read Pod"
-		podDeletionFailureMsg = "failed to delete Pod"
 	)
 	testCases := []FailTestCase{
 		{
@@ -160,16 +186,6 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 			description:        "wait for VMI deletion fails",
 			vmiDeletionFailure: errors.New(vmiDeletionFailureMsg),
 			expectedFailure:    vmiDeletionFailureMsg,
-		},
-		{
-			description:        "Traffic generator Pod deletion fails",
-			podDeletionFailure: errors.New(podDeletionFailureMsg),
-			expectedFailure:    podDeletionFailureMsg,
-		},
-		{
-			description:     "wait for Traffic generator Pod deletion fails",
-			podReadFailure:  errors.New(podReadFailureMsg),
-			expectedFailure: podReadFailureMsg,
 		},
 	}
 
@@ -185,11 +201,26 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 
 			testClient.vmiDeletionFailure = testCase.vmiDeletionFailure
 			testClient.vmiReadFailure = testCase.vmiReadFailure
-			testClient.podDeletionFailure = testCase.podDeletionFailure
-			testClient.podReadFailure = testCase.podReadFailure
 			assert.ErrorContains(t, testCheckup.Teardown(context.Background()), testCase.expectedFailure)
 		})
 	}
+}
+
+func TestTrafficGenCMTeardownFailure(t *testing.T) {
+	testClient := newClientStub()
+	testConfig := newTestConfig()
+
+	testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
+
+	assert.NoError(t, testCheckup.Setup(context.Background()))
+	assert.NotEmpty(t, testClient.createdConfigMaps)
+
+	assert.NoError(t, testCheckup.Run(context.Background()))
+
+	expectedCMDeletionFailure := errors.New("failed to delete ConfigMap")
+	testClient.configMapDeletionFailure = expectedCMDeletionFailure
+
+	assert.ErrorContains(t, testCheckup.Teardown(context.Background()), expectedCMDeletionFailure.Error())
 }
 
 func TestRunFailure(t *testing.T) {
@@ -201,21 +232,14 @@ func TestRunFailure(t *testing.T) {
 
 	assert.NoError(t, testCheckup.Setup(context.Background()))
 
-	vmiName := testClient.VMIName()
-	assert.NotEmpty(t, vmiName)
-
-	podName := testClient.TrafficGeneratorPodName()
-	assert.NotEmpty(t, podName)
+	vmiUnderTestName := testClient.VMIName(checkup.VMIUnderTestNamePrefix)
+	assert.NotEmpty(t, vmiUnderTestName)
 
 	assert.Error(t, expectedExecutionFailure, testCheckup.Run(context.Background()))
 
 	assert.NoError(t, testCheckup.Teardown(context.Background()))
 
-	_, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
-	assert.ErrorContains(t, err, "not found")
-
-	_, err = testClient.GetPod(context.Background(), testNamespace, podName)
-	assert.ErrorContains(t, err, "not found")
+	assert.Empty(t, testClient.createdVMIs)
 
 	actualResults := testCheckup.Results()
 	expectedResults := status.Results{}
@@ -223,32 +247,87 @@ func TestRunFailure(t *testing.T) {
 	assert.Equal(t, expectedResults, actualResults)
 }
 
-func TestCloudInitString(t *testing.T) {
-	actualString := checkup.CloudInit("user", "password")
-	expectedString := `#cloud-config
-user: user
-password: password
-chpasswd:
-  expire: false`
+func assertPodAntiAffinityExists(t *testing.T, testClient *clientStub, vmiName, ownerUID string) {
+	actualVMI, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
+	assert.NoError(t, err)
 
-	assert.Equal(t, expectedString, actualString)
+	expectedAffinity := &k8scorev1.Affinity{
+		PodAntiAffinity: &k8scorev1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []k8scorev1.WeightedPodAffinityTerm{
+				{
+					Weight: 1,
+					PodAffinityTerm: k8scorev1.PodAffinityTerm{
+						TopologyKey: k8scorev1.LabelHostname,
+						LabelSelector: &k8smetav1.LabelSelector{
+							MatchExpressions: []k8smetav1.LabelSelectorRequirement{
+								{
+									Operator: k8smetav1.LabelSelectorOpIn,
+									Key:      checkup.DPDKCheckupUIDLabelKey,
+									Values:   []string{ownerUID},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	assert.Equal(t, expectedAffinity, actualVMI.Spec.Affinity)
+}
+
+func assertPodAntiAffinityDoesNotExist(t *testing.T, testClient *clientStub, vmiName string) {
+	actualVmi, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
+	assert.NoError(t, err)
+
+	assert.Nil(t, actualVmi.Spec.Affinity.PodAntiAffinity)
+}
+
+func assertNodeAffinityExists(t *testing.T, testClient *clientStub, vmiName, nodeName string) {
+	actualVMI, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
+	assert.NoError(t, err)
+
+	expectedAffinity := &k8scorev1.Affinity{
+		NodeAffinity: &k8scorev1.NodeAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: &k8scorev1.NodeSelector{
+				NodeSelectorTerms: []k8scorev1.NodeSelectorTerm{
+					{
+						MatchExpressions: []k8scorev1.NodeSelectorRequirement{
+							{
+								Key:      k8scorev1.LabelHostname,
+								Operator: k8scorev1.NodeSelectorOpIn,
+								Values:   []string{nodeName}},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	assert.Equal(t, expectedAffinity, actualVMI.Spec.Affinity)
+}
+
+func assertNodeAffinityDoesNotExist(t *testing.T, testClient *clientStub, vmiName string) {
+	actualVmi, err := testClient.GetVirtualMachineInstance(context.Background(), testNamespace, vmiName)
+	assert.NoError(t, err)
+
+	assert.Nil(t, actualVmi.Spec.Affinity.NodeAffinity)
 }
 
 type clientStub struct {
-	createdVMIs        map[string]*kvcorev1.VirtualMachineInstance
-	createdPods        map[string]*k8scorev1.Pod
-	podCreationFailure error
-	podReadFailure     error
-	podDeletionFailure error
-	vmiCreationFailure error
-	vmiReadFailure     error
-	vmiDeletionFailure error
+	createdVMIs              map[string]*kvcorev1.VirtualMachineInstance
+	vmiCreationFailure       error
+	vmiReadFailure           error
+	vmiDeletionFailure       error
+	createdConfigMaps        map[string]*k8scorev1.ConfigMap
+	configMapCreationFailure error
+	configMapDeletionFailure error
 }
 
 func newClientStub() *clientStub {
 	return &clientStub{
-		createdVMIs: map[string]*kvcorev1.VirtualMachineInstance{},
-		createdPods: map[string]*k8scorev1.Pod{},
+		createdVMIs:       map[string]*kvcorev1.VirtualMachineInstance{},
+		createdConfigMaps: map[string]*k8scorev1.ConfigMap{},
 	}
 }
 
@@ -302,72 +381,38 @@ func (cs *clientStub) DeleteVirtualMachineInstance(_ context.Context, namespace,
 	return nil
 }
 
-func (cs *clientStub) CreatePod(_ context.Context, namespace string, pod *k8scorev1.Pod) (*k8scorev1.Pod, error) {
-	if cs.podCreationFailure != nil {
-		return nil, cs.podCreationFailure
+func (cs *clientStub) CreateConfigMap(_ context.Context, namespace string, configMap *k8scorev1.ConfigMap) (*k8scorev1.ConfigMap, error) {
+	if cs.configMapCreationFailure != nil {
+		return nil, cs.configMapCreationFailure
 	}
 
-	pod.Namespace = namespace
+	configMap.Namespace = namespace
 
-	podFullName := checkup.ObjectFullName(pod.Namespace, pod.Name)
-	pod.Status.Phase = k8scorev1.PodRunning
-	cs.createdPods[podFullName] = pod
+	configMapFullName := checkup.ObjectFullName(configMap.Namespace, configMap.Name)
+	cs.createdConfigMaps[configMapFullName] = configMap
 
-	return pod, nil
+	return configMap, nil
 }
 
-func (cs *clientStub) DeletePod(_ context.Context, namespace, name string) error {
-	if cs.podDeletionFailure != nil {
-		return cs.podDeletionFailure
+func (cs *clientStub) DeleteConfigMap(_ context.Context, namespace, name string) error {
+	if cs.configMapDeletionFailure != nil {
+		return cs.configMapDeletionFailure
 	}
 
-	podFullName := checkup.ObjectFullName(namespace, name)
-	_, exist := cs.createdPods[podFullName]
+	configMapFullName := checkup.ObjectFullName(namespace, name)
+	_, exist := cs.createdConfigMaps[configMapFullName]
 	if !exist {
-		return k8serrors.NewNotFound(schema.GroupResource{Group: "", Resource: "pods"}, name)
+		return k8serrors.NewNotFound(schema.GroupResource{Group: "", Resource: "configmaps"}, name)
 	}
 
-	delete(cs.createdPods, podFullName)
+	delete(cs.createdConfigMaps, configMapFullName)
 
 	return nil
 }
 
-func (cs *clientStub) GetPod(_ context.Context, namespace, name string) (*k8scorev1.Pod, error) {
-	if cs.podReadFailure != nil {
-		return nil, cs.podReadFailure
-	}
-
-	podFullName := checkup.ObjectFullName(namespace, name)
-	pod, exist := cs.createdPods[podFullName]
-	if !exist {
-		return nil, k8serrors.NewNotFound(schema.GroupResource{Group: "", Resource: "pods"}, name)
-	}
-	return pod, nil
-}
-
-func (cs *clientStub) GetNetworkAttachmentDefinition(_ context.Context, _, _ string) (*networkv1.NetworkAttachmentDefinition, error) {
-	return &networkv1.NetworkAttachmentDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Annotations: map[string]string{
-				"k8s.v1.cni.cncf.io/resourceName": "openshift.io/dpdk-net",
-			},
-		},
-	}, nil
-}
-
-func (cs *clientStub) TrafficGeneratorPodName() string {
-	for _, pod := range cs.createdPods {
-		if strings.Contains(pod.Name, checkup.TrafficGeneratorPodNamePrefix) {
-			return pod.Name
-		}
-	}
-
-	return ""
-}
-
-func (cs *clientStub) VMIName() string {
+func (cs *clientStub) VMIName(namePrefix string) string {
 	for _, vmi := range cs.createdVMIs {
-		if strings.Contains(vmi.Name, checkup.VMINamePrefix) {
+		if strings.Contains(vmi.Name, namePrefix) {
 			return vmi.Name
 		}
 	}
@@ -379,7 +424,7 @@ type executorStub struct {
 	executeErr error
 }
 
-func (es executorStub) Execute(_ context.Context, vmiName, podName, podContainerName string) (status.Results, error) {
+func (es executorStub) Execute(_ context.Context, vmiUnderTestName, trafficGenVMIName string) (status.Results, error) {
 	if es.executeErr != nil {
 		return status.Results{}, es.executeErr
 	}
@@ -390,8 +435,8 @@ func (es executorStub) Execute(_ context.Context, vmiName, podName, podContainer
 func newTestConfig() config.Config {
 	trafficGeneratorEastHWAddress, _ := net.ParseMAC(trafficGeneratorEastMacAddress)
 	trafficGeneratorWestHWAddress, _ := net.ParseMAC(trafficGeneratorWestMacAddress)
-	dpdkEastHWAddress, _ := net.ParseMAC(dpdkEastMacAddress)
-	dpdkWestHWAddress, _ := net.ParseMAC(dpdkWestMacAddress)
+	vmiUnderTestEastHWAddress, _ := net.ParseMAC(vmiUnderTestEastMacAddress)
+	vmiUnderTestWestHWAddress, _ := net.ParseMAC(vmiUnderTestWestMacAddress)
 	return config.Config{
 		PodName:                           testPodName,
 		PodUID:                            testPodUID,
@@ -402,8 +447,8 @@ func newTestConfig() config.Config {
 		PortBandwidthGB:                   config.PortBandwidthGBDefault,
 		TrafficGeneratorEastMacAddress:    trafficGeneratorEastHWAddress,
 		TrafficGeneratorWestMacAddress:    trafficGeneratorWestHWAddress,
-		DPDKEastMacAddress:                dpdkEastHWAddress,
-		DPDKWestMacAddress:                dpdkWestHWAddress,
+		DPDKEastMacAddress:                vmiUnderTestEastHWAddress,
+		DPDKWestMacAddress:                vmiUnderTestWestHWAddress,
 		TestDuration:                      config.TestDurationDefault,
 	}
 }

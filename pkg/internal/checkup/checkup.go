@@ -21,25 +21,19 @@ package checkup
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"strconv"
-	"strings"
 	"time"
 
 	k8scorev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	k8srand "k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
-
-	networkv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
 
 	kvcorev1 "kubevirt.io/api/core/v1"
 
-	kaffinity "github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/affinity"
-	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/pod"
-	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/vmi"
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/configmap"
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/trex"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/status"
 )
@@ -50,39 +44,43 @@ type kubeVirtVMIClient interface {
 		vmi *kvcorev1.VirtualMachineInstance) (*kvcorev1.VirtualMachineInstance, error)
 	GetVirtualMachineInstance(ctx context.Context, namespace, name string) (*kvcorev1.VirtualMachineInstance, error)
 	DeleteVirtualMachineInstance(ctx context.Context, namespace, name string) error
-	CreatePod(ctx context.Context, namespace string, pod *k8scorev1.Pod) (*k8scorev1.Pod, error)
-	DeletePod(ctx context.Context, namespace, name string) error
-	GetPod(ctx context.Context, namespace, name string) (*k8scorev1.Pod, error)
-	GetNetworkAttachmentDefinition(ctx context.Context, namespace, name string) (*networkv1.NetworkAttachmentDefinition, error)
+	CreateConfigMap(ctx context.Context, namespace string, configMap *k8scorev1.ConfigMap) (*k8scorev1.ConfigMap, error)
+	DeleteConfigMap(ctx context.Context, namespace, name string) error
 }
 
 type testExecutor interface {
-	Execute(ctx context.Context, vmiName, podName, podContainerName string) (status.Results, error)
+	Execute(ctx context.Context, vmiUnderTestName, trafficGenVMIName string) (status.Results, error)
 }
 
 type Checkup struct {
 	client              kubeVirtVMIClient
 	namespace           string
 	params              config.Config
-	vmi                 *kvcorev1.VirtualMachineInstance
-	trafficGeneratorPod *k8scorev1.Pod
+	vmiUnderTest        *kvcorev1.VirtualMachineInstance
+	trafficGen          *kvcorev1.VirtualMachineInstance
+	trafficGenConfigMap *k8scorev1.ConfigMap
 	results             status.Results
 	executor            testExecutor
 }
 
 const (
-	VMINamePrefix                 = "dpdk-vmi"
-	TrafficGeneratorPodNamePrefix = "kubevirt-dpdk-checkup-traffic-gen"
-	DPDKCheckupUIDLabelKey        = "kubevirt-dpdk-checkup/uid"
+	TrafficGenConfigMapNamePrefix = "dpdk-traffic-gen-config"
 )
 
 func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config, executor testExecutor) *Checkup {
+	const randomStringLen = 5
+	randomSuffix := rand.String(randomStringLen)
+
+	trafficGenCMName := trafficGenConfigMapName(randomSuffix)
+
 	return &Checkup{
-		client:    client,
-		namespace: namespace,
-		params:    checkupConfig,
-		vmi:       newDPDKVMI(checkupConfig),
-		executor:  executor,
+		client:              client,
+		namespace:           namespace,
+		params:              checkupConfig,
+		vmiUnderTest:        newVMIUnderTest(vmiUnderTestName(randomSuffix), checkupConfig),
+		trafficGen:          newTrafficGen(trafficGenName(randomSuffix), checkupConfig, trafficGenCMName),
+		trafficGenConfigMap: newTrafficGenConfigMap(trafficGenCMName, checkupConfig),
+		executor:            executor,
 	}
 }
 
@@ -90,34 +88,43 @@ func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
 	const errMessagePrefix = "setup"
 	var err error
 
-	if err = c.createVMI(ctx); err != nil {
+	if err = c.createTrafficGenCM(ctx); err != nil {
+		return fmt.Errorf("%s: %w", errMessagePrefix, err)
+	}
+
+	if err = c.createVMI(ctx, c.vmiUnderTest); err != nil {
 		return fmt.Errorf("%s: %w", errMessagePrefix, err)
 	}
 	defer func() {
 		if setupErr != nil {
-			c.cleanupVMI()
+			c.cleanupVMI(c.vmiUnderTest.Name)
 		}
 	}()
 
-	if err = c.createTrafficGeneratorPod(ctx); err != nil {
+	if err = c.createVMI(ctx, c.trafficGen); err != nil {
 		return fmt.Errorf("%s: %w", errMessagePrefix, err)
 	}
-
 	defer func() {
 		if setupErr != nil {
-			c.cleanupPod()
+			c.cleanupVMI(c.trafficGen.Name)
 		}
 	}()
 
-	err = c.waitForVMIToBoot(ctx)
+	var updatedVMIUnderTest *kvcorev1.VirtualMachineInstance
+	updatedVMIUnderTest, err = c.waitForVMIToBoot(ctx, c.vmiUnderTest.Name)
 	if err != nil {
 		return err
 	}
 
-	err = c.waitForPodRunningStatus(ctx, c.namespace, c.trafficGeneratorPod.Name)
+	c.vmiUnderTest = updatedVMIUnderTest
+
+	var updatedTrafficGen *kvcorev1.VirtualMachineInstance
+	updatedTrafficGen, err = c.waitForVMIToBoot(ctx, c.trafficGen.Name)
 	if err != nil {
-		return fmt.Errorf("%s: %w", errMessagePrefix, err)
+		return err
 	}
+
+	c.trafficGen = updatedTrafficGen
 
 	return nil
 }
@@ -125,12 +132,12 @@ func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
 func (c *Checkup) Run(ctx context.Context) error {
 	var err error
 
-	c.results, err = c.executor.Execute(ctx, c.vmi.Name, c.trafficGeneratorPod.Name, c.trafficGeneratorPod.Spec.Containers[0].Name)
+	c.results, err = c.executor.Execute(ctx, c.vmiUnderTest.Name, c.trafficGen.Name)
 	if err != nil {
 		return err
 	}
-	c.results.TrafficGeneratorNode = c.trafficGeneratorPod.Spec.NodeName
-	c.results.DPDKVMNode = c.vmi.Status.NodeName
+	c.results.DPDKVMNode = c.vmiUnderTest.Status.NodeName
+	c.results.TrafficGeneratorNode = c.trafficGen.Status.NodeName
 
 	if c.results.TrafficGeneratorOutErrorPackets != 0 || c.results.TrafficGeneratorInErrorPackets != 0 {
 		return fmt.Errorf("detected Error Packets on the traffic generator's side: Oerrors %d Ierrors %d",
@@ -153,19 +160,23 @@ func (c *Checkup) Run(ctx context.Context) error {
 func (c *Checkup) Teardown(ctx context.Context) error {
 	const errPrefix = "teardown"
 
-	if err := c.deleteVMI(ctx); err != nil {
+	if err := c.deleteVMI(ctx, c.vmiUnderTest.Name); err != nil {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 
-	if err := c.deletePod(ctx); err != nil {
+	if err := c.deleteVMI(ctx, c.trafficGen.Name); err != nil {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 
-	if err := c.waitForVMIDeletion(ctx); err != nil {
+	if err := c.deleteTrafficGenCM(ctx); err != nil {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 
-	if err := c.waitForPodDeletion(ctx); err != nil {
+	if err := c.waitForVMIDeletion(ctx, c.vmiUnderTest.Name); err != nil {
+		return fmt.Errorf("%s: %w", errPrefix, err)
+	}
+
+	if err := c.waitForVMIDeletion(ctx, c.trafficGen.Name); err != nil {
 		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 
@@ -176,26 +187,34 @@ func (c *Checkup) Results() status.Results {
 	return c.results
 }
 
-func (c *Checkup) createVMI(ctx context.Context) error {
-	log.Printf("Creating VMI %q...", ObjectFullName(c.namespace, c.vmi.Name))
+func (c *Checkup) createTrafficGenCM(ctx context.Context) error {
+	log.Printf("Creating ConfigMap %q...", ObjectFullName(c.namespace, c.trafficGenConfigMap.Name))
 
-	var err error
-	c.vmi, err = c.client.CreateVirtualMachineInstance(ctx, c.namespace, c.vmi)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	_, err := c.client.CreateConfigMap(ctx, c.namespace, c.trafficGenConfigMap)
+	return err
 }
 
-func (c *Checkup) waitForVMIToBoot(ctx context.Context) error {
-	vmiFullName := ObjectFullName(c.vmi.Namespace, c.vmi.Name)
+func (c *Checkup) deleteTrafficGenCM(ctx context.Context) error {
+	log.Printf("Deleting ConfigMap %q...", ObjectFullName(c.namespace, c.trafficGenConfigMap.Name))
+
+	return c.client.DeleteConfigMap(ctx, c.namespace, c.trafficGenConfigMap.Name)
+}
+
+func (c *Checkup) createVMI(ctx context.Context, vmiToCreate *kvcorev1.VirtualMachineInstance) error {
+	log.Printf("Creating VMI %q...", ObjectFullName(c.namespace, vmiToCreate.Name))
+
+	_, err := c.client.CreateVirtualMachineInstance(ctx, c.namespace, vmiToCreate)
+	return err
+}
+
+func (c *Checkup) waitForVMIToBoot(ctx context.Context, name string) (*kvcorev1.VirtualMachineInstance, error) {
+	vmiFullName := ObjectFullName(c.namespace, name)
 	log.Printf("Waiting for VMI %q to boot...", vmiFullName)
 	var updatedVMI *kvcorev1.VirtualMachineInstance
 
 	conditionFn := func(ctx context.Context) (bool, error) {
 		var err error
-		updatedVMI, err = c.client.GetVirtualMachineInstance(ctx, c.vmi.Namespace, c.vmi.Name)
+		updatedVMI, err = c.client.GetVirtualMachineInstance(ctx, c.namespace, name)
 		if err != nil {
 			return false, err
 		}
@@ -210,23 +229,19 @@ func (c *Checkup) waitForVMIToBoot(ctx context.Context) error {
 	}
 	const pollInterval = 5 * time.Second
 	if err := wait.PollImmediateUntilWithContext(ctx, pollInterval, conditionFn); err != nil {
-		return fmt.Errorf("failed to wait for VMI %q to boot: %v", vmiFullName, err)
+		return nil, fmt.Errorf("failed to wait for VMI %q to boot: %v", vmiFullName, err)
 	}
 
 	log.Printf("VMI %q had successfully booted", vmiFullName)
-	c.vmi = updatedVMI
-	return nil
+
+	return updatedVMI, nil
 }
 
-func (c *Checkup) deleteVMI(ctx context.Context) error {
-	if c.vmi == nil {
-		return fmt.Errorf("failed to delete VMI, object doesn't exist")
-	}
-
-	vmiFullName := ObjectFullName(c.vmi.Namespace, c.vmi.Name)
+func (c *Checkup) deleteVMI(ctx context.Context, name string) error {
+	vmiFullName := ObjectFullName(c.namespace, name)
 
 	log.Printf("Trying to delete VMI: %q", vmiFullName)
-	if err := c.client.DeleteVirtualMachineInstance(ctx, c.vmi.Namespace, c.vmi.Name); err != nil {
+	if err := c.client.DeleteVirtualMachineInstance(ctx, c.namespace, name); err != nil {
 		log.Printf("Failed to delete VMI: %q", vmiFullName)
 		return err
 	}
@@ -234,12 +249,12 @@ func (c *Checkup) deleteVMI(ctx context.Context) error {
 	return nil
 }
 
-func (c *Checkup) waitForVMIDeletion(ctx context.Context) error {
-	vmiFullName := ObjectFullName(c.vmi.Namespace, c.vmi.Name)
+func (c *Checkup) waitForVMIDeletion(ctx context.Context, name string) error {
+	vmiFullName := ObjectFullName(c.namespace, name)
 	log.Printf("Waiting for VMI %q to be deleted...", vmiFullName)
 
 	conditionFn := func(ctx context.Context) (bool, error) {
-		_, err := c.client.GetVirtualMachineInstance(ctx, c.vmi.Namespace, c.vmi.Name)
+		_, err := c.client.GetVirtualMachineInstance(ctx, c.namespace, name)
 		if k8serrors.IsNotFound(err) {
 			return true, nil
 		}
@@ -255,144 +270,19 @@ func (c *Checkup) waitForVMIDeletion(ctx context.Context) error {
 	return nil
 }
 
-func (c *Checkup) cleanupVMI() {
+func (c *Checkup) cleanupVMI(name string) {
 	const setupCleanupTimeout = 30 * time.Second
 
-	log.Printf("setup failed, cleanup VMI '%s/%s'", c.vmi.Namespace, c.vmi.Name)
+	vmiFullName := ObjectFullName(c.namespace, name)
+	log.Printf("setup failed, cleanup VMI %q", vmiFullName)
+
 	delCtx, cancel := context.WithTimeout(context.Background(), setupCleanupTimeout)
 	defer cancel()
-	_ = c.deleteVMI(delCtx)
 
-	if derr := c.waitForVMIDeletion(delCtx); derr != nil {
-		log.Printf("Failed to cleanup VMI '%s/%s': %v", c.vmi.Namespace, c.vmi.Name, derr)
-	}
-}
+	_ = c.deleteVMI(delCtx, name)
 
-func (c *Checkup) createTrafficGeneratorPod(ctx context.Context) error {
-	secondaryNetworksRequest, err := pod.CreateNetworksRequest([]networkv1.NetworkSelectionElement{
-		{Name: c.params.NetworkAttachmentDefinitionName, Namespace: c.namespace, MacRequest: c.params.TrafficGeneratorEastMacAddress.String()},
-		{Name: c.params.NetworkAttachmentDefinitionName, Namespace: c.namespace, MacRequest: c.params.TrafficGeneratorWestMacAddress.String()},
-	})
-	if err != nil {
-		return err
-	}
-
-	pciDevicesVarName, err := c.getPCIDevicesVarName(ctx)
-	if err != nil {
-		return err
-	}
-	trafficGeneratorPod := newTrafficGeneratorPod(c.params, secondaryNetworksRequest, pciDevicesVarName)
-
-	log.Printf("Creating traffic generator Pod %s..", ObjectFullName(c.namespace, trafficGeneratorPod.Name))
-	if c.params.Verbose {
-		trafficGeneratorPodJSON, _ := json.Marshal(trafficGeneratorPod)
-		log.Print(string(trafficGeneratorPodJSON))
-	}
-
-	c.trafficGeneratorPod, err = c.client.CreatePod(ctx, c.namespace, trafficGeneratorPod)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *Checkup) getPCIDevicesVarName(ctx context.Context) (string, error) {
-	netAttachDef, err := c.client.GetNetworkAttachmentDefinition(ctx, c.namespace, c.params.NetworkAttachmentDefinitionName)
-	if err != nil {
-		return "", err
-	}
-
-	const resourceNameAnnotationKey = "k8s.v1.cni.cncf.io/resourceName"
-	rawResourceName, exists := netAttachDef.Annotations[resourceNameAnnotationKey]
-	if !exists {
-		return "", fmt.Errorf("%q annotation is not found on the network-attachement-definition %q",
-			resourceNameAnnotationKey, ObjectFullName(c.namespace, c.params.NetworkAttachmentDefinitionName))
-	}
-
-	const (
-		pciDevicesVarPrefix    = "PCIDEVICE"
-		pciDevicesVarDelimiter = "_"
-	)
-
-	// build the PCI Device env var naming recipe
-	// https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin#pod-device-information
-	pciDevicesVarName := pciDevicesVarPrefix + pciDevicesVarDelimiter + rawResourceName
-	pciDevicesVarName = strings.ReplaceAll(pciDevicesVarName, ".", pciDevicesVarDelimiter)
-	pciDevicesVarName = strings.ReplaceAll(pciDevicesVarName, "/", pciDevicesVarDelimiter)
-	return strings.ToUpper(pciDevicesVarName), nil
-}
-
-func (c *Checkup) waitForPodRunningStatus(ctx context.Context, namespace, name string) error {
-	podFullName := ObjectFullName(c.namespace, name)
-	log.Printf("Waiting for Pod %s..", podFullName)
-	var updatedPod *k8scorev1.Pod
-
-	conditionFn := func(ctx context.Context) (bool, error) {
-		var err error
-		updatedPod, err = c.client.GetPod(ctx, namespace, name)
-		if err != nil {
-			return false, err
-		}
-		return pod.PodInRunningPhase(updatedPod), nil
-	}
-	const interval = time.Second * 5
-	if err := wait.PollImmediateUntilWithContext(ctx, interval, conditionFn); err != nil {
-		return fmt.Errorf("failed to wait for Pod '%s' to be in Running Phase: %v", podFullName, err)
-	}
-
-	log.Printf("Pod %s is Running", podFullName)
-	c.trafficGeneratorPod = updatedPod
-	return nil
-}
-
-func (c *Checkup) deletePod(ctx context.Context) error {
-	if c.trafficGeneratorPod == nil {
-		return fmt.Errorf("failed to delete traffic generator Pod, object doesn't exist")
-	}
-
-	vmiFullName := ObjectFullName(c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
-
-	log.Printf("Trying to delete traffic generator Pod: %q", vmiFullName)
-	if err := c.client.DeletePod(ctx, c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name); err != nil {
-		log.Printf("Failed to delete traffic generator Pod: %q", vmiFullName)
-		return err
-	}
-
-	return nil
-}
-
-func (c *Checkup) waitForPodDeletion(ctx context.Context) error {
-	podFullName := ObjectFullName(c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
-	log.Printf("Waiting for Pod %q to be deleted..", podFullName)
-
-	conditionFn := func(ctx context.Context) (bool, error) {
-		var err error
-		_, err = c.client.GetPod(ctx, c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
-		if k8serrors.IsNotFound(err) {
-			return true, nil
-		}
-		return false, err
-	}
-	const interval = 5 * time.Second
-	if err := wait.PollImmediateUntilWithContext(ctx, interval, conditionFn); err != nil {
-		return fmt.Errorf("failed to wait for POD %q to be in deleted: %v", podFullName, err)
-	}
-
-	log.Printf("Pod %q is deleted", podFullName)
-	return nil
-}
-
-func (c *Checkup) cleanupPod() {
-	const setupCleanupTimeout = 30 * time.Second
-
-	log.Printf("setup failed, cleanup Pod '%s/%s'", c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name)
-	delCtx, cancel := context.WithTimeout(context.Background(), setupCleanupTimeout)
-	defer cancel()
-	_ = c.deletePod(delCtx)
-
-	if derr := c.waitForPodDeletion(delCtx); derr != nil {
-		log.Printf("Failed to cleanup Pod '%s/%s': %v", c.trafficGeneratorPod.Namespace, c.trafficGeneratorPod.Name, derr)
+	if err := c.waitForVMIDeletion(delCtx, name); err != nil {
+		log.Printf("Failed to wait for VMI %q disposal: %v", vmiFullName, err)
 	}
 }
 
@@ -400,143 +290,31 @@ func ObjectFullName(namespace, name string) string {
 	return fmt.Sprintf("%s/%s", namespace, name)
 }
 
-func CloudInit(username, password string) string {
-	sb := strings.Builder{}
-	sb.WriteString("#cloud-config\n")
-	sb.WriteString(fmt.Sprintf("user: %s\n", username))
-	sb.WriteString(fmt.Sprintf("password: %s\n", password))
-	sb.WriteString("chpasswd:\n")
-	sb.WriteString("  expire: false")
-
-	return sb.String()
-}
-
-func randomizeName(prefix string) string {
-	const randomStringLen = 5
-
-	return fmt.Sprintf("%s-%s", prefix, k8srand.String(randomStringLen))
-}
-
-func newDPDKVMI(checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
-	const (
-		CPUSocketsCount   = 1
-		CPUCoresCount     = 4
-		CPUTreadsCount    = 2
-		hugePageSize      = "1Gi"
-		guestMemory       = "4Gi"
-		rootDiskName      = "rootdisk"
-		cloudInitDiskName = "cloudinitdisk"
-		eastNetworkName   = "nic-east"
-		westNetworkName   = "nic-west"
-
-		terminationGracePeriodSeconds = 0
-	)
-
-	labels := map[string]string{
-		DPDKCheckupUIDLabelKey: checkupConfig.PodUID,
+func newTrafficGenConfigMap(name string, checkupConfig config.Config) *k8scorev1.ConfigMap {
+	trexConfig := trex.NewConfig(checkupConfig)
+	trafficGenConfigData := map[string]string{
+		trex.SystemdUnitFileName:        trex.GenerateSystemdUnitFile(),
+		trex.ExecutionScriptName:        trexConfig.GenerateExecutionScript(),
+		trex.CfgFileName:                trexConfig.GenerateCfgFile(),
+		trex.StreamPyFileName:           trexConfig.GenerateStreamPyFile(),
+		trex.StreamPeerParamsPyFileName: trexConfig.GenerateStreamAddrPyFile(),
 	}
-	var affinity *k8scorev1.Affinity
-	if checkupConfig.DPDKNodeLabelSelector != "" {
-		affinity = &k8scorev1.Affinity{NodeAffinity: kaffinity.NewRequiredNodeAffinity(checkupConfig.DPDKNodeLabelSelector)}
-	} else {
-		affinity = &k8scorev1.Affinity{PodAntiAffinity: kaffinity.NewPreferredPodAntiAffinity(DPDKCheckupUIDLabelKey,
-			checkupConfig.PodUID)}
-	}
-
-	return vmi.New(randomizeName(VMINamePrefix),
-		vmi.WithOwnerReference(checkupConfig.PodName, checkupConfig.PodUID),
-		vmi.WithLabels(labels),
-		vmi.WithAffinity(affinity),
-		vmi.WithoutCRIOCPULoadBalancing(),
-		vmi.WithoutCRIOCPUQuota(),
-		vmi.WithoutCRIOIRQLoadBalancing(),
-		vmi.WithDedicatedCPU(CPUSocketsCount, CPUCoresCount, CPUTreadsCount),
-		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.DPDKEastMacAddress.String(), config.VMIEastNICPCIAddress),
-		vmi.WithMultusNetwork(eastNetworkName, checkupConfig.NetworkAttachmentDefinitionName),
-		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.DPDKWestMacAddress.String(), config.VMIWestNICPCIAddress),
-		vmi.WithMultusNetwork(westNetworkName, checkupConfig.NetworkAttachmentDefinitionName),
-		vmi.WithNetworkInterfaceMultiQueue(),
-		vmi.WithRandomNumberGenerator(),
-		vmi.WithMemory(hugePageSize, guestMemory),
-		vmi.WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds),
-		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMContainerDiskImage),
-		vmi.WithVirtIODisk(rootDiskName),
-		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword)),
-		vmi.WithVirtIODisk(cloudInitDiskName),
+	return configmap.New(
+		name,
+		checkupConfig.PodName,
+		checkupConfig.PodUID,
+		trafficGenConfigData,
 	)
 }
 
-func newTrafficGeneratorPod(checkupConfig config.Config, secondaryNetworkRequest, pciDevicesVarName string) *k8scorev1.Pod {
-	const (
-		trafficGeneratorServiceAccountName     = "dpdk-checkup-traffic-gen-sa"
-		trafficGeneratorPodCPUCount            = 8
-		trafficGeneratorPodNumOfNonTrafficCPUs = 2
-		trafficGeneratorPodHugepagesCount      = "1Gi"
-		terminationGracePeriodSeconds          = int64(0)
+func vmiUnderTestName(suffix string) string {
+	return VMIUnderTestNamePrefix + "-" + suffix
+}
 
-		portBandwidthParamName     = "PORT_BANDWIDTH_GB"
-		verboseParamName           = "SET_VERBOSE"
-		numTrafficCpusParamName    = "NUM_OF_TRAFFIC_CPUS"
-		numCpusParamName           = "NUM_OF_CPUS"
-		srcWestMACAddressParamName = "SRC_WEST_MAC_ADDRESS"
-		srcEastMACAddressParamName = "SRC_EAST_MAC_ADDRESS"
-		dstWestMACAddressParamName = "DST_WEST_MAC_ADDRESS"
-		dstEastMACAddressParamName = "DST_EAST_MAC_ADDRESS"
-		PCIDeviceVarParamName      = "PCI_DEVICES_VAR_NAME"
-	)
+func trafficGenName(suffix string) string {
+	return TrafficGenNamePrefix + "-" + suffix
+}
 
-	envVars := map[string]string{
-		portBandwidthParamName:     fmt.Sprintf("%d", checkupConfig.PortBandwidthGB),
-		numTrafficCpusParamName:    fmt.Sprintf("%d", trafficGeneratorPodCPUCount-trafficGeneratorPodNumOfNonTrafficCPUs),
-		numCpusParamName:           fmt.Sprintf("%d", trafficGeneratorPodCPUCount),
-		srcWestMACAddressParamName: checkupConfig.TrafficGeneratorWestMacAddress.String(),
-		srcEastMACAddressParamName: checkupConfig.TrafficGeneratorEastMacAddress.String(),
-		dstWestMACAddressParamName: checkupConfig.DPDKWestMacAddress.String(),
-		dstEastMACAddressParamName: checkupConfig.DPDKEastMacAddress.String(),
-		verboseParamName:           strings.ToUpper(strconv.FormatBool(checkupConfig.Verbose)),
-		PCIDeviceVarParamName:      pciDevicesVarName,
-	}
-	if checkupConfig.Verbose {
-		log.Printf("envVars: %v", envVars)
-	}
-	securityContext := pod.NewSecurityContext(int64(0), false,
-		[]k8scorev1.Capability{"IPC_LOCK", "SYS_RESOURCE", "NET_RAW", "NET_ADMIN"})
-
-	trafficGeneratorContainer := pod.NewPodContainer(TrafficGeneratorPodNamePrefix,
-		pod.WithContainerImage(checkupConfig.TrafficGeneratorImage),
-		pod.WithContainerCommand([]string{"/bin/bash", "/opt/scripts/main.sh"}),
-		pod.WithContainerSecurityContext(securityContext),
-		pod.WithContainerEnvVars(envVars),
-		pod.WithContainerCPUsStrict(fmt.Sprintf("%d", trafficGeneratorPodCPUCount)),
-		pod.WithContainerHugepagesResources(trafficGeneratorPodHugepagesCount),
-		pod.WithContainerHugepagesVolumeMount(),
-		pod.WithContainerLibModulesVolumeMount(),
-	)
-
-	labels := map[string]string{
-		DPDKCheckupUIDLabelKey: checkupConfig.PodUID,
-	}
-	var affinity *k8scorev1.Affinity
-	if checkupConfig.DPDKNodeLabelSelector != "" {
-		affinity = &k8scorev1.Affinity{NodeAffinity: kaffinity.NewRequiredNodeAffinity(checkupConfig.TrafficGeneratorNodeLabelSelector)}
-	} else {
-		affinity = &k8scorev1.Affinity{PodAntiAffinity: kaffinity.NewPreferredPodAntiAffinity(DPDKCheckupUIDLabelKey,
-			checkupConfig.PodUID)}
-	}
-
-	return pod.NewPod(randomizeName(TrafficGeneratorPodNamePrefix),
-		pod.WithServiceAccountName(trafficGeneratorServiceAccountName),
-		pod.WithPodContainer(trafficGeneratorContainer),
-		pod.WithLabels(labels),
-		pod.WithAffinity(affinity),
-		pod.WithRuntimeClassName(checkupConfig.TrafficGeneratorRuntimeClassName),
-		pod.WithoutCRIOCPULoadBalancing(),
-		pod.WithoutCRIOCPUQuota(),
-		pod.WithoutCRIOIRQLoadBalancing(),
-		pod.WithOwnerReference(checkupConfig.PodName, checkupConfig.PodUID),
-		pod.WithNetworkRequestAnnotation(secondaryNetworkRequest),
-		pod.WithHugepagesVolume(),
-		pod.WithLibModulesVolume(),
-		pod.WithTerminationGracePeriodSeconds(terminationGracePeriodSeconds),
-	)
+func trafficGenConfigMapName(suffix string) string {
+	return TrafficGenConfigMapNamePrefix + "-" + suffix
 }
