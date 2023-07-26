@@ -60,7 +60,7 @@ func newVMIUnderTest(name string, checkupConfig config.Config) *kvcorev1.Virtual
 		vmi.WithAffinity(Affinity(checkupConfig.DPDKNodeLabelSelector, checkupConfig.PodUID)),
 		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.DPDKEastMacAddress.String(), config.VMIEastNICPCIAddress),
 		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.DPDKWestMacAddress.String(), config.VMIWestNICPCIAddress),
-		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMContainerDiskImage),
+		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMUnderTestContainerDiskImage),
 		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword, nil)),
 	)
 

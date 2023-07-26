@@ -33,16 +33,16 @@ import (
 )
 
 const (
-	testPodName                      = "my-pod"
-	testPodUID                       = "0123456789-0123456789"
-	networkAttachmentDefinitionName  = "intel-dpdk-network1"
-	testTrafficGenContainerDiskImage = "quay.io/ramlavi/kubevirt-dpdk-checkup-traffic-gen:main"
-	testTrafficGenTargetNodeName     = "worker-dpdk1"
-	testTrafficGenPacketsPerSecond   = "6m"
-	vmContainerDiskImage             = "quay.io/ramlavi/kubevirt-dpdk-checkup-vm:main"
-	dpdkNodeLabelSelector            = "node-role.kubernetes.io/worker-dpdk2"
-	testDuration                     = "30m"
-	portBandwidthGB                  = 100
+	testPodName                       = "my-pod"
+	testPodUID                        = "0123456789-0123456789"
+	networkAttachmentDefinitionName   = "intel-dpdk-network1"
+	testTrafficGenContainerDiskImage  = "quay.io/ramlavi/kubevirt-dpdk-checkup-traffic-gen:main"
+	testTrafficGenTargetNodeName      = "worker-dpdk1"
+	testTrafficGenPacketsPerSecond    = "6m"
+	testVMUnderTestContainerDiskImage = "quay.io/ramlavi/kubevirt-dpdk-checkup-vm:main"
+	dpdkNodeLabelSelector             = "node-role.kubernetes.io/worker-dpdk2"
+	testDuration                      = "30m"
+	portBandwidthGB                   = 100
 )
 
 func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
@@ -70,7 +70,7 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		TrafficGenPacketsPerSecond:      config.TrafficGenDefaultPacketsPerSecond,
 		TrafficGenEastMacAddress:        actualConfig.TrafficGenEastMacAddress,
 		TrafficGenWestMacAddress:        actualConfig.TrafficGenWestMacAddress,
-		VMContainerDiskImage:            config.VMContainerDiskImageDefault,
+		VMUnderTestContainerDiskImage:   config.VMUnderTestDefaultContainerDiskImage,
 		DPDKEastMacAddress:              actualConfig.DPDKEastMacAddress,
 		DPDKWestMacAddress:              actualConfig.DPDKWestMacAddress,
 		TestDuration:                    config.TestDurationDefault,
@@ -98,7 +98,7 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 				TrafficGenContainerDiskImage:    testTrafficGenContainerDiskImage,
 				TrafficGenTargetNodeName:        testTrafficGenTargetNodeName,
 				TrafficGenPacketsPerSecond:      testTrafficGenPacketsPerSecond,
-				VMContainerDiskImage:            vmContainerDiskImage,
+				VMUnderTestContainerDiskImage:   testVMUnderTestContainerDiskImage,
 				DPDKNodeLabelSelector:           dpdkNodeLabelSelector,
 				TestDuration:                    30 * time.Minute,
 				PortBandwidthGB:                 portBandwidthGB,
@@ -114,7 +114,7 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 				NetworkAttachmentDefinitionName: networkAttachmentDefinitionName,
 				TrafficGenContainerDiskImage:    testTrafficGenContainerDiskImage,
 				TrafficGenPacketsPerSecond:      testTrafficGenPacketsPerSecond,
-				VMContainerDiskImage:            vmContainerDiskImage,
+				VMUnderTestContainerDiskImage:   testVMUnderTestContainerDiskImage,
 				TestDuration:                    30 * time.Minute,
 				PortBandwidthGB:                 portBandwidthGB,
 				Verbose:                         true,
@@ -244,7 +244,7 @@ func getValidUserParameters() map[string]string {
 		config.TrafficGenContainerDiskImageParamName:    testTrafficGenContainerDiskImage,
 		config.TrafficGenTargetNodeNameParamName:        testTrafficGenTargetNodeName,
 		config.TrafficGenPacketsPerSecondParamName:      testTrafficGenPacketsPerSecond,
-		config.VMContainerDiskImageParamName:            vmContainerDiskImage,
+		config.VMUnderTestContainerDiskImageParamName:   testVMUnderTestContainerDiskImage,
 		config.DPDKNodeLabelSelectorParamName:           dpdkNodeLabelSelector,
 		config.TestDurationParamName:                    testDuration,
 		config.PortBandwidthGBParamName:                 fmt.Sprintf("%d", portBandwidthGB),

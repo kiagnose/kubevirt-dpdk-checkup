@@ -292,7 +292,7 @@ func newConfigMap() *corev1.ConfigMap {
 			"spec.param.networkAttachmentDefinitionName": networkAttachmentDefinitionName,
 			"spec.param.trafficGenContainerDiskImage":    trafficGeneratorImage,
 			"spec.param.trafficGenPacketsPerSecond":      "8m",
-			"spec.param.vmContainerDiskImage":            vmContainerDiskImage,
+			"spec.param.vmUnderTestContainerDiskImage":   vmContainerDiskImage,
 			"spec.param.testDuration":                    "1m",
 			"spec.param.verbose":                         "true",
 		},
