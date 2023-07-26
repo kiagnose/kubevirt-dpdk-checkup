@@ -35,12 +35,8 @@ const (
 	TrafficGeneratorImageParamName             = "trafficGeneratorImage"
 	TrafficGeneratorNodeLabelSelectorParamName = "trafficGeneratorNodeLabelSelector"
 	TrafficGeneratorPacketsPerSecondParamName  = "trafficGeneratorPacketsPerSecond"
-	TrafficGeneratorEastMacAddressParamName    = "trafficGeneratorEastMacAddress"
-	TrafficGeneratorWestMacAddressParamName    = "trafficGeneratorWestMacAddress"
 	VMContainerDiskImageParamName              = "vmContainerDiskImage"
 	DPDKNodeLabelSelectorParamName             = "DPDKNodeLabelSelector"
-	DPDKEastMacAddressParamName                = "DPDKEastMacAddress"
-	DPDKWestMacAddressParamName                = "DPDKWestMacAddress"
 	TestDurationParamName                      = "testDuration"
 	PortBandwidthGBParamName                   = "portBandwidthGB"
 	VerboseParamName                           = "verbose"
@@ -73,10 +69,6 @@ var (
 	ErrIllegalLabelSelectorCombination        = errors.New("illegal Traffic Generator and DPDK Node " +
 		"Label Selector combination")
 	ErrInvalidTrafficGeneratorPacketsPerSecond = errors.New("invalid Traffic Generator Packets Per Second")
-	ErrInvalidTrafficGeneratorEastMacAddress   = errors.New("invalid Traffic Generator East MAC Address")
-	ErrInvalidTrafficGeneratorWestMacAddress   = errors.New("invalid Traffic Generator West MAC Address")
-	ErrInvalidDPDKEastMacAddress               = errors.New("invalid DPDK East MAC Address")
-	ErrInvalidDPDKWestMacAddress               = errors.New("invalid DPDK West MAC Address")
 	ErrInvalidTestDuration                     = errors.New("invalid Test Duration")
 	ErrInvalidPortBandwidthGB                  = errors.New("invalid Port Bandwidth [GB]")
 	ErrInvalidVerbose                          = errors.New("invalid Verbose value [true|false]")
@@ -176,44 +168,6 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 		}
 	}
 
-	newConfig, err = setMacAddressParams(baseConfig, newConfig)
-	if err != nil {
-		return Config{}, err
-	}
-
-	return newConfig, nil
-}
-
-func setMacAddressParams(baseConfig kconfig.Config, newConfig Config) (Config, error) {
-	var err error
-
-	if rawVal := baseConfig.Params[TrafficGeneratorEastMacAddressParamName]; rawVal != "" {
-		newConfig.TrafficGeneratorEastMacAddress, err = net.ParseMAC(rawVal)
-		if err != nil {
-			return Config{}, ErrInvalidTrafficGeneratorEastMacAddress
-		}
-	}
-
-	if rawVal := baseConfig.Params[TrafficGeneratorWestMacAddressParamName]; rawVal != "" {
-		newConfig.TrafficGeneratorWestMacAddress, err = net.ParseMAC(rawVal)
-		if err != nil {
-			return Config{}, ErrInvalidTrafficGeneratorWestMacAddress
-		}
-	}
-
-	if rawVal := baseConfig.Params[DPDKEastMacAddressParamName]; rawVal != "" {
-		newConfig.DPDKEastMacAddress, err = net.ParseMAC(rawVal)
-		if err != nil {
-			return Config{}, ErrInvalidDPDKEastMacAddress
-		}
-	}
-
-	if rawVal := baseConfig.Params[DPDKWestMacAddressParamName]; rawVal != "" {
-		newConfig.DPDKWestMacAddress, err = net.ParseMAC(rawVal)
-		if err != nil {
-			return Config{}, ErrInvalidDPDKWestMacAddress
-		}
-	}
 	return newConfig, nil
 }
 
