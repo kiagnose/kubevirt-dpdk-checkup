@@ -34,8 +34,8 @@ const (
 	NetworkAttachmentDefinitionNameParamName   = "networkAttachmentDefinitionName"
 	TrafficGeneratorImageParamName             = "trafficGeneratorImage"
 	TrafficGeneratorNodeLabelSelectorParamName = "trafficGeneratorNodeLabelSelector"
-	DPDKNodeLabelSelectorParamName             = "DPDKNodeLabelSelector"
 	TrafficGeneratorPacketsPerSecondParamName  = "trafficGeneratorPacketsPerSecond"
+	DPDKNodeLabelSelectorParamName             = "DPDKNodeLabelSelector"
 	PortBandwidthGBParamName                   = "portBandwidthGB"
 	TrafficGeneratorEastMacAddressParamName    = "trafficGeneratorEastMacAddress"
 	TrafficGeneratorWestMacAddressParamName    = "trafficGeneratorWestMacAddress"
@@ -88,8 +88,8 @@ type Config struct {
 	NetworkAttachmentDefinitionName   string
 	TrafficGeneratorImage             string
 	TrafficGeneratorNodeLabelSelector string
-	DPDKNodeLabelSelector             string
 	TrafficGeneratorPacketsPerSecond  string
+	DPDKNodeLabelSelector             string
 	PortBandwidthGB                   int
 	TrafficGeneratorEastMacAddress    net.HardwareAddr
 	TrafficGeneratorWestMacAddress    net.HardwareAddr
@@ -113,8 +113,8 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		NetworkAttachmentDefinitionName:   baseConfig.Params[NetworkAttachmentDefinitionNameParamName],
 		TrafficGeneratorImage:             TrafficGeneratorImageDefault,
 		TrafficGeneratorNodeLabelSelector: baseConfig.Params[TrafficGeneratorNodeLabelSelectorParamName],
-		DPDKNodeLabelSelector:             baseConfig.Params[DPDKNodeLabelSelectorParamName],
 		TrafficGeneratorPacketsPerSecond:  TrafficGeneratorPacketsPerSecondDefault,
+		DPDKNodeLabelSelector:             baseConfig.Params[DPDKNodeLabelSelectorParamName],
 		PortBandwidthGB:                   PortBandwidthGBDefault,
 		TrafficGeneratorEastMacAddress:    trafficGeneratorEastMacAddressDefault,
 		TrafficGeneratorWestMacAddress:    trafficGeneratorWestMacAddressDefault,
@@ -144,17 +144,17 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 		newConfig.TrafficGeneratorImage = rawVal
 	}
 
-	if rawVal := baseConfig.Params[VerboseParamName]; rawVal != "" {
-		newConfig.Verbose, err = strconv.ParseBool(rawVal)
-		if err != nil {
-			return Config{}, ErrInvalidVerbose
-		}
-	}
-
 	if rawVal := baseConfig.Params[TrafficGeneratorPacketsPerSecondParamName]; rawVal != "" {
 		newConfig.TrafficGeneratorPacketsPerSecond, err = parseTrafficGeneratorPacketsPerSecond(rawVal)
 		if err != nil {
 			return Config{}, ErrInvalidTrafficGeneratorPacketsPerSecond
+		}
+	}
+
+	if rawVal := baseConfig.Params[VerboseParamName]; rawVal != "" {
+		newConfig.Verbose, err = strconv.ParseBool(rawVal)
+		if err != nil {
+			return Config{}, ErrInvalidVerbose
 		}
 	}
 

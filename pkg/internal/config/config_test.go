@@ -39,8 +39,8 @@ const (
 	networkAttachmentDefinitionName   = "intel-dpdk-network1"
 	trafficGeneratorImage             = "quay.io/ramlavi/kubevirt-dpdk-checkup-traffic-gen:main"
 	trafficGeneratorNodeLabelSelector = "node-role.kubernetes.io/worker-dpdk1"
-	portBandwidthGB                   = 100
 	trafficGeneratorPacketsPerSecond  = "6m"
+	portBandwidthGB                   = 100
 	dpdkNodeLabelSelector             = "node-role.kubernetes.io/worker-dpdk2"
 	trafficGeneratorEastMacAddress    = "DE:AD:BE:EF:00:01"
 	trafficGeneratorWestMacAddress    = "DE:AD:BE:EF:01:00"
@@ -275,8 +275,8 @@ func getValidUserParameters() map[string]string {
 		config.NetworkAttachmentDefinitionNameParamName:   networkAttachmentDefinitionName,
 		config.TrafficGeneratorImageParamName:             trafficGeneratorImage,
 		config.TrafficGeneratorNodeLabelSelectorParamName: trafficGeneratorNodeLabelSelector,
-		config.PortBandwidthGBParamName:                   fmt.Sprintf("%d", portBandwidthGB),
 		config.TrafficGeneratorPacketsPerSecondParamName:  trafficGeneratorPacketsPerSecond,
+		config.PortBandwidthGBParamName:                   fmt.Sprintf("%d", portBandwidthGB),
 		config.DPDKNodeLabelSelectorParamName:             dpdkNodeLabelSelector,
 		config.TrafficGeneratorEastMacAddressParamName:    trafficGeneratorEastMacAddress,
 		config.TrafficGeneratorWestMacAddressParamName:    trafficGeneratorWestMacAddress,
