@@ -69,7 +69,7 @@ func printConfig(checkupConfig config.Config) {
 	log.Printf("%q: %q", config.NetworkAttachmentDefinitionNameParamName, checkupConfig.NetworkAttachmentDefinitionName)
 	log.Printf("%q: %q", config.TrafficGenContainerDiskImageParamName, checkupConfig.TrafficGenContainerDiskImage)
 	log.Printf("%q: %q", config.TrafficGenTargetNodeNameParamName, checkupConfig.TrafficGenTargetNodeName)
-	log.Printf("%q: %q", config.TrafficGeneratorPacketsPerSecondParamName, checkupConfig.TrafficGeneratorPacketsPerSecond)
+	log.Printf("%q: %q", config.TrafficGenPacketsPerSecondParamName, checkupConfig.TrafficGenPacketsPerSecond)
 	log.Printf("%q: %q", "TrafficGeneratorEastMacAddress", checkupConfig.TrafficGeneratorEastMacAddress)
 	log.Printf("%q: %q", "TrafficGeneratorWestMacAddress", checkupConfig.TrafficGeneratorWestMacAddress)
 	log.Printf("%q: %q", config.VMContainerDiskImageParamName, checkupConfig.VMContainerDiskImage)

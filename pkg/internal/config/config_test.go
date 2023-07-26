@@ -38,7 +38,7 @@ const (
 	networkAttachmentDefinitionName  = "intel-dpdk-network1"
 	testTrafficGenContainerDiskImage = "quay.io/ramlavi/kubevirt-dpdk-checkup-traffic-gen:main"
 	testTrafficGenTargetNodeName     = "worker-dpdk1"
-	trafficGeneratorPacketsPerSecond = "6m"
+	testTrafficGenPacketsPerSecond   = "6m"
 	vmContainerDiskImage             = "quay.io/ramlavi/kubevirt-dpdk-checkup-vm:main"
 	dpdkNodeLabelSelector            = "node-role.kubernetes.io/worker-dpdk2"
 	testDuration                     = "30m"
@@ -63,19 +63,19 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 	assert.NotNil(t, actualConfig.DPDKWestMacAddress)
 
 	expectedConfig := config.Config{
-		PodName:                          testPodName,
-		PodUID:                           testPodUID,
-		NetworkAttachmentDefinitionName:  networkAttachmentDefinitionName,
-		TrafficGenContainerDiskImage:     config.TrafficGenDefaultContainerDiskImage,
-		TrafficGeneratorPacketsPerSecond: config.TrafficGeneratorPacketsPerSecondDefault,
-		TrafficGeneratorEastMacAddress:   actualConfig.TrafficGeneratorEastMacAddress,
-		TrafficGeneratorWestMacAddress:   actualConfig.TrafficGeneratorWestMacAddress,
-		VMContainerDiskImage:             config.VMContainerDiskImageDefault,
-		DPDKEastMacAddress:               actualConfig.DPDKEastMacAddress,
-		DPDKWestMacAddress:               actualConfig.DPDKWestMacAddress,
-		TestDuration:                     config.TestDurationDefault,
-		PortBandwidthGB:                  config.PortBandwidthGBDefault,
-		Verbose:                          config.VerboseDefault,
+		PodName:                         testPodName,
+		PodUID:                          testPodUID,
+		NetworkAttachmentDefinitionName: networkAttachmentDefinitionName,
+		TrafficGenContainerDiskImage:    config.TrafficGenDefaultContainerDiskImage,
+		TrafficGenPacketsPerSecond:      config.TrafficGenDefaultPacketsPerSecond,
+		TrafficGeneratorEastMacAddress:  actualConfig.TrafficGeneratorEastMacAddress,
+		TrafficGeneratorWestMacAddress:  actualConfig.TrafficGeneratorWestMacAddress,
+		VMContainerDiskImage:            config.VMContainerDiskImageDefault,
+		DPDKEastMacAddress:              actualConfig.DPDKEastMacAddress,
+		DPDKWestMacAddress:              actualConfig.DPDKWestMacAddress,
+		TestDuration:                    config.TestDurationDefault,
+		PortBandwidthGB:                 config.PortBandwidthGBDefault,
+		Verbose:                         config.VerboseDefault,
 	}
 	assert.Equal(t, expectedConfig, actualConfig)
 }
@@ -92,32 +92,32 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 			"config is valid and both Node Selectors are set",
 			getValidUserParametersWithNodeSelectors(),
 			config.Config{
-				PodName:                          testPodName,
-				PodUID:                           testPodUID,
-				NetworkAttachmentDefinitionName:  networkAttachmentDefinitionName,
-				TrafficGenContainerDiskImage:     testTrafficGenContainerDiskImage,
-				TrafficGenTargetNodeName:         testTrafficGenTargetNodeName,
-				TrafficGeneratorPacketsPerSecond: trafficGeneratorPacketsPerSecond,
-				VMContainerDiskImage:             vmContainerDiskImage,
-				DPDKNodeLabelSelector:            dpdkNodeLabelSelector,
-				TestDuration:                     30 * time.Minute,
-				PortBandwidthGB:                  portBandwidthGB,
-				Verbose:                          true,
+				PodName:                         testPodName,
+				PodUID:                          testPodUID,
+				NetworkAttachmentDefinitionName: networkAttachmentDefinitionName,
+				TrafficGenContainerDiskImage:    testTrafficGenContainerDiskImage,
+				TrafficGenTargetNodeName:        testTrafficGenTargetNodeName,
+				TrafficGenPacketsPerSecond:      testTrafficGenPacketsPerSecond,
+				VMContainerDiskImage:            vmContainerDiskImage,
+				DPDKNodeLabelSelector:           dpdkNodeLabelSelector,
+				TestDuration:                    30 * time.Minute,
+				PortBandwidthGB:                 portBandwidthGB,
+				Verbose:                         true,
 			},
 		},
 		{
 			"config is valid and both Node Selectors are not set",
 			getValidUserParametersWithOutNodeSelectors(),
 			config.Config{
-				PodName:                          testPodName,
-				PodUID:                           testPodUID,
-				NetworkAttachmentDefinitionName:  networkAttachmentDefinitionName,
-				TrafficGenContainerDiskImage:     testTrafficGenContainerDiskImage,
-				TrafficGeneratorPacketsPerSecond: trafficGeneratorPacketsPerSecond,
-				VMContainerDiskImage:             vmContainerDiskImage,
-				TestDuration:                     30 * time.Minute,
-				PortBandwidthGB:                  portBandwidthGB,
-				Verbose:                          true,
+				PodName:                         testPodName,
+				PodUID:                          testPodUID,
+				NetworkAttachmentDefinitionName: networkAttachmentDefinitionName,
+				TrafficGenContainerDiskImage:    testTrafficGenContainerDiskImage,
+				TrafficGenPacketsPerSecond:      testTrafficGenPacketsPerSecond,
+				VMContainerDiskImage:            vmContainerDiskImage,
+				TestDuration:                    30 * time.Minute,
+				PortBandwidthGB:                 portBandwidthGB,
+				Verbose:                         true,
 			},
 		},
 	}
@@ -175,16 +175,16 @@ func TestNewShouldFailWhen(t *testing.T) {
 			expectedError:  config.ErrIllegalLabelSelectorCombination,
 		},
 		{
-			description:    "TrafficGeneratorPacketsPerSecond is invalid",
-			key:            config.TrafficGeneratorPacketsPerSecondParamName,
+			description:    "TrafficGenPacketsPerSecond is invalid",
+			key:            config.TrafficGenPacketsPerSecondParamName,
 			faultyKeyValue: "-14",
-			expectedError:  config.ErrInvalidTrafficGeneratorPacketsPerSecond,
+			expectedError:  config.ErrInvalidTrafficGenPacketsPerSecond,
 		},
 		{
-			description:    "TrafficGeneratorPacketsPerSecond is invalid",
-			key:            config.TrafficGeneratorPacketsPerSecondParamName,
+			description:    "TrafficGenPacketsPerSecond is invalid",
+			key:            config.TrafficGenPacketsPerSecondParamName,
 			faultyKeyValue: "15f",
-			expectedError:  config.ErrInvalidTrafficGeneratorPacketsPerSecond,
+			expectedError:  config.ErrInvalidTrafficGenPacketsPerSecond,
 		},
 		{
 			description:    "TestDuration is invalid",
@@ -240,14 +240,14 @@ func getValidUserParametersWithOutNodeSelectors() map[string]string {
 
 func getValidUserParameters() map[string]string {
 	return map[string]string{
-		config.NetworkAttachmentDefinitionNameParamName:  networkAttachmentDefinitionName,
-		config.TrafficGenContainerDiskImageParamName:     testTrafficGenContainerDiskImage,
-		config.TrafficGenTargetNodeNameParamName:         testTrafficGenTargetNodeName,
-		config.TrafficGeneratorPacketsPerSecondParamName: trafficGeneratorPacketsPerSecond,
-		config.VMContainerDiskImageParamName:             vmContainerDiskImage,
-		config.DPDKNodeLabelSelectorParamName:            dpdkNodeLabelSelector,
-		config.TestDurationParamName:                     testDuration,
-		config.PortBandwidthGBParamName:                  fmt.Sprintf("%d", portBandwidthGB),
-		config.VerboseParamName:                          strconv.FormatBool(true),
+		config.NetworkAttachmentDefinitionNameParamName: networkAttachmentDefinitionName,
+		config.TrafficGenContainerDiskImageParamName:    testTrafficGenContainerDiskImage,
+		config.TrafficGenTargetNodeNameParamName:        testTrafficGenTargetNodeName,
+		config.TrafficGenPacketsPerSecondParamName:      testTrafficGenPacketsPerSecond,
+		config.VMContainerDiskImageParamName:            vmContainerDiskImage,
+		config.DPDKNodeLabelSelectorParamName:           dpdkNodeLabelSelector,
+		config.TestDurationParamName:                    testDuration,
+		config.PortBandwidthGBParamName:                 fmt.Sprintf("%d", portBandwidthGB),
+		config.VerboseParamName:                         strconv.FormatBool(true),
 	}
 }

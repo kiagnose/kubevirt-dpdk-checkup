@@ -438,17 +438,17 @@ func newTestConfig() config.Config {
 	vmiUnderTestEastHWAddress, _ := net.ParseMAC(vmiUnderTestEastMacAddress)
 	vmiUnderTestWestHWAddress, _ := net.ParseMAC(vmiUnderTestWestMacAddress)
 	return config.Config{
-		PodName:                          testPodName,
-		PodUID:                           testPodUID,
-		NetworkAttachmentDefinitionName:  testNetworkAttachmentDefinitionName,
-		TrafficGenTargetNodeName:         "",
-		DPDKNodeLabelSelector:            "",
-		TrafficGeneratorPacketsPerSecond: config.TrafficGeneratorPacketsPerSecondDefault,
-		PortBandwidthGB:                  config.PortBandwidthGBDefault,
-		TrafficGeneratorEastMacAddress:   trafficGeneratorEastHWAddress,
-		TrafficGeneratorWestMacAddress:   trafficGeneratorWestHWAddress,
-		DPDKEastMacAddress:               vmiUnderTestEastHWAddress,
-		DPDKWestMacAddress:               vmiUnderTestWestHWAddress,
-		TestDuration:                     config.TestDurationDefault,
+		PodName:                         testPodName,
+		PodUID:                          testPodUID,
+		NetworkAttachmentDefinitionName: testNetworkAttachmentDefinitionName,
+		TrafficGenTargetNodeName:        "",
+		DPDKNodeLabelSelector:           "",
+		TrafficGenPacketsPerSecond:      config.TrafficGenDefaultPacketsPerSecond,
+		PortBandwidthGB:                 config.PortBandwidthGBDefault,
+		TrafficGeneratorEastMacAddress:  trafficGeneratorEastHWAddress,
+		TrafficGeneratorWestMacAddress:  trafficGeneratorWestHWAddress,
+		DPDKEastMacAddress:              vmiUnderTestEastHWAddress,
+		DPDKWestMacAddress:              vmiUnderTestWestHWAddress,
+		TestDuration:                    config.TestDurationDefault,
 	}
 }

@@ -31,24 +31,24 @@ import (
 )
 
 const (
-	NetworkAttachmentDefinitionNameParamName  = "networkAttachmentDefinitionName"
-	TrafficGenContainerDiskImageParamName     = "trafficGenContainerDiskImage"
-	TrafficGenTargetNodeNameParamName         = "trafficGenTargetNodeName"
-	TrafficGeneratorPacketsPerSecondParamName = "trafficGeneratorPacketsPerSecond"
-	VMContainerDiskImageParamName             = "vmContainerDiskImage"
-	DPDKNodeLabelSelectorParamName            = "DPDKNodeLabelSelector"
-	TestDurationParamName                     = "testDuration"
-	PortBandwidthGBParamName                  = "portBandwidthGB"
-	VerboseParamName                          = "verbose"
+	NetworkAttachmentDefinitionNameParamName = "networkAttachmentDefinitionName"
+	TrafficGenContainerDiskImageParamName    = "trafficGenContainerDiskImage"
+	TrafficGenTargetNodeNameParamName        = "trafficGenTargetNodeName"
+	TrafficGenPacketsPerSecondParamName      = "trafficGenPacketsPerSecond"
+	VMContainerDiskImageParamName            = "vmContainerDiskImage"
+	DPDKNodeLabelSelectorParamName           = "DPDKNodeLabelSelector"
+	TestDurationParamName                    = "testDuration"
+	PortBandwidthGBParamName                 = "portBandwidthGB"
+	VerboseParamName                         = "verbose"
 )
 
 const (
-	TrafficGenDefaultContainerDiskImage     = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main"
-	TrafficGeneratorPacketsPerSecondDefault = "14m"
-	VMContainerDiskImageDefault             = "quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main"
-	TestDurationDefault                     = 5 * time.Minute
-	PortBandwidthGBDefault                  = 10
-	VerboseDefault                          = false
+	TrafficGenDefaultContainerDiskImage = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main"
+	TrafficGenDefaultPacketsPerSecond   = "14m"
+	VMContainerDiskImageDefault         = "quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main"
+	TestDurationDefault                 = 5 * time.Minute
+	PortBandwidthGBDefault              = 10
+	VerboseDefault                      = false
 
 	TrafficGeneratorMacAddressPrefixOctet = 0x50
 	DPDKMacAddressPrefixOctet             = 0x60
@@ -68,28 +68,28 @@ var (
 	ErrInvalidNetworkAttachmentDefinitionName = errors.New("invalid Network-Attachment-Definition Name")
 	ErrIllegalLabelSelectorCombination        = errors.New("illegal Traffic Generator and DPDK Node " +
 		"Label Selector combination")
-	ErrInvalidTrafficGeneratorPacketsPerSecond = errors.New("invalid Traffic Generator Packets Per Second")
-	ErrInvalidTestDuration                     = errors.New("invalid Test Duration")
-	ErrInvalidPortBandwidthGB                  = errors.New("invalid Port Bandwidth [GB]")
-	ErrInvalidVerbose                          = errors.New("invalid Verbose value [true|false]")
+	ErrInvalidTrafficGenPacketsPerSecond = errors.New("invalid Traffic Generator Packets Per Second")
+	ErrInvalidTestDuration               = errors.New("invalid Test Duration")
+	ErrInvalidPortBandwidthGB            = errors.New("invalid Port Bandwidth [GB]")
+	ErrInvalidVerbose                    = errors.New("invalid Verbose value [true|false]")
 )
 
 type Config struct {
-	PodName                          string
-	PodUID                           string
-	NetworkAttachmentDefinitionName  string
-	TrafficGenContainerDiskImage     string
-	TrafficGenTargetNodeName         string
-	TrafficGeneratorPacketsPerSecond string
-	TrafficGeneratorEastMacAddress   net.HardwareAddr
-	TrafficGeneratorWestMacAddress   net.HardwareAddr
-	VMContainerDiskImage             string
-	DPDKNodeLabelSelector            string
-	DPDKEastMacAddress               net.HardwareAddr
-	DPDKWestMacAddress               net.HardwareAddr
-	TestDuration                     time.Duration
-	PortBandwidthGB                  int
-	Verbose                          bool
+	PodName                         string
+	PodUID                          string
+	NetworkAttachmentDefinitionName string
+	TrafficGenContainerDiskImage    string
+	TrafficGenTargetNodeName        string
+	TrafficGenPacketsPerSecond      string
+	TrafficGeneratorEastMacAddress  net.HardwareAddr
+	TrafficGeneratorWestMacAddress  net.HardwareAddr
+	VMContainerDiskImage            string
+	DPDKNodeLabelSelector           string
+	DPDKEastMacAddress              net.HardwareAddr
+	DPDKWestMacAddress              net.HardwareAddr
+	TestDuration                    time.Duration
+	PortBandwidthGB                 int
+	Verbose                         bool
 }
 
 func New(baseConfig kconfig.Config) (Config, error) {
@@ -100,21 +100,21 @@ func New(baseConfig kconfig.Config) (Config, error) {
 	dpdkEastMacAddressDefault := generateMacAddressWithPresetPrefixAndSuffix(DPDKMacAddressPrefixOctet, EastMacAddressSuffixOctet)
 	dpdkWestMacAddressDefault := generateMacAddressWithPresetPrefixAndSuffix(DPDKMacAddressPrefixOctet, WestMacAddressSuffixOctet)
 	newConfig := Config{
-		PodName:                          baseConfig.PodName,
-		PodUID:                           baseConfig.PodUID,
-		NetworkAttachmentDefinitionName:  baseConfig.Params[NetworkAttachmentDefinitionNameParamName],
-		TrafficGenContainerDiskImage:     TrafficGenDefaultContainerDiskImage,
-		TrafficGenTargetNodeName:         baseConfig.Params[TrafficGenTargetNodeNameParamName],
-		TrafficGeneratorPacketsPerSecond: TrafficGeneratorPacketsPerSecondDefault,
-		TrafficGeneratorEastMacAddress:   trafficGeneratorEastMacAddressDefault,
-		TrafficGeneratorWestMacAddress:   trafficGeneratorWestMacAddressDefault,
-		VMContainerDiskImage:             VMContainerDiskImageDefault,
-		DPDKNodeLabelSelector:            baseConfig.Params[DPDKNodeLabelSelectorParamName],
-		DPDKEastMacAddress:               dpdkEastMacAddressDefault,
-		DPDKWestMacAddress:               dpdkWestMacAddressDefault,
-		TestDuration:                     TestDurationDefault,
-		PortBandwidthGB:                  PortBandwidthGBDefault,
-		Verbose:                          VerboseDefault,
+		PodName:                         baseConfig.PodName,
+		PodUID:                          baseConfig.PodUID,
+		NetworkAttachmentDefinitionName: baseConfig.Params[NetworkAttachmentDefinitionNameParamName],
+		TrafficGenContainerDiskImage:    TrafficGenDefaultContainerDiskImage,
+		TrafficGenTargetNodeName:        baseConfig.Params[TrafficGenTargetNodeNameParamName],
+		TrafficGenPacketsPerSecond:      TrafficGenDefaultPacketsPerSecond,
+		TrafficGeneratorEastMacAddress:  trafficGeneratorEastMacAddressDefault,
+		TrafficGeneratorWestMacAddress:  trafficGeneratorWestMacAddressDefault,
+		VMContainerDiskImage:            VMContainerDiskImageDefault,
+		DPDKNodeLabelSelector:           baseConfig.Params[DPDKNodeLabelSelectorParamName],
+		DPDKEastMacAddress:              dpdkEastMacAddressDefault,
+		DPDKWestMacAddress:              dpdkWestMacAddressDefault,
+		TestDuration:                    TestDurationDefault,
+		PortBandwidthGB:                 PortBandwidthGBDefault,
+		Verbose:                         VerboseDefault,
 	}
 
 	if newConfig.NetworkAttachmentDefinitionName == "" {
@@ -136,10 +136,10 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 		newConfig.TrafficGenContainerDiskImage = rawVal
 	}
 
-	if rawVal := baseConfig.Params[TrafficGeneratorPacketsPerSecondParamName]; rawVal != "" {
-		newConfig.TrafficGeneratorPacketsPerSecond, err = parseTrafficGeneratorPacketsPerSecond(rawVal)
+	if rawVal := baseConfig.Params[TrafficGenPacketsPerSecondParamName]; rawVal != "" {
+		newConfig.TrafficGenPacketsPerSecond, err = parseTrafficGenPacketsPerSecond(rawVal)
 		if err != nil {
-			return Config{}, ErrInvalidTrafficGeneratorPacketsPerSecond
+			return Config{}, ErrInvalidTrafficGenPacketsPerSecond
 		}
 	}
 
@@ -171,7 +171,7 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 	return newConfig, nil
 }
 
-func parseTrafficGeneratorPacketsPerSecond(rawVal string) (string, error) {
+func parseTrafficGenPacketsPerSecond(rawVal string) (string, error) {
 	validFormat := regexp.MustCompile(`^[1-9]\d*([km])?$`)
 	if !validFormat.MatchString(rawVal) {
 		return "", errors.New("parameter has invalid format")

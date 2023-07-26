@@ -66,7 +66,7 @@ func New(client vmiSerialConsoleClient, namespace string, cfg config.Config) Exe
 		trafficGenWestMACAddress:         cfg.TrafficGeneratorWestMacAddress.String(),
 		testDuration:                     cfg.TestDuration,
 		verbosePrintsEnabled:             cfg.Verbose,
-		trafficGeneratorPacketsPerSecond: cfg.TrafficGeneratorPacketsPerSecond,
+		trafficGeneratorPacketsPerSecond: cfg.TrafficGenPacketsPerSecond,
 	}
 }
 
