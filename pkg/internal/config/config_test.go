@@ -40,10 +40,10 @@ const (
 	trafficGeneratorImage             = "quay.io/ramlavi/kubevirt-dpdk-checkup-traffic-gen:main"
 	trafficGeneratorNodeLabelSelector = "node-role.kubernetes.io/worker-dpdk1"
 	trafficGeneratorPacketsPerSecond  = "6m"
-	portBandwidthGB                   = 100
-	dpdkNodeLabelSelector             = "node-role.kubernetes.io/worker-dpdk2"
 	trafficGeneratorEastMacAddress    = "DE:AD:BE:EF:00:01"
 	trafficGeneratorWestMacAddress    = "DE:AD:BE:EF:01:00"
+	portBandwidthGB                   = 100
+	dpdkNodeLabelSelector             = "node-role.kubernetes.io/worker-dpdk2"
 	dpdkEastMacAddress                = "DE:AD:BE:EF:00:02"
 	dpdkWestMacAddress                = "DE:AD:BE:EF:02:00"
 	vmContainerDiskImage              = "quay.io/ramlavi/kubevirt-dpdk-checkup-vm:main"
@@ -73,9 +73,9 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		NetworkAttachmentDefinitionName:  networkAttachmentDefinitionName,
 		TrafficGeneratorImage:            config.TrafficGeneratorImageDefault,
 		TrafficGeneratorPacketsPerSecond: config.TrafficGeneratorPacketsPerSecondDefault,
-		PortBandwidthGB:                  config.PortBandwidthGBDefault,
 		TrafficGeneratorEastMacAddress:   actualConfig.TrafficGeneratorEastMacAddress,
 		TrafficGeneratorWestMacAddress:   actualConfig.TrafficGeneratorWestMacAddress,
+		PortBandwidthGB:                  config.PortBandwidthGBDefault,
 		DPDKEastMacAddress:               actualConfig.DPDKEastMacAddress,
 		DPDKWestMacAddress:               actualConfig.DPDKWestMacAddress,
 		VMContainerDiskImage:             config.VMContainerDiskImageDefault,
@@ -109,9 +109,9 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 				TrafficGeneratorImage:             trafficGeneratorImage,
 				TrafficGeneratorNodeLabelSelector: trafficGeneratorNodeLabelSelector,
 				TrafficGeneratorPacketsPerSecond:  trafficGeneratorPacketsPerSecond,
-				DPDKNodeLabelSelector:             dpdkNodeLabelSelector,
 				TrafficGeneratorEastMacAddress:    trafficGeneratorEastHWAddress,
 				TrafficGeneratorWestMacAddress:    trafficGeneratorWestHWAddress,
+				DPDKNodeLabelSelector:             dpdkNodeLabelSelector,
 				DPDKEastMacAddress:                dpdkEastHWAddress,
 				DPDKWestMacAddress:                dpdkWestHWAddress,
 				VMContainerDiskImage:              vmContainerDiskImage,
@@ -195,12 +195,6 @@ func TestNewShouldFailWhen(t *testing.T) {
 			expectedError:  config.ErrInvalidTrafficGeneratorPacketsPerSecond,
 		},
 		{
-			description:    "PortBandwidthGB is invalid",
-			key:            config.PortBandwidthGBParamName,
-			faultyKeyValue: "0",
-			expectedError:  config.ErrInvalidPortBandwidthGB,
-		},
-		{
 			description:    "TrafficGeneratorEastMacAddress is invalid",
 			key:            config.TrafficGeneratorEastMacAddressParamName,
 			faultyKeyValue: "AB:CD:EF:GH:IJ:KH",
@@ -211,6 +205,12 @@ func TestNewShouldFailWhen(t *testing.T) {
 			key:            config.TrafficGeneratorWestMacAddressParamName,
 			faultyKeyValue: "AB:CD:EF:GH:IJ:KH",
 			expectedError:  config.ErrInvalidTrafficGeneratorWestMacAddress,
+		},
+		{
+			description:    "PortBandwidthGB is invalid",
+			key:            config.PortBandwidthGBParamName,
+			faultyKeyValue: "0",
+			expectedError:  config.ErrInvalidPortBandwidthGB,
 		},
 		{
 			description:    "DPDKEastMacAddress is invalid",
@@ -276,10 +276,10 @@ func getValidUserParameters() map[string]string {
 		config.TrafficGeneratorImageParamName:             trafficGeneratorImage,
 		config.TrafficGeneratorNodeLabelSelectorParamName: trafficGeneratorNodeLabelSelector,
 		config.TrafficGeneratorPacketsPerSecondParamName:  trafficGeneratorPacketsPerSecond,
-		config.PortBandwidthGBParamName:                   fmt.Sprintf("%d", portBandwidthGB),
-		config.DPDKNodeLabelSelectorParamName:             dpdkNodeLabelSelector,
 		config.TrafficGeneratorEastMacAddressParamName:    trafficGeneratorEastMacAddress,
 		config.TrafficGeneratorWestMacAddressParamName:    trafficGeneratorWestMacAddress,
+		config.PortBandwidthGBParamName:                   fmt.Sprintf("%d", portBandwidthGB),
+		config.DPDKNodeLabelSelectorParamName:             dpdkNodeLabelSelector,
 		config.DPDKEastMacAddressParamName:                dpdkEastMacAddress,
 		config.DPDKWestMacAddressParamName:                dpdkWestMacAddress,
 		config.VMContainerDiskImageParamName:              vmContainerDiskImage,

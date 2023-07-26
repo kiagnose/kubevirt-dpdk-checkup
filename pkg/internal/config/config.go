@@ -35,10 +35,10 @@ const (
 	TrafficGeneratorImageParamName             = "trafficGeneratorImage"
 	TrafficGeneratorNodeLabelSelectorParamName = "trafficGeneratorNodeLabelSelector"
 	TrafficGeneratorPacketsPerSecondParamName  = "trafficGeneratorPacketsPerSecond"
-	DPDKNodeLabelSelectorParamName             = "DPDKNodeLabelSelector"
-	PortBandwidthGBParamName                   = "portBandwidthGB"
 	TrafficGeneratorEastMacAddressParamName    = "trafficGeneratorEastMacAddress"
 	TrafficGeneratorWestMacAddressParamName    = "trafficGeneratorWestMacAddress"
+	DPDKNodeLabelSelectorParamName             = "DPDKNodeLabelSelector"
+	PortBandwidthGBParamName                   = "portBandwidthGB"
 	DPDKEastMacAddressParamName                = "DPDKEastMacAddress"
 	DPDKWestMacAddressParamName                = "DPDKWestMacAddress"
 	VMContainerDiskImageParamName              = "vmContainerDiskImage"
@@ -73,9 +73,9 @@ var (
 	ErrIllegalLabelSelectorCombination        = errors.New("illegal Traffic Generator and DPDK Node " +
 		"Label Selector combination")
 	ErrInvalidTrafficGeneratorPacketsPerSecond = errors.New("invalid Traffic Generator Packets Per Second")
-	ErrInvalidPortBandwidthGB                  = errors.New("invalid Port Bandwidth [GB]")
 	ErrInvalidTrafficGeneratorEastMacAddress   = errors.New("invalid Traffic Generator East MAC Address")
 	ErrInvalidTrafficGeneratorWestMacAddress   = errors.New("invalid Traffic Generator West MAC Address")
+	ErrInvalidPortBandwidthGB                  = errors.New("invalid Port Bandwidth [GB]")
 	ErrInvalidDPDKEastMacAddress               = errors.New("invalid DPDK East MAC Address")
 	ErrInvalidDPDKWestMacAddress               = errors.New("invalid DPDK West MAC Address")
 	ErrInvalidTestDuration                     = errors.New("invalid Test Duration")
@@ -89,10 +89,10 @@ type Config struct {
 	TrafficGeneratorImage             string
 	TrafficGeneratorNodeLabelSelector string
 	TrafficGeneratorPacketsPerSecond  string
-	DPDKNodeLabelSelector             string
-	PortBandwidthGB                   int
 	TrafficGeneratorEastMacAddress    net.HardwareAddr
 	TrafficGeneratorWestMacAddress    net.HardwareAddr
+	DPDKNodeLabelSelector             string
+	PortBandwidthGB                   int
 	DPDKEastMacAddress                net.HardwareAddr
 	DPDKWestMacAddress                net.HardwareAddr
 	VMContainerDiskImage              string
@@ -114,10 +114,10 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		TrafficGeneratorImage:             TrafficGeneratorImageDefault,
 		TrafficGeneratorNodeLabelSelector: baseConfig.Params[TrafficGeneratorNodeLabelSelectorParamName],
 		TrafficGeneratorPacketsPerSecond:  TrafficGeneratorPacketsPerSecondDefault,
-		DPDKNodeLabelSelector:             baseConfig.Params[DPDKNodeLabelSelectorParamName],
-		PortBandwidthGB:                   PortBandwidthGBDefault,
 		TrafficGeneratorEastMacAddress:    trafficGeneratorEastMacAddressDefault,
 		TrafficGeneratorWestMacAddress:    trafficGeneratorWestMacAddressDefault,
+		DPDKNodeLabelSelector:             baseConfig.Params[DPDKNodeLabelSelectorParamName],
+		PortBandwidthGB:                   PortBandwidthGBDefault,
 		DPDKEastMacAddress:                dpdkEastMacAddressDefault,
 		DPDKWestMacAddress:                dpdkWestMacAddressDefault,
 		VMContainerDiskImage:              VMContainerDiskImageDefault,
