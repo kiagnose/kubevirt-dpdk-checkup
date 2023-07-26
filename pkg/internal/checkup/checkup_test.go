@@ -107,7 +107,7 @@ func TestVMIAffinity(t *testing.T) {
 		testClient := newClientStub()
 		testConfig := newTestConfig()
 		testConfig.DPDKNodeLabelSelector = vmiUnderTestNodeName
-		testConfig.TrafficGeneratorNodeLabelSelector = trafficGenNodeName
+		testConfig.TrafficGenTargetNodeName = trafficGenNodeName
 
 		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
 		assert.NoError(t, testCheckup.Setup(context.Background()))
@@ -438,17 +438,17 @@ func newTestConfig() config.Config {
 	vmiUnderTestEastHWAddress, _ := net.ParseMAC(vmiUnderTestEastMacAddress)
 	vmiUnderTestWestHWAddress, _ := net.ParseMAC(vmiUnderTestWestMacAddress)
 	return config.Config{
-		PodName:                           testPodName,
-		PodUID:                            testPodUID,
-		NetworkAttachmentDefinitionName:   testNetworkAttachmentDefinitionName,
-		TrafficGeneratorNodeLabelSelector: "",
-		DPDKNodeLabelSelector:             "",
-		TrafficGeneratorPacketsPerSecond:  config.TrafficGeneratorPacketsPerSecondDefault,
-		PortBandwidthGB:                   config.PortBandwidthGBDefault,
-		TrafficGeneratorEastMacAddress:    trafficGeneratorEastHWAddress,
-		TrafficGeneratorWestMacAddress:    trafficGeneratorWestHWAddress,
-		DPDKEastMacAddress:                vmiUnderTestEastHWAddress,
-		DPDKWestMacAddress:                vmiUnderTestWestHWAddress,
-		TestDuration:                      config.TestDurationDefault,
+		PodName:                          testPodName,
+		PodUID:                           testPodUID,
+		NetworkAttachmentDefinitionName:  testNetworkAttachmentDefinitionName,
+		TrafficGenTargetNodeName:         "",
+		DPDKNodeLabelSelector:            "",
+		TrafficGeneratorPacketsPerSecond: config.TrafficGeneratorPacketsPerSecondDefault,
+		PortBandwidthGB:                  config.PortBandwidthGBDefault,
+		TrafficGeneratorEastMacAddress:   trafficGeneratorEastHWAddress,
+		TrafficGeneratorWestMacAddress:   trafficGeneratorWestHWAddress,
+		DPDKEastMacAddress:               vmiUnderTestEastHWAddress,
+		DPDKWestMacAddress:               vmiUnderTestWestHWAddress,
+		TestDuration:                     config.TestDurationDefault,
 	}
 }

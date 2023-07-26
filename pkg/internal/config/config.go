@@ -31,15 +31,15 @@ import (
 )
 
 const (
-	NetworkAttachmentDefinitionNameParamName   = "networkAttachmentDefinitionName"
-	TrafficGenContainerDiskImageParamName      = "trafficGenContainerDiskImage"
-	TrafficGeneratorNodeLabelSelectorParamName = "trafficGeneratorNodeLabelSelector"
-	TrafficGeneratorPacketsPerSecondParamName  = "trafficGeneratorPacketsPerSecond"
-	VMContainerDiskImageParamName              = "vmContainerDiskImage"
-	DPDKNodeLabelSelectorParamName             = "DPDKNodeLabelSelector"
-	TestDurationParamName                      = "testDuration"
-	PortBandwidthGBParamName                   = "portBandwidthGB"
-	VerboseParamName                           = "verbose"
+	NetworkAttachmentDefinitionNameParamName  = "networkAttachmentDefinitionName"
+	TrafficGenContainerDiskImageParamName     = "trafficGenContainerDiskImage"
+	TrafficGenTargetNodeNameParamName         = "trafficGenTargetNodeName"
+	TrafficGeneratorPacketsPerSecondParamName = "trafficGeneratorPacketsPerSecond"
+	VMContainerDiskImageParamName             = "vmContainerDiskImage"
+	DPDKNodeLabelSelectorParamName            = "DPDKNodeLabelSelector"
+	TestDurationParamName                     = "testDuration"
+	PortBandwidthGBParamName                  = "portBandwidthGB"
+	VerboseParamName                          = "verbose"
 )
 
 const (
@@ -75,21 +75,21 @@ var (
 )
 
 type Config struct {
-	PodName                           string
-	PodUID                            string
-	NetworkAttachmentDefinitionName   string
-	TrafficGenContainerDiskImage      string
-	TrafficGeneratorNodeLabelSelector string
-	TrafficGeneratorPacketsPerSecond  string
-	TrafficGeneratorEastMacAddress    net.HardwareAddr
-	TrafficGeneratorWestMacAddress    net.HardwareAddr
-	VMContainerDiskImage              string
-	DPDKNodeLabelSelector             string
-	DPDKEastMacAddress                net.HardwareAddr
-	DPDKWestMacAddress                net.HardwareAddr
-	TestDuration                      time.Duration
-	PortBandwidthGB                   int
-	Verbose                           bool
+	PodName                          string
+	PodUID                           string
+	NetworkAttachmentDefinitionName  string
+	TrafficGenContainerDiskImage     string
+	TrafficGenTargetNodeName         string
+	TrafficGeneratorPacketsPerSecond string
+	TrafficGeneratorEastMacAddress   net.HardwareAddr
+	TrafficGeneratorWestMacAddress   net.HardwareAddr
+	VMContainerDiskImage             string
+	DPDKNodeLabelSelector            string
+	DPDKEastMacAddress               net.HardwareAddr
+	DPDKWestMacAddress               net.HardwareAddr
+	TestDuration                     time.Duration
+	PortBandwidthGB                  int
+	Verbose                          bool
 }
 
 func New(baseConfig kconfig.Config) (Config, error) {
@@ -100,29 +100,29 @@ func New(baseConfig kconfig.Config) (Config, error) {
 	dpdkEastMacAddressDefault := generateMacAddressWithPresetPrefixAndSuffix(DPDKMacAddressPrefixOctet, EastMacAddressSuffixOctet)
 	dpdkWestMacAddressDefault := generateMacAddressWithPresetPrefixAndSuffix(DPDKMacAddressPrefixOctet, WestMacAddressSuffixOctet)
 	newConfig := Config{
-		PodName:                           baseConfig.PodName,
-		PodUID:                            baseConfig.PodUID,
-		NetworkAttachmentDefinitionName:   baseConfig.Params[NetworkAttachmentDefinitionNameParamName],
-		TrafficGenContainerDiskImage:      TrafficGenDefaultContainerDiskImage,
-		TrafficGeneratorNodeLabelSelector: baseConfig.Params[TrafficGeneratorNodeLabelSelectorParamName],
-		TrafficGeneratorPacketsPerSecond:  TrafficGeneratorPacketsPerSecondDefault,
-		TrafficGeneratorEastMacAddress:    trafficGeneratorEastMacAddressDefault,
-		TrafficGeneratorWestMacAddress:    trafficGeneratorWestMacAddressDefault,
-		VMContainerDiskImage:              VMContainerDiskImageDefault,
-		DPDKNodeLabelSelector:             baseConfig.Params[DPDKNodeLabelSelectorParamName],
-		DPDKEastMacAddress:                dpdkEastMacAddressDefault,
-		DPDKWestMacAddress:                dpdkWestMacAddressDefault,
-		TestDuration:                      TestDurationDefault,
-		PortBandwidthGB:                   PortBandwidthGBDefault,
-		Verbose:                           VerboseDefault,
+		PodName:                          baseConfig.PodName,
+		PodUID:                           baseConfig.PodUID,
+		NetworkAttachmentDefinitionName:  baseConfig.Params[NetworkAttachmentDefinitionNameParamName],
+		TrafficGenContainerDiskImage:     TrafficGenDefaultContainerDiskImage,
+		TrafficGenTargetNodeName:         baseConfig.Params[TrafficGenTargetNodeNameParamName],
+		TrafficGeneratorPacketsPerSecond: TrafficGeneratorPacketsPerSecondDefault,
+		TrafficGeneratorEastMacAddress:   trafficGeneratorEastMacAddressDefault,
+		TrafficGeneratorWestMacAddress:   trafficGeneratorWestMacAddressDefault,
+		VMContainerDiskImage:             VMContainerDiskImageDefault,
+		DPDKNodeLabelSelector:            baseConfig.Params[DPDKNodeLabelSelectorParamName],
+		DPDKEastMacAddress:               dpdkEastMacAddressDefault,
+		DPDKWestMacAddress:               dpdkWestMacAddressDefault,
+		TestDuration:                     TestDurationDefault,
+		PortBandwidthGB:                  PortBandwidthGBDefault,
+		Verbose:                          VerboseDefault,
 	}
 
 	if newConfig.NetworkAttachmentDefinitionName == "" {
 		return Config{}, ErrInvalidNetworkAttachmentDefinitionName
 	}
 
-	if newConfig.TrafficGeneratorNodeLabelSelector == "" && newConfig.DPDKNodeLabelSelector != "" ||
-		newConfig.TrafficGeneratorNodeLabelSelector != "" && newConfig.DPDKNodeLabelSelector == "" {
+	if newConfig.TrafficGenTargetNodeName == "" && newConfig.DPDKNodeLabelSelector != "" ||
+		newConfig.TrafficGenTargetNodeName != "" && newConfig.DPDKNodeLabelSelector == "" {
 		return Config{}, ErrIllegalLabelSelectorCombination
 	}
 
