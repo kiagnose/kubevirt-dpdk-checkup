@@ -66,12 +66,11 @@ const (
 
 var (
 	ErrInvalidNetworkAttachmentDefinitionName = errors.New("invalid Network-Attachment-Definition Name")
-	ErrIllegalLabelSelectorCombination        = errors.New("illegal Traffic Generator and DPDK Node " +
-		"Label Selector combination")
-	ErrInvalidTrafficGenPacketsPerSecond = errors.New("invalid Traffic Generator Packets Per Second")
-	ErrInvalidTestDuration               = errors.New("invalid Test Duration")
-	ErrInvalidPortBandwidthGbps          = errors.New("invalid Port Bandwidth [Gbps]")
-	ErrInvalidVerbose                    = errors.New("invalid Verbose value [true|false]")
+	ErrIllegalTargetNodeNamesCombination      = errors.New("illegal Traffic Generator and VM under test target node names combination")
+	ErrInvalidTrafficGenPacketsPerSecond      = errors.New("invalid Traffic Generator Packets Per Second")
+	ErrInvalidTestDuration                    = errors.New("invalid Test Duration")
+	ErrInvalidPortBandwidthGbps               = errors.New("invalid Port Bandwidth [Gbps]")
+	ErrInvalidVerbose                         = errors.New("invalid Verbose value [true|false]")
 )
 
 type Config struct {
@@ -137,7 +136,7 @@ func New(baseConfig kconfig.Config) (Config, error) {
 
 	if newConfig.TrafficGenTargetNodeName == "" && newConfig.VMUnderTestTargetNodeName != "" ||
 		newConfig.TrafficGenTargetNodeName != "" && newConfig.VMUnderTestTargetNodeName == "" {
-		return Config{}, ErrIllegalLabelSelectorCombination
+		return Config{}, ErrIllegalTargetNodeNamesCombination
 	}
 
 	return setOptionalParams(baseConfig, newConfig)

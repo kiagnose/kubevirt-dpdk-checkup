@@ -166,13 +166,13 @@ func TestNewShouldFailWhen(t *testing.T) {
 			description:    "trafficGenTargetNodeName is missing and vmUnderTestTargetNodeName is set",
 			key:            config.TrafficGenTargetNodeNameParamName,
 			faultyKeyValue: "",
-			expectedError:  config.ErrIllegalLabelSelectorCombination,
+			expectedError:  config.ErrIllegalTargetNodeNamesCombination,
 		},
 		{
 			description:    "vmUnderTestTargetNodeName is missing and trafficGenTargetNodeName is set",
 			key:            config.VMUnderTestTargetNodeNameParamName,
 			faultyKeyValue: "",
-			expectedError:  config.ErrIllegalLabelSelectorCombination,
+			expectedError:  config.ErrIllegalTargetNodeNamesCombination,
 		},
 		{
 			description:    "TrafficGenPacketsPerSecond is invalid",
