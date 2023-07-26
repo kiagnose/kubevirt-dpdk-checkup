@@ -37,17 +37,17 @@ const (
 	testPodName                       = "my-pod"
 	testPodUID                        = "0123456789-0123456789"
 	networkAttachmentDefinitionName   = "intel-dpdk-network1"
-	portBandwidthGB                   = 100
+	trafficGeneratorImage             = "quay.io/ramlavi/kubevirt-dpdk-checkup-traffic-gen:main"
 	trafficGeneratorNodeLabelSelector = "node-role.kubernetes.io/worker-dpdk1"
 	trafficGeneratorPacketsPerSecond  = "6m"
-	dpdkNodeLabelSelector             = "node-role.kubernetes.io/worker-dpdk2"
 	trafficGeneratorEastMacAddress    = "DE:AD:BE:EF:00:01"
 	trafficGeneratorWestMacAddress    = "DE:AD:BE:EF:01:00"
+	vmContainerDiskImage              = "quay.io/ramlavi/kubevirt-dpdk-checkup-vm:main"
+	dpdkNodeLabelSelector             = "node-role.kubernetes.io/worker-dpdk2"
 	dpdkEastMacAddress                = "DE:AD:BE:EF:00:02"
 	dpdkWestMacAddress                = "DE:AD:BE:EF:02:00"
-	trafficGeneratorImage             = "quay.io/ramlavi/kubevirt-dpdk-checkup-traffic-gen:main"
-	vmContainerDiskImage              = "quay.io/ramlavi/kubevirt-dpdk-checkup-vm:main"
 	testDuration                      = "30m"
+	portBandwidthGB                   = 100
 )
 
 func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
@@ -71,15 +71,15 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		PodName:                          testPodName,
 		PodUID:                           testPodUID,
 		NetworkAttachmentDefinitionName:  networkAttachmentDefinitionName,
+		TrafficGeneratorImage:            config.TrafficGeneratorImageDefault,
 		TrafficGeneratorPacketsPerSecond: config.TrafficGeneratorPacketsPerSecondDefault,
-		PortBandwidthGB:                  config.PortBandwidthGBDefault,
 		TrafficGeneratorEastMacAddress:   actualConfig.TrafficGeneratorEastMacAddress,
 		TrafficGeneratorWestMacAddress:   actualConfig.TrafficGeneratorWestMacAddress,
+		VMContainerDiskImage:             config.VMContainerDiskImageDefault,
 		DPDKEastMacAddress:               actualConfig.DPDKEastMacAddress,
 		DPDKWestMacAddress:               actualConfig.DPDKWestMacAddress,
-		TrafficGeneratorImage:            config.TrafficGeneratorImageDefault,
-		VMContainerDiskImage:             config.VMContainerDiskImageDefault,
 		TestDuration:                     config.TestDurationDefault,
+		PortBandwidthGB:                  config.PortBandwidthGBDefault,
 		Verbose:                          config.VerboseDefault,
 	}
 	assert.Equal(t, expectedConfig, actualConfig)
@@ -104,18 +104,18 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 			config.Config{
 				PodName:                           testPodName,
 				PodUID:                            testPodUID,
-				PortBandwidthGB:                   portBandwidthGB,
 				NetworkAttachmentDefinitionName:   networkAttachmentDefinitionName,
-				TrafficGeneratorPacketsPerSecond:  trafficGeneratorPacketsPerSecond,
+				TrafficGeneratorImage:             trafficGeneratorImage,
 				TrafficGeneratorNodeLabelSelector: trafficGeneratorNodeLabelSelector,
-				DPDKNodeLabelSelector:             dpdkNodeLabelSelector,
+				TrafficGeneratorPacketsPerSecond:  trafficGeneratorPacketsPerSecond,
 				TrafficGeneratorEastMacAddress:    trafficGeneratorEastHWAddress,
 				TrafficGeneratorWestMacAddress:    trafficGeneratorWestHWAddress,
+				VMContainerDiskImage:              vmContainerDiskImage,
+				DPDKNodeLabelSelector:             dpdkNodeLabelSelector,
 				DPDKEastMacAddress:                dpdkEastHWAddress,
 				DPDKWestMacAddress:                dpdkWestHWAddress,
-				TrafficGeneratorImage:             trafficGeneratorImage,
-				VMContainerDiskImage:              vmContainerDiskImage,
 				TestDuration:                      30 * time.Minute,
+				PortBandwidthGB:                   portBandwidthGB,
 				Verbose:                           true,
 			},
 		},
@@ -125,16 +125,16 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 			config.Config{
 				PodName:                          testPodName,
 				PodUID:                           testPodUID,
-				PortBandwidthGB:                  portBandwidthGB,
 				NetworkAttachmentDefinitionName:  networkAttachmentDefinitionName,
+				TrafficGeneratorImage:            trafficGeneratorImage,
 				TrafficGeneratorPacketsPerSecond: trafficGeneratorPacketsPerSecond,
 				TrafficGeneratorEastMacAddress:   trafficGeneratorEastHWAddress,
 				TrafficGeneratorWestMacAddress:   trafficGeneratorWestHWAddress,
+				VMContainerDiskImage:             vmContainerDiskImage,
 				DPDKEastMacAddress:               dpdkEastHWAddress,
 				DPDKWestMacAddress:               dpdkWestHWAddress,
-				TrafficGeneratorImage:            trafficGeneratorImage,
-				VMContainerDiskImage:             vmContainerDiskImage,
 				TestDuration:                     30 * time.Minute,
+				PortBandwidthGB:                  portBandwidthGB,
 				Verbose:                          true,
 			},
 		},
@@ -195,12 +195,6 @@ func TestNewShouldFailWhen(t *testing.T) {
 			expectedError:  config.ErrInvalidTrafficGeneratorPacketsPerSecond,
 		},
 		{
-			description:    "PortBandwidthGB is invalid",
-			key:            config.PortBandwidthGBParamName,
-			faultyKeyValue: "0",
-			expectedError:  config.ErrInvalidPortBandwidthGB,
-		},
-		{
 			description:    "TrafficGeneratorEastMacAddress is invalid",
 			key:            config.TrafficGeneratorEastMacAddressParamName,
 			faultyKeyValue: "AB:CD:EF:GH:IJ:KH",
@@ -229,6 +223,12 @@ func TestNewShouldFailWhen(t *testing.T) {
 			key:            config.TestDurationParamName,
 			faultyKeyValue: "invalid value",
 			expectedError:  config.ErrInvalidTestDuration,
+		},
+		{
+			description:    "PortBandwidthGB is invalid",
+			key:            config.PortBandwidthGBParamName,
+			faultyKeyValue: "0",
+			expectedError:  config.ErrInvalidPortBandwidthGB,
 		},
 		{
 			description:    "Verbose is invalid",
@@ -273,17 +273,17 @@ func getValidUserParametersWithOutNodeSelectors() map[string]string {
 func getValidUserParameters() map[string]string {
 	return map[string]string{
 		config.NetworkAttachmentDefinitionNameParamName:   networkAttachmentDefinitionName,
-		config.PortBandwidthGBParamName:                   fmt.Sprintf("%d", portBandwidthGB),
+		config.TrafficGeneratorImageParamName:             trafficGeneratorImage,
 		config.TrafficGeneratorNodeLabelSelectorParamName: trafficGeneratorNodeLabelSelector,
 		config.TrafficGeneratorPacketsPerSecondParamName:  trafficGeneratorPacketsPerSecond,
-		config.DPDKNodeLabelSelectorParamName:             dpdkNodeLabelSelector,
 		config.TrafficGeneratorEastMacAddressParamName:    trafficGeneratorEastMacAddress,
 		config.TrafficGeneratorWestMacAddressParamName:    trafficGeneratorWestMacAddress,
+		config.VMContainerDiskImageParamName:              vmContainerDiskImage,
+		config.DPDKNodeLabelSelectorParamName:             dpdkNodeLabelSelector,
 		config.DPDKEastMacAddressParamName:                dpdkEastMacAddress,
 		config.DPDKWestMacAddressParamName:                dpdkWestMacAddress,
-		config.TrafficGeneratorImageParamName:             trafficGeneratorImage,
-		config.VMContainerDiskImageParamName:              vmContainerDiskImage,
 		config.TestDurationParamName:                      testDuration,
+		config.PortBandwidthGBParamName:                   fmt.Sprintf("%d", portBandwidthGB),
 		config.VerboseParamName:                           strconv.FormatBool(true),
 	}
 }
