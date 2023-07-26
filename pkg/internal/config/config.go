@@ -32,6 +32,7 @@ import (
 
 const (
 	NetworkAttachmentDefinitionNameParamName   = "networkAttachmentDefinitionName"
+	TrafficGeneratorImageParamName             = "trafficGeneratorImage"
 	TrafficGeneratorNodeLabelSelectorParamName = "trafficGeneratorNodeLabelSelector"
 	DPDKNodeLabelSelectorParamName             = "DPDKNodeLabelSelector"
 	TrafficGeneratorPacketsPerSecondParamName  = "trafficGeneratorPacketsPerSecond"
@@ -40,16 +41,15 @@ const (
 	TrafficGeneratorWestMacAddressParamName    = "trafficGeneratorWestMacAddress"
 	DPDKEastMacAddressParamName                = "DPDKEastMacAddress"
 	DPDKWestMacAddressParamName                = "DPDKWestMacAddress"
-	TrafficGeneratorImageParamName             = "trafficGeneratorImage"
 	VMContainerDiskImageParamName              = "vmContainerDiskImage"
 	TestDurationParamName                      = "testDuration"
 	VerboseParamName                           = "verbose"
 )
 
 const (
+	TrafficGeneratorImageDefault            = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main"
 	TrafficGeneratorPacketsPerSecondDefault = "14m"
 	PortBandwidthGBDefault                  = 10
-	TrafficGeneratorImageDefault            = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main"
 	VMContainerDiskImageDefault             = "quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main"
 	TestDurationDefault                     = 5 * time.Minute
 	VerboseDefault                          = false
@@ -86,6 +86,7 @@ type Config struct {
 	PodName                           string
 	PodUID                            string
 	NetworkAttachmentDefinitionName   string
+	TrafficGeneratorImage             string
 	TrafficGeneratorNodeLabelSelector string
 	DPDKNodeLabelSelector             string
 	TrafficGeneratorPacketsPerSecond  string
@@ -94,7 +95,6 @@ type Config struct {
 	TrafficGeneratorWestMacAddress    net.HardwareAddr
 	DPDKEastMacAddress                net.HardwareAddr
 	DPDKWestMacAddress                net.HardwareAddr
-	TrafficGeneratorImage             string
 	VMContainerDiskImage              string
 	TestDuration                      time.Duration
 	Verbose                           bool
@@ -111,6 +111,7 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		PodName:                           baseConfig.PodName,
 		PodUID:                            baseConfig.PodUID,
 		NetworkAttachmentDefinitionName:   baseConfig.Params[NetworkAttachmentDefinitionNameParamName],
+		TrafficGeneratorImage:             TrafficGeneratorImageDefault,
 		TrafficGeneratorNodeLabelSelector: baseConfig.Params[TrafficGeneratorNodeLabelSelectorParamName],
 		DPDKNodeLabelSelector:             baseConfig.Params[DPDKNodeLabelSelectorParamName],
 		TrafficGeneratorPacketsPerSecond:  TrafficGeneratorPacketsPerSecondDefault,
@@ -119,7 +120,6 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		TrafficGeneratorWestMacAddress:    trafficGeneratorWestMacAddressDefault,
 		DPDKEastMacAddress:                dpdkEastMacAddressDefault,
 		DPDKWestMacAddress:                dpdkWestMacAddressDefault,
-		TrafficGeneratorImage:             TrafficGeneratorImageDefault,
 		VMContainerDiskImage:              VMContainerDiskImageDefault,
 		TestDuration:                      TestDurationDefault,
 		Verbose:                           VerboseDefault,
@@ -139,6 +139,10 @@ func New(baseConfig kconfig.Config) (Config, error) {
 
 func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, error) {
 	var err error
+
+	if rawVal := baseConfig.Params[TrafficGeneratorImageParamName]; rawVal != "" {
+		newConfig.TrafficGeneratorImage = rawVal
+	}
 
 	if rawVal := baseConfig.Params[VerboseParamName]; rawVal != "" {
 		newConfig.Verbose, err = strconv.ParseBool(rawVal)
@@ -164,10 +168,6 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 	newConfig, err = setMacAddressParams(baseConfig, newConfig)
 	if err != nil {
 		return Config{}, err
-	}
-
-	if rawVal := baseConfig.Params[TrafficGeneratorImageParamName]; rawVal != "" {
-		newConfig.TrafficGeneratorImage = rawVal
 	}
 
 	if rawVal := baseConfig.Params[VMContainerDiskImageParamName]; rawVal != "" {
