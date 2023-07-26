@@ -61,8 +61,8 @@ func NewConfig(cfg config.Config) Config {
 		trafficCPUs:                    trafficCPUs,
 		numOfTrafficCPUs:               numOfTrafficCPUs,
 		portBandwidthGB:                fmt.Sprintf("%d", cfg.PortBandwidthGB),
-		trafficGeneratorEastMacAddress: cfg.TrafficGeneratorEastMacAddress.String(),
-		trafficGeneratorWestMacAddress: cfg.TrafficGeneratorWestMacAddress.String(),
+		trafficGeneratorEastMacAddress: cfg.TrafficGenEastMacAddress.String(),
+		trafficGeneratorWestMacAddress: cfg.TrafficGenWestMacAddress.String(),
 		DPDKEastMacAddress:             cfg.DPDKEastMacAddress.String(),
 		DPDKWestMacAddress:             cfg.DPDKWestMacAddress.String(),
 	}

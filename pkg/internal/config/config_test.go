@@ -57,8 +57,8 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 	actualConfig, err := config.New(baseConfig)
 	assert.NoError(t, err)
 
-	assert.NotNil(t, actualConfig.TrafficGeneratorEastMacAddress)
-	assert.NotNil(t, actualConfig.TrafficGeneratorWestMacAddress)
+	assert.NotNil(t, actualConfig.TrafficGenEastMacAddress)
+	assert.NotNil(t, actualConfig.TrafficGenWestMacAddress)
 	assert.NotNil(t, actualConfig.DPDKEastMacAddress)
 	assert.NotNil(t, actualConfig.DPDKWestMacAddress)
 
@@ -68,8 +68,8 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		NetworkAttachmentDefinitionName: networkAttachmentDefinitionName,
 		TrafficGenContainerDiskImage:    config.TrafficGenDefaultContainerDiskImage,
 		TrafficGenPacketsPerSecond:      config.TrafficGenDefaultPacketsPerSecond,
-		TrafficGeneratorEastMacAddress:  actualConfig.TrafficGeneratorEastMacAddress,
-		TrafficGeneratorWestMacAddress:  actualConfig.TrafficGeneratorWestMacAddress,
+		TrafficGenEastMacAddress:        actualConfig.TrafficGenEastMacAddress,
+		TrafficGenWestMacAddress:        actualConfig.TrafficGenWestMacAddress,
 		VMContainerDiskImage:            config.VMContainerDiskImageDefault,
 		DPDKEastMacAddress:              actualConfig.DPDKEastMacAddress,
 		DPDKWestMacAddress:              actualConfig.DPDKWestMacAddress,
@@ -132,13 +132,13 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 
 			actualConfig, err := config.New(baseConfig)
 			assert.NoError(t, err)
-			assert.NotNil(t, actualConfig.TrafficGeneratorEastMacAddress)
-			assert.NotNil(t, actualConfig.TrafficGeneratorWestMacAddress)
+			assert.NotNil(t, actualConfig.TrafficGenEastMacAddress)
+			assert.NotNil(t, actualConfig.TrafficGenWestMacAddress)
 			assert.NotNil(t, actualConfig.DPDKEastMacAddress)
 			assert.NotNil(t, actualConfig.DPDKWestMacAddress)
 
-			testCase.expectedConfig.TrafficGeneratorEastMacAddress = actualConfig.TrafficGeneratorEastMacAddress
-			testCase.expectedConfig.TrafficGeneratorWestMacAddress = actualConfig.TrafficGeneratorWestMacAddress
+			testCase.expectedConfig.TrafficGenEastMacAddress = actualConfig.TrafficGenEastMacAddress
+			testCase.expectedConfig.TrafficGenWestMacAddress = actualConfig.TrafficGenWestMacAddress
 			testCase.expectedConfig.DPDKEastMacAddress = actualConfig.DPDKEastMacAddress
 			testCase.expectedConfig.DPDKWestMacAddress = actualConfig.DPDKWestMacAddress
 

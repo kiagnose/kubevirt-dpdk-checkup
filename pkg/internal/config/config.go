@@ -50,10 +50,10 @@ const (
 	PortBandwidthGBDefault              = 10
 	VerboseDefault                      = false
 
-	TrafficGeneratorMacAddressPrefixOctet = 0x50
-	DPDKMacAddressPrefixOctet             = 0x60
-	EastMacAddressSuffixOctet             = 0x01
-	WestMacAddressSuffixOctet             = 0x02
+	TrafficGenMACAddressPrefixOctet = 0x50
+	DPDKMacAddressPrefixOctet       = 0x60
+	EastMACAddressSuffixOctet       = 0x01
+	WestMACAddressSuffixOctet       = 0x02
 )
 
 const (
@@ -81,8 +81,8 @@ type Config struct {
 	TrafficGenContainerDiskImage    string
 	TrafficGenTargetNodeName        string
 	TrafficGenPacketsPerSecond      string
-	TrafficGeneratorEastMacAddress  net.HardwareAddr
-	TrafficGeneratorWestMacAddress  net.HardwareAddr
+	TrafficGenEastMacAddress        net.HardwareAddr
+	TrafficGenWestMacAddress        net.HardwareAddr
 	VMContainerDiskImage            string
 	DPDKNodeLabelSelector           string
 	DPDKEastMacAddress              net.HardwareAddr
@@ -93,12 +93,18 @@ type Config struct {
 }
 
 func New(baseConfig kconfig.Config) (Config, error) {
-	trafficGeneratorEastMacAddressDefault := generateMacAddressWithPresetPrefixAndSuffix(
-		TrafficGeneratorMacAddressPrefixOctet, EastMacAddressSuffixOctet)
-	trafficGeneratorWestMacAddressDefault := generateMacAddressWithPresetPrefixAndSuffix(
-		TrafficGeneratorMacAddressPrefixOctet, WestMacAddressSuffixOctet)
-	dpdkEastMacAddressDefault := generateMacAddressWithPresetPrefixAndSuffix(DPDKMacAddressPrefixOctet, EastMacAddressSuffixOctet)
-	dpdkWestMacAddressDefault := generateMacAddressWithPresetPrefixAndSuffix(DPDKMacAddressPrefixOctet, WestMacAddressSuffixOctet)
+	trafficGenEastMacAddress := generateMacAddressWithPresetPrefixAndSuffix(
+		TrafficGenMACAddressPrefixOctet,
+		EastMACAddressSuffixOctet,
+	)
+
+	trafficGenWestMacAddress := generateMacAddressWithPresetPrefixAndSuffix(
+		TrafficGenMACAddressPrefixOctet,
+		WestMACAddressSuffixOctet,
+	)
+
+	dpdkEastMacAddressDefault := generateMacAddressWithPresetPrefixAndSuffix(DPDKMacAddressPrefixOctet, EastMACAddressSuffixOctet)
+	dpdkWestMacAddressDefault := generateMacAddressWithPresetPrefixAndSuffix(DPDKMacAddressPrefixOctet, WestMACAddressSuffixOctet)
 	newConfig := Config{
 		PodName:                         baseConfig.PodName,
 		PodUID:                          baseConfig.PodUID,
@@ -106,8 +112,8 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		TrafficGenContainerDiskImage:    TrafficGenDefaultContainerDiskImage,
 		TrafficGenTargetNodeName:        baseConfig.Params[TrafficGenTargetNodeNameParamName],
 		TrafficGenPacketsPerSecond:      TrafficGenDefaultPacketsPerSecond,
-		TrafficGeneratorEastMacAddress:  trafficGeneratorEastMacAddressDefault,
-		TrafficGeneratorWestMacAddress:  trafficGeneratorWestMacAddressDefault,
+		TrafficGenEastMacAddress:        trafficGenEastMacAddress,
+		TrafficGenWestMacAddress:        trafficGenWestMacAddress,
 		VMContainerDiskImage:            VMContainerDiskImageDefault,
 		DPDKNodeLabelSelector:           baseConfig.Params[DPDKNodeLabelSelectorParamName],
 		DPDKEastMacAddress:              dpdkEastMacAddressDefault,

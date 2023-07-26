@@ -75,8 +75,8 @@ func newTrafficGen(name string, checkupConfig config.Config, configMapName strin
 
 	optionsToApply = append(optionsToApply,
 		vmi.WithAffinity(Affinity(checkupConfig.TrafficGenTargetNodeName, checkupConfig.PodUID)),
-		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.TrafficGeneratorEastMacAddress.String(), config.VMIEastNICPCIAddress),
-		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.TrafficGeneratorWestMacAddress.String(), config.VMIWestNICPCIAddress),
+		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.TrafficGenEastMacAddress.String(), config.VMIEastNICPCIAddress),
+		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.TrafficGenWestMacAddress.String(), config.VMIWestNICPCIAddress),
 		vmi.WithContainerDisk(rootDiskName, checkupConfig.TrafficGenContainerDiskImage),
 		vmi.WithCloudInitNoCloudVolume(
 			cloudInitDiskName,
