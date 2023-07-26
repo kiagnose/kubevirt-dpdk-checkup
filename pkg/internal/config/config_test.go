@@ -42,11 +42,11 @@ const (
 	trafficGeneratorPacketsPerSecond  = "6m"
 	trafficGeneratorEastMacAddress    = "DE:AD:BE:EF:00:01"
 	trafficGeneratorWestMacAddress    = "DE:AD:BE:EF:01:00"
+	vmContainerDiskImage              = "quay.io/ramlavi/kubevirt-dpdk-checkup-vm:main"
 	portBandwidthGB                   = 100
 	dpdkNodeLabelSelector             = "node-role.kubernetes.io/worker-dpdk2"
 	dpdkEastMacAddress                = "DE:AD:BE:EF:00:02"
 	dpdkWestMacAddress                = "DE:AD:BE:EF:02:00"
-	vmContainerDiskImage              = "quay.io/ramlavi/kubevirt-dpdk-checkup-vm:main"
 	testDuration                      = "30m"
 )
 
@@ -75,10 +75,10 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		TrafficGeneratorPacketsPerSecond: config.TrafficGeneratorPacketsPerSecondDefault,
 		TrafficGeneratorEastMacAddress:   actualConfig.TrafficGeneratorEastMacAddress,
 		TrafficGeneratorWestMacAddress:   actualConfig.TrafficGeneratorWestMacAddress,
+		VMContainerDiskImage:             config.VMContainerDiskImageDefault,
 		PortBandwidthGB:                  config.PortBandwidthGBDefault,
 		DPDKEastMacAddress:               actualConfig.DPDKEastMacAddress,
 		DPDKWestMacAddress:               actualConfig.DPDKWestMacAddress,
-		VMContainerDiskImage:             config.VMContainerDiskImageDefault,
 		TestDuration:                     config.TestDurationDefault,
 		Verbose:                          config.VerboseDefault,
 	}
@@ -111,10 +111,10 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 				TrafficGeneratorPacketsPerSecond:  trafficGeneratorPacketsPerSecond,
 				TrafficGeneratorEastMacAddress:    trafficGeneratorEastHWAddress,
 				TrafficGeneratorWestMacAddress:    trafficGeneratorWestHWAddress,
+				VMContainerDiskImage:              vmContainerDiskImage,
 				DPDKNodeLabelSelector:             dpdkNodeLabelSelector,
 				DPDKEastMacAddress:                dpdkEastHWAddress,
 				DPDKWestMacAddress:                dpdkWestHWAddress,
-				VMContainerDiskImage:              vmContainerDiskImage,
 				TestDuration:                      30 * time.Minute,
 				Verbose:                           true,
 			},
@@ -131,9 +131,9 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 				TrafficGeneratorPacketsPerSecond: trafficGeneratorPacketsPerSecond,
 				TrafficGeneratorEastMacAddress:   trafficGeneratorEastHWAddress,
 				TrafficGeneratorWestMacAddress:   trafficGeneratorWestHWAddress,
+				VMContainerDiskImage:             vmContainerDiskImage,
 				DPDKEastMacAddress:               dpdkEastHWAddress,
 				DPDKWestMacAddress:               dpdkWestHWAddress,
-				VMContainerDiskImage:             vmContainerDiskImage,
 				TestDuration:                     30 * time.Minute,
 				Verbose:                          true,
 			},
@@ -278,11 +278,11 @@ func getValidUserParameters() map[string]string {
 		config.TrafficGeneratorPacketsPerSecondParamName:  trafficGeneratorPacketsPerSecond,
 		config.TrafficGeneratorEastMacAddressParamName:    trafficGeneratorEastMacAddress,
 		config.TrafficGeneratorWestMacAddressParamName:    trafficGeneratorWestMacAddress,
+		config.VMContainerDiskImageParamName:              vmContainerDiskImage,
 		config.PortBandwidthGBParamName:                   fmt.Sprintf("%d", portBandwidthGB),
 		config.DPDKNodeLabelSelectorParamName:             dpdkNodeLabelSelector,
 		config.DPDKEastMacAddressParamName:                dpdkEastMacAddress,
 		config.DPDKWestMacAddressParamName:                dpdkWestMacAddress,
-		config.VMContainerDiskImageParamName:              vmContainerDiskImage,
 		config.TestDurationParamName:                      testDuration,
 		config.VerboseParamName:                           strconv.FormatBool(true),
 	}

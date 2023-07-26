@@ -37,11 +37,11 @@ const (
 	TrafficGeneratorPacketsPerSecondParamName  = "trafficGeneratorPacketsPerSecond"
 	TrafficGeneratorEastMacAddressParamName    = "trafficGeneratorEastMacAddress"
 	TrafficGeneratorWestMacAddressParamName    = "trafficGeneratorWestMacAddress"
+	VMContainerDiskImageParamName              = "vmContainerDiskImage"
 	DPDKNodeLabelSelectorParamName             = "DPDKNodeLabelSelector"
 	PortBandwidthGBParamName                   = "portBandwidthGB"
 	DPDKEastMacAddressParamName                = "DPDKEastMacAddress"
 	DPDKWestMacAddressParamName                = "DPDKWestMacAddress"
-	VMContainerDiskImageParamName              = "vmContainerDiskImage"
 	TestDurationParamName                      = "testDuration"
 	VerboseParamName                           = "verbose"
 )
@@ -49,8 +49,8 @@ const (
 const (
 	TrafficGeneratorImageDefault            = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main"
 	TrafficGeneratorPacketsPerSecondDefault = "14m"
-	PortBandwidthGBDefault                  = 10
 	VMContainerDiskImageDefault             = "quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main"
+	PortBandwidthGBDefault                  = 10
 	TestDurationDefault                     = 5 * time.Minute
 	VerboseDefault                          = false
 
@@ -91,11 +91,11 @@ type Config struct {
 	TrafficGeneratorPacketsPerSecond  string
 	TrafficGeneratorEastMacAddress    net.HardwareAddr
 	TrafficGeneratorWestMacAddress    net.HardwareAddr
+	VMContainerDiskImage              string
 	DPDKNodeLabelSelector             string
 	PortBandwidthGB                   int
 	DPDKEastMacAddress                net.HardwareAddr
 	DPDKWestMacAddress                net.HardwareAddr
-	VMContainerDiskImage              string
 	TestDuration                      time.Duration
 	Verbose                           bool
 }
@@ -116,11 +116,11 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		TrafficGeneratorPacketsPerSecond:  TrafficGeneratorPacketsPerSecondDefault,
 		TrafficGeneratorEastMacAddress:    trafficGeneratorEastMacAddressDefault,
 		TrafficGeneratorWestMacAddress:    trafficGeneratorWestMacAddressDefault,
+		VMContainerDiskImage:              VMContainerDiskImageDefault,
 		DPDKNodeLabelSelector:             baseConfig.Params[DPDKNodeLabelSelectorParamName],
 		PortBandwidthGB:                   PortBandwidthGBDefault,
 		DPDKEastMacAddress:                dpdkEastMacAddressDefault,
 		DPDKWestMacAddress:                dpdkWestMacAddressDefault,
-		VMContainerDiskImage:              VMContainerDiskImageDefault,
 		TestDuration:                      TestDurationDefault,
 		Verbose:                           VerboseDefault,
 	}
@@ -151,6 +151,10 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 		}
 	}
 
+	if rawVal := baseConfig.Params[VMContainerDiskImageParamName]; rawVal != "" {
+		newConfig.VMContainerDiskImage = rawVal
+	}
+
 	if rawVal := baseConfig.Params[VerboseParamName]; rawVal != "" {
 		newConfig.Verbose, err = strconv.ParseBool(rawVal)
 		if err != nil {
@@ -168,10 +172,6 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 	newConfig, err = setMacAddressParams(baseConfig, newConfig)
 	if err != nil {
 		return Config{}, err
-	}
-
-	if rawVal := baseConfig.Params[VMContainerDiskImageParamName]; rawVal != "" {
-		newConfig.VMContainerDiskImage = rawVal
 	}
 
 	if rawVal := baseConfig.Params[TestDurationParamName]; rawVal != "" {
