@@ -73,7 +73,7 @@ func printConfig(checkupConfig config.Config) {
 	log.Printf("%q: %q", "TrafficGenEastMacAddress", checkupConfig.TrafficGenEastMacAddress)
 	log.Printf("%q: %q", "TrafficGenWestMacAddress", checkupConfig.TrafficGenWestMacAddress)
 	log.Printf("%q: %q", config.VMUnderTestContainerDiskImageParamName, checkupConfig.VMUnderTestContainerDiskImage)
-	log.Printf("%q: %q", config.DPDKNodeLabelSelectorParamName, checkupConfig.DPDKNodeLabelSelector)
+	log.Printf("%q: %q", config.VMUnderTestTargetNodeNameParamName, checkupConfig.VMUnderTestTargetNodeName)
 	log.Printf("%q: %q", "DPDKEastMacAddress", checkupConfig.DPDKEastMacAddress)
 	log.Printf("%q: %q", "DPDKWestMacAddress", checkupConfig.DPDKWestMacAddress)
 	log.Printf("%q: %q", config.TestDurationParamName, checkupConfig.TestDuration)

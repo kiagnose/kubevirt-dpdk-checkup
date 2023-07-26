@@ -57,7 +57,7 @@ func newVMIUnderTest(name string, checkupConfig config.Config) *kvcorev1.Virtual
 	optionsToApply := baseOptions(checkupConfig)
 
 	optionsToApply = append(optionsToApply,
-		vmi.WithAffinity(Affinity(checkupConfig.DPDKNodeLabelSelector, checkupConfig.PodUID)),
+		vmi.WithAffinity(Affinity(checkupConfig.VMUnderTestTargetNodeName, checkupConfig.PodUID)),
 		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.DPDKEastMacAddress.String(), config.VMIEastNICPCIAddress),
 		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.DPDKWestMacAddress.String(), config.VMIWestNICPCIAddress),
 		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMUnderTestContainerDiskImage),

@@ -36,7 +36,7 @@ const (
 	TrafficGenTargetNodeNameParamName        = "trafficGenTargetNodeName"
 	TrafficGenPacketsPerSecondParamName      = "trafficGenPacketsPerSecond"
 	VMUnderTestContainerDiskImageParamName   = "vmUnderTestContainerDiskImage"
-	DPDKNodeLabelSelectorParamName           = "DPDKNodeLabelSelector"
+	VMUnderTestTargetNodeNameParamName       = "vmUnderTestTargetNodeName"
 	TestDurationParamName                    = "testDuration"
 	PortBandwidthGBParamName                 = "portBandwidthGB"
 	VerboseParamName                         = "verbose"
@@ -84,7 +84,7 @@ type Config struct {
 	TrafficGenEastMacAddress        net.HardwareAddr
 	TrafficGenWestMacAddress        net.HardwareAddr
 	VMUnderTestContainerDiskImage   string
-	DPDKNodeLabelSelector           string
+	VMUnderTestTargetNodeName       string
 	DPDKEastMacAddress              net.HardwareAddr
 	DPDKWestMacAddress              net.HardwareAddr
 	TestDuration                    time.Duration
@@ -115,7 +115,7 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		TrafficGenEastMacAddress:        trafficGenEastMacAddress,
 		TrafficGenWestMacAddress:        trafficGenWestMacAddress,
 		VMUnderTestContainerDiskImage:   VMUnderTestDefaultContainerDiskImage,
-		DPDKNodeLabelSelector:           baseConfig.Params[DPDKNodeLabelSelectorParamName],
+		VMUnderTestTargetNodeName:       baseConfig.Params[VMUnderTestTargetNodeNameParamName],
 		DPDKEastMacAddress:              dpdkEastMacAddressDefault,
 		DPDKWestMacAddress:              dpdkWestMacAddressDefault,
 		TestDuration:                    TestDurationDefault,
@@ -127,8 +127,8 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		return Config{}, ErrInvalidNetworkAttachmentDefinitionName
 	}
 
-	if newConfig.TrafficGenTargetNodeName == "" && newConfig.DPDKNodeLabelSelector != "" ||
-		newConfig.TrafficGenTargetNodeName != "" && newConfig.DPDKNodeLabelSelector == "" {
+	if newConfig.TrafficGenTargetNodeName == "" && newConfig.VMUnderTestTargetNodeName != "" ||
+		newConfig.TrafficGenTargetNodeName != "" && newConfig.VMUnderTestTargetNodeName == "" {
 		return Config{}, ErrIllegalLabelSelectorCombination
 	}
 

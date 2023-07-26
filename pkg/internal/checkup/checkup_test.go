@@ -106,7 +106,7 @@ func TestVMIAffinity(t *testing.T) {
 
 		testClient := newClientStub()
 		testConfig := newTestConfig()
-		testConfig.DPDKNodeLabelSelector = vmiUnderTestNodeName
+		testConfig.VMUnderTestTargetNodeName = vmiUnderTestNodeName
 		testConfig.TrafficGenTargetNodeName = trafficGenNodeName
 
 		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
@@ -442,7 +442,7 @@ func newTestConfig() config.Config {
 		PodUID:                          testPodUID,
 		NetworkAttachmentDefinitionName: testNetworkAttachmentDefinitionName,
 		TrafficGenTargetNodeName:        "",
-		DPDKNodeLabelSelector:           "",
+		VMUnderTestTargetNodeName:       "",
 		TrafficGenPacketsPerSecond:      config.TrafficGenDefaultPacketsPerSecond,
 		PortBandwidthGB:                 config.PortBandwidthGBDefault,
 		TrafficGenEastMacAddress:        trafficGeneratorEastHWAddress,
