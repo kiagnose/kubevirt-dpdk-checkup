@@ -36,7 +36,7 @@ const (
 	testPodName                       = "my-pod"
 	testPodUID                        = "0123456789-0123456789"
 	networkAttachmentDefinitionName   = "intel-dpdk-network1"
-	trafficGeneratorImage             = "quay.io/ramlavi/kubevirt-dpdk-checkup-traffic-gen:main"
+	testTrafficGenContainerDiskImage  = "quay.io/ramlavi/kubevirt-dpdk-checkup-traffic-gen:main"
 	trafficGeneratorNodeLabelSelector = "node-role.kubernetes.io/worker-dpdk1"
 	trafficGeneratorPacketsPerSecond  = "6m"
 	vmContainerDiskImage              = "quay.io/ramlavi/kubevirt-dpdk-checkup-vm:main"
@@ -66,7 +66,7 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		PodName:                          testPodName,
 		PodUID:                           testPodUID,
 		NetworkAttachmentDefinitionName:  networkAttachmentDefinitionName,
-		TrafficGeneratorImage:            config.TrafficGeneratorImageDefault,
+		TrafficGenContainerDiskImage:     config.TrafficGenDefaultContainerDiskImage,
 		TrafficGeneratorPacketsPerSecond: config.TrafficGeneratorPacketsPerSecondDefault,
 		TrafficGeneratorEastMacAddress:   actualConfig.TrafficGeneratorEastMacAddress,
 		TrafficGeneratorWestMacAddress:   actualConfig.TrafficGeneratorWestMacAddress,
@@ -95,7 +95,7 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 				PodName:                           testPodName,
 				PodUID:                            testPodUID,
 				NetworkAttachmentDefinitionName:   networkAttachmentDefinitionName,
-				TrafficGeneratorImage:             trafficGeneratorImage,
+				TrafficGenContainerDiskImage:      testTrafficGenContainerDiskImage,
 				TrafficGeneratorNodeLabelSelector: trafficGeneratorNodeLabelSelector,
 				TrafficGeneratorPacketsPerSecond:  trafficGeneratorPacketsPerSecond,
 				VMContainerDiskImage:              vmContainerDiskImage,
@@ -112,7 +112,7 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 				PodName:                          testPodName,
 				PodUID:                           testPodUID,
 				NetworkAttachmentDefinitionName:  networkAttachmentDefinitionName,
-				TrafficGeneratorImage:            trafficGeneratorImage,
+				TrafficGenContainerDiskImage:     testTrafficGenContainerDiskImage,
 				TrafficGeneratorPacketsPerSecond: trafficGeneratorPacketsPerSecond,
 				VMContainerDiskImage:             vmContainerDiskImage,
 				TestDuration:                     30 * time.Minute,
@@ -241,7 +241,7 @@ func getValidUserParametersWithOutNodeSelectors() map[string]string {
 func getValidUserParameters() map[string]string {
 	return map[string]string{
 		config.NetworkAttachmentDefinitionNameParamName:   networkAttachmentDefinitionName,
-		config.TrafficGeneratorImageParamName:             trafficGeneratorImage,
+		config.TrafficGenContainerDiskImageParamName:      testTrafficGenContainerDiskImage,
 		config.TrafficGeneratorNodeLabelSelectorParamName: trafficGeneratorNodeLabelSelector,
 		config.TrafficGeneratorPacketsPerSecondParamName:  trafficGeneratorPacketsPerSecond,
 		config.VMContainerDiskImageParamName:              vmContainerDiskImage,

@@ -32,7 +32,7 @@ import (
 
 const (
 	NetworkAttachmentDefinitionNameParamName   = "networkAttachmentDefinitionName"
-	TrafficGeneratorImageParamName             = "trafficGeneratorImage"
+	TrafficGenContainerDiskImageParamName      = "trafficGenContainerDiskImage"
 	TrafficGeneratorNodeLabelSelectorParamName = "trafficGeneratorNodeLabelSelector"
 	TrafficGeneratorPacketsPerSecondParamName  = "trafficGeneratorPacketsPerSecond"
 	VMContainerDiskImageParamName              = "vmContainerDiskImage"
@@ -43,7 +43,7 @@ const (
 )
 
 const (
-	TrafficGeneratorImageDefault            = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main"
+	TrafficGenDefaultContainerDiskImage     = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main"
 	TrafficGeneratorPacketsPerSecondDefault = "14m"
 	VMContainerDiskImageDefault             = "quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main"
 	TestDurationDefault                     = 5 * time.Minute
@@ -78,7 +78,7 @@ type Config struct {
 	PodName                           string
 	PodUID                            string
 	NetworkAttachmentDefinitionName   string
-	TrafficGeneratorImage             string
+	TrafficGenContainerDiskImage      string
 	TrafficGeneratorNodeLabelSelector string
 	TrafficGeneratorPacketsPerSecond  string
 	TrafficGeneratorEastMacAddress    net.HardwareAddr
@@ -103,7 +103,7 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		PodName:                           baseConfig.PodName,
 		PodUID:                            baseConfig.PodUID,
 		NetworkAttachmentDefinitionName:   baseConfig.Params[NetworkAttachmentDefinitionNameParamName],
-		TrafficGeneratorImage:             TrafficGeneratorImageDefault,
+		TrafficGenContainerDiskImage:      TrafficGenDefaultContainerDiskImage,
 		TrafficGeneratorNodeLabelSelector: baseConfig.Params[TrafficGeneratorNodeLabelSelectorParamName],
 		TrafficGeneratorPacketsPerSecond:  TrafficGeneratorPacketsPerSecondDefault,
 		TrafficGeneratorEastMacAddress:    trafficGeneratorEastMacAddressDefault,
@@ -132,8 +132,8 @@ func New(baseConfig kconfig.Config) (Config, error) {
 func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, error) {
 	var err error
 
-	if rawVal := baseConfig.Params[TrafficGeneratorImageParamName]; rawVal != "" {
-		newConfig.TrafficGeneratorImage = rawVal
+	if rawVal := baseConfig.Params[TrafficGenContainerDiskImageParamName]; rawVal != "" {
+		newConfig.TrafficGenContainerDiskImage = rawVal
 	}
 
 	if rawVal := baseConfig.Params[TrafficGeneratorPacketsPerSecondParamName]; rawVal != "" {
