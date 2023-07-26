@@ -65,22 +65,22 @@ roleRef:
 
 ## Configuration
 
-| Key                                         | Description                                                                                                       | Is Mandatory | Remarks                                                                             |
-|---------------------------------------------|-------------------------------------------------------------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------|
-| spec.timeout                                | How much time before the checkup will try to close itself                                                         | True         |                                                                                     |
-| spec.param.networkAttachmentDefinitionName  | NetworkAttachmentDefinition name of the SR-IOV NICs connected                                                     | True         | Assumed to be in the same namespace                                                 |
-| spec.param.trafficGeneratorImage            | Traffic generator's container image                                                                               | False        | Defaults to the U/S image `quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main` |
-| spec.param.trafficGeneratorNodeSelector     | Node Name on which the traffic generator Pod will be scheduled to                                                 | False        | Assumed to be configured to Nodes that allow DPDK traffic                           |
-| spec.param.trafficGeneratorPacketsPerSecond | Amount of packets per second. format: <amount>[/k/m] k-kilo; m-million                                            | False        | Defaults to 14m                                                                     |
-| spec.param.trafficGeneratorEastMacAddress   | MAC address of the NIC connected to the traffic generator pod/VM                                                  | False        | Defaults to a random MAC address of the form: 50:xx:xx:xx:xx:01                     |
-| spec.param.trafficGeneratorWestMacAddress   | MAC address of the NIC connected to the traffic generator pod/VM                                                  | False        | Defaults to a random MAC address of the form: 50:xx:xx:xx:xx:02                     |
-| spec.param.vmContainerDiskImage             | Container disk image for the VM                                                                                   | False        | Defaults to `quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main`                        |
-| spec.param.DPDKLabelSelector                | Node Label of on which the VM shall run                                                                           | False        | Assumed to be configured to Nodes that allow DPDK traffic                           |
-| spec.param.DPDKEastMacAddress               | MAC address of the NIC connected to the DPDK VM                                                                   | False        | Defaults to a random MAC address of the form: 60:xx:xx:xx:xx:01                     |
-| spec.param.DPDKWestMacAddress               | MAC address of the NIC connected to the DPDK VM                                                                   | False        | Defaults to a random MAC address of the form: 60:xx:xx:xx:xx:02                     |
-| spec.param.testDuration                     | How much time will the traffic generator will run                                                                 | False        | Defaults to 5 Minutes                                                               |
-| spec.param.portBandwidthGB                  | SR-IOV NIC max bandwidth                                                                                          | False        | Defaults to 10GB                                                                    |
-| spec.param.verbose                          | Increases checkup's log verbosity                                                                                 | False        | "true" / "false". Defaults to "false"                                               |
+| Key                                         | Description                                                            | Is Mandatory | Remarks                                                                             |
+|---------------------------------------------|------------------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------|
+| spec.timeout                                | How much time before the checkup will try to close itself              | True         |                                                                                     |
+| spec.param.networkAttachmentDefinitionName  | NetworkAttachmentDefinition name of the SR-IOV NICs connected          | True         | Assumed to be in the same namespace                                                 |
+| spec.param.trafficGeneratorImage            | Traffic generator's container image                                    | False        | Defaults to the U/S image `quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main` |
+| spec.param.trafficGeneratorNodeSelector     | Node Name on which the traffic generator VM will be scheduled to       | False        | Assumed to be configured to Nodes that allow DPDK traffic                           |
+| spec.param.trafficGeneratorPacketsPerSecond | Amount of packets per second. format: <amount>[/k/m] k-kilo; m-million | False        | Defaults to 14m                                                                     |
+| spec.param.trafficGeneratorEastMacAddress   | MAC address of the NIC connected to the traffic generator VM           | False        | Defaults to a random MAC address of the form: 50:xx:xx:xx:xx:01                     |
+| spec.param.trafficGeneratorWestMacAddress   | MAC address of the NIC connected to the traffic generator VM           | False        | Defaults to a random MAC address of the form: 50:xx:xx:xx:xx:02                     |
+| spec.param.vmContainerDiskImage             | Container disk image for the VM                                        | False        | Defaults to `quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main`                        |
+| spec.param.DPDKLabelSelector                | Node Label of on which the VM shall run                                | False        | Assumed to be configured to Nodes that allow DPDK traffic                           |
+| spec.param.DPDKEastMacAddress               | MAC address of the NIC connected to the DPDK VM                        | False        | Defaults to a random MAC address of the form: 60:xx:xx:xx:xx:01                     |
+| spec.param.DPDKWestMacAddress               | MAC address of the NIC connected to the DPDK VM                        | False        | Defaults to a random MAC address of the form: 60:xx:xx:xx:xx:02                     |
+| spec.param.testDuration                     | How much time will the traffic generator will run                      | False        | Defaults to 5 Minutes                                                               |
+| spec.param.portBandwidthGB                  | SR-IOV NIC max bandwidth                                               | False        | Defaults to 10GB                                                                    |
+| spec.param.verbose                          | Increases checkup's log verbosity                                      | False        | "true" / "false". Defaults to "false"                                               |
 
 ### Example
 
@@ -148,7 +148,7 @@ kubectl get configmap dpdk-checkup-config -n <target-namespace> -o yaml
 | status.result.trafficGeneratorTxPackets          | Number of packets sent from the traffic generator                 |          |
 | status.result.trafficGeneratorOutputErrorPackets | Indicates error sending packets from traffic generator            |          |
 | status.result.trafficGeneratorInErrorPackets     | Indicates error receiving packets to traffic generator            |          |
-| status.result.trafficGeneratorNode               | Node name on which the traffic generator Pod was scheduled        |          |
+| status.result.trafficGeneratorNode               | Node name on which the traffic generator VM was scheduled         |          |
 | status.result.DPDKVMNode                         | Node name on which the DPDK VMI was scheduled                     |          |
 | status.result.DPDKRxTestPackets                  | Number of packets packets received on the DPDK VMI                |          |
 | status.result.DPDKRxPacketDrops                  | Indicates ingress packets that were dropped from DPDK application |          |
