@@ -21,7 +21,6 @@ package config_test
 
 import (
 	"fmt"
-	"net"
 	"strconv"
 	"testing"
 	"time"
@@ -40,12 +39,8 @@ const (
 	trafficGeneratorImage             = "quay.io/ramlavi/kubevirt-dpdk-checkup-traffic-gen:main"
 	trafficGeneratorNodeLabelSelector = "node-role.kubernetes.io/worker-dpdk1"
 	trafficGeneratorPacketsPerSecond  = "6m"
-	trafficGeneratorEastMacAddress    = "DE:AD:BE:EF:00:01"
-	trafficGeneratorWestMacAddress    = "DE:AD:BE:EF:01:00"
 	vmContainerDiskImage              = "quay.io/ramlavi/kubevirt-dpdk-checkup-vm:main"
 	dpdkNodeLabelSelector             = "node-role.kubernetes.io/worker-dpdk2"
-	dpdkEastMacAddress                = "DE:AD:BE:EF:00:02"
-	dpdkWestMacAddress                = "DE:AD:BE:EF:02:00"
 	testDuration                      = "30m"
 	portBandwidthGB                   = 100
 )
@@ -92,11 +87,6 @@ type SuccessTestCase struct {
 }
 
 func TestNewShouldApplyUserConfigWhen(t *testing.T) {
-	trafficGeneratorEastHWAddress, _ := net.ParseMAC(trafficGeneratorEastMacAddress)
-	trafficGeneratorWestHWAddress, _ := net.ParseMAC(trafficGeneratorWestMacAddress)
-	dpdkEastHWAddress, _ := net.ParseMAC(dpdkEastMacAddress)
-	dpdkWestHWAddress, _ := net.ParseMAC(dpdkWestMacAddress)
-
 	testCases := []SuccessTestCase{
 		{
 			"config is valid and both Node Selectors are set",
@@ -108,12 +98,8 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 				TrafficGeneratorImage:             trafficGeneratorImage,
 				TrafficGeneratorNodeLabelSelector: trafficGeneratorNodeLabelSelector,
 				TrafficGeneratorPacketsPerSecond:  trafficGeneratorPacketsPerSecond,
-				TrafficGeneratorEastMacAddress:    trafficGeneratorEastHWAddress,
-				TrafficGeneratorWestMacAddress:    trafficGeneratorWestHWAddress,
 				VMContainerDiskImage:              vmContainerDiskImage,
 				DPDKNodeLabelSelector:             dpdkNodeLabelSelector,
-				DPDKEastMacAddress:                dpdkEastHWAddress,
-				DPDKWestMacAddress:                dpdkWestHWAddress,
 				TestDuration:                      30 * time.Minute,
 				PortBandwidthGB:                   portBandwidthGB,
 				Verbose:                           true,
@@ -128,11 +114,7 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 				NetworkAttachmentDefinitionName:  networkAttachmentDefinitionName,
 				TrafficGeneratorImage:            trafficGeneratorImage,
 				TrafficGeneratorPacketsPerSecond: trafficGeneratorPacketsPerSecond,
-				TrafficGeneratorEastMacAddress:   trafficGeneratorEastHWAddress,
-				TrafficGeneratorWestMacAddress:   trafficGeneratorWestHWAddress,
 				VMContainerDiskImage:             vmContainerDiskImage,
-				DPDKEastMacAddress:               dpdkEastHWAddress,
-				DPDKWestMacAddress:               dpdkWestHWAddress,
 				TestDuration:                     30 * time.Minute,
 				PortBandwidthGB:                  portBandwidthGB,
 				Verbose:                          true,
@@ -150,6 +132,16 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 
 			actualConfig, err := config.New(baseConfig)
 			assert.NoError(t, err)
+			assert.NotNil(t, actualConfig.TrafficGeneratorEastMacAddress)
+			assert.NotNil(t, actualConfig.TrafficGeneratorWestMacAddress)
+			assert.NotNil(t, actualConfig.DPDKEastMacAddress)
+			assert.NotNil(t, actualConfig.DPDKWestMacAddress)
+
+			testCase.expectedConfig.TrafficGeneratorEastMacAddress = actualConfig.TrafficGeneratorEastMacAddress
+			testCase.expectedConfig.TrafficGeneratorWestMacAddress = actualConfig.TrafficGeneratorWestMacAddress
+			testCase.expectedConfig.DPDKEastMacAddress = actualConfig.DPDKEastMacAddress
+			testCase.expectedConfig.DPDKWestMacAddress = actualConfig.DPDKWestMacAddress
+
 			assert.Equal(t, testCase.expectedConfig, actualConfig)
 		})
 	}
@@ -193,30 +185,6 @@ func TestNewShouldFailWhen(t *testing.T) {
 			key:            config.TrafficGeneratorPacketsPerSecondParamName,
 			faultyKeyValue: "15f",
 			expectedError:  config.ErrInvalidTrafficGeneratorPacketsPerSecond,
-		},
-		{
-			description:    "TrafficGeneratorEastMacAddress is invalid",
-			key:            config.TrafficGeneratorEastMacAddressParamName,
-			faultyKeyValue: "AB:CD:EF:GH:IJ:KH",
-			expectedError:  config.ErrInvalidTrafficGeneratorEastMacAddress,
-		},
-		{
-			description:    "TrafficGeneratorWestMacAddress is invalid",
-			key:            config.TrafficGeneratorWestMacAddressParamName,
-			faultyKeyValue: "AB:CD:EF:GH:IJ:KH",
-			expectedError:  config.ErrInvalidTrafficGeneratorWestMacAddress,
-		},
-		{
-			description:    "DPDKEastMacAddress is invalid",
-			key:            config.DPDKEastMacAddressParamName,
-			faultyKeyValue: "AB:CD:EF:GH:IJ:KH",
-			expectedError:  config.ErrInvalidDPDKEastMacAddress,
-		},
-		{
-			description:    "DPDKWestMacAddress is invalid",
-			key:            config.DPDKWestMacAddressParamName,
-			faultyKeyValue: "AB:CD:EF:GH:IJ:KH",
-			expectedError:  config.ErrInvalidDPDKWestMacAddress,
 		},
 		{
 			description:    "TestDuration is invalid",
@@ -276,12 +244,8 @@ func getValidUserParameters() map[string]string {
 		config.TrafficGeneratorImageParamName:             trafficGeneratorImage,
 		config.TrafficGeneratorNodeLabelSelectorParamName: trafficGeneratorNodeLabelSelector,
 		config.TrafficGeneratorPacketsPerSecondParamName:  trafficGeneratorPacketsPerSecond,
-		config.TrafficGeneratorEastMacAddressParamName:    trafficGeneratorEastMacAddress,
-		config.TrafficGeneratorWestMacAddressParamName:    trafficGeneratorWestMacAddress,
 		config.VMContainerDiskImageParamName:              vmContainerDiskImage,
 		config.DPDKNodeLabelSelectorParamName:             dpdkNodeLabelSelector,
-		config.DPDKEastMacAddressParamName:                dpdkEastMacAddress,
-		config.DPDKWestMacAddressParamName:                dpdkWestMacAddress,
 		config.TestDurationParamName:                      testDuration,
 		config.PortBandwidthGBParamName:                   fmt.Sprintf("%d", portBandwidthGB),
 		config.VerboseParamName:                           strconv.FormatBool(true),
