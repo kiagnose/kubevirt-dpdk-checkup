@@ -104,7 +104,6 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 			config.Config{
 				PodName:                           testPodName,
 				PodUID:                            testPodUID,
-				PortBandwidthGB:                   portBandwidthGB,
 				NetworkAttachmentDefinitionName:   networkAttachmentDefinitionName,
 				TrafficGeneratorImage:             trafficGeneratorImage,
 				TrafficGeneratorNodeLabelSelector: trafficGeneratorNodeLabelSelector,
@@ -116,6 +115,7 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 				DPDKEastMacAddress:                dpdkEastHWAddress,
 				DPDKWestMacAddress:                dpdkWestHWAddress,
 				TestDuration:                      30 * time.Minute,
+				PortBandwidthGB:                   portBandwidthGB,
 				Verbose:                           true,
 			},
 		},
@@ -125,7 +125,6 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 			config.Config{
 				PodName:                          testPodName,
 				PodUID:                           testPodUID,
-				PortBandwidthGB:                  portBandwidthGB,
 				NetworkAttachmentDefinitionName:  networkAttachmentDefinitionName,
 				TrafficGeneratorImage:            trafficGeneratorImage,
 				TrafficGeneratorPacketsPerSecond: trafficGeneratorPacketsPerSecond,
@@ -135,6 +134,7 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 				DPDKEastMacAddress:               dpdkEastHWAddress,
 				DPDKWestMacAddress:               dpdkWestHWAddress,
 				TestDuration:                     30 * time.Minute,
+				PortBandwidthGB:                  portBandwidthGB,
 				Verbose:                          true,
 			},
 		},

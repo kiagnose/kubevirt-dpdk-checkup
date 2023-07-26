@@ -162,17 +162,17 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 		}
 	}
 
-	if rawVal := baseConfig.Params[VerboseParamName]; rawVal != "" {
-		newConfig.Verbose, err = strconv.ParseBool(rawVal)
-		if err != nil {
-			return Config{}, ErrInvalidVerbose
-		}
-	}
-
 	if rawVal := baseConfig.Params[PortBandwidthGBParamName]; rawVal != "" {
 		newConfig.PortBandwidthGB, err = parseNonZeroPositiveInt(rawVal)
 		if err != nil {
 			return Config{}, ErrInvalidPortBandwidthGB
+		}
+	}
+
+	if rawVal := baseConfig.Params[VerboseParamName]; rawVal != "" {
+		newConfig.Verbose, err = strconv.ParseBool(rawVal)
+		if err != nil {
+			return Config{}, ErrInvalidVerbose
 		}
 	}
 
