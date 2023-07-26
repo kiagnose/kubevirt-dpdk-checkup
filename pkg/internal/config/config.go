@@ -38,7 +38,7 @@ const (
 	VMUnderTestContainerDiskImageParamName   = "vmUnderTestContainerDiskImage"
 	VMUnderTestTargetNodeNameParamName       = "vmUnderTestTargetNodeName"
 	TestDurationParamName                    = "testDuration"
-	PortBandwidthGBParamName                 = "portBandwidthGB"
+	PortBandwidthGbpsParamName               = "portBandwidthGbps"
 	VerboseParamName                         = "verbose"
 )
 
@@ -47,7 +47,7 @@ const (
 	TrafficGenDefaultPacketsPerSecond    = "14m"
 	VMUnderTestDefaultContainerDiskImage = "quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main"
 	TestDurationDefault                  = 5 * time.Minute
-	PortBandwidthGBDefault               = 10
+	PortBandwidthGbpsDefault             = 10
 	VerboseDefault                       = false
 
 	TrafficGenMACAddressPrefixOctet  = 0x50
@@ -70,7 +70,7 @@ var (
 		"Label Selector combination")
 	ErrInvalidTrafficGenPacketsPerSecond = errors.New("invalid Traffic Generator Packets Per Second")
 	ErrInvalidTestDuration               = errors.New("invalid Test Duration")
-	ErrInvalidPortBandwidthGB            = errors.New("invalid Port Bandwidth [GB]")
+	ErrInvalidPortBandwidthGbps          = errors.New("invalid Port Bandwidth [Gbps]")
 	ErrInvalidVerbose                    = errors.New("invalid Verbose value [true|false]")
 )
 
@@ -88,7 +88,7 @@ type Config struct {
 	VMUnderTestEastMacAddress       net.HardwareAddr
 	VMUnderTestWestMacAddress       net.HardwareAddr
 	TestDuration                    time.Duration
-	PortBandwidthGB                 int
+	PortBandwidthGbps               int
 	Verbose                         bool
 }
 
@@ -127,7 +127,7 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		VMUnderTestEastMacAddress:       vmUnderTestEastMACAddress,
 		VMUnderTestWestMacAddress:       vmUnderTestWestMacAddress,
 		TestDuration:                    TestDurationDefault,
-		PortBandwidthGB:                 PortBandwidthGBDefault,
+		PortBandwidthGbps:               PortBandwidthGbpsDefault,
 		Verbose:                         VerboseDefault,
 	}
 
@@ -168,10 +168,10 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 		}
 	}
 
-	if rawVal := baseConfig.Params[PortBandwidthGBParamName]; rawVal != "" {
-		newConfig.PortBandwidthGB, err = parseNonZeroPositiveInt(rawVal)
+	if rawVal := baseConfig.Params[PortBandwidthGbpsParamName]; rawVal != "" {
+		newConfig.PortBandwidthGbps, err = parseNonZeroPositiveInt(rawVal)
 		if err != nil {
-			return Config{}, ErrInvalidPortBandwidthGB
+			return Config{}, ErrInvalidPortBandwidthGbps
 		}
 	}
 

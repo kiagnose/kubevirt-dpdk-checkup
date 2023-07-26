@@ -152,7 +152,7 @@ func createSampleConfigs() trex.Config {
 	DPDKEastMacAddress, _ := net.ParseMAC("00:00:00:00:00:02")
 	DPDKWestMacAddress, _ := net.ParseMAC("00:00:00:00:00:03")
 	cfg := config.Config{
-		PortBandwidthGB:           40,
+		PortBandwidthGbps:         40,
 		TrafficGenEastMacAddress:  trafficGeneratorEastMacAddress,
 		TrafficGenWestMacAddress:  trafficGeneratorWestMacAddress,
 		VMUnderTestEastMacAddress: DPDKEastMacAddress,

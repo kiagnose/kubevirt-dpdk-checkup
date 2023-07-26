@@ -444,7 +444,7 @@ func newTestConfig() config.Config {
 		TrafficGenTargetNodeName:        "",
 		VMUnderTestTargetNodeName:       "",
 		TrafficGenPacketsPerSecond:      config.TrafficGenDefaultPacketsPerSecond,
-		PortBandwidthGB:                 config.PortBandwidthGBDefault,
+		PortBandwidthGbps:               config.PortBandwidthGbpsDefault,
 		TrafficGenEastMacAddress:        trafficGeneratorEastHWAddress,
 		TrafficGenWestMacAddress:        trafficGeneratorWestHWAddress,
 		VMUnderTestEastMacAddress:       vmiUnderTestEastHWAddress,

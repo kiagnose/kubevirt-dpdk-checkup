@@ -75,7 +75,7 @@ roleRef:
 | spec.param.vmUnderTestContainerDiskImage   | VM under test container disk image                                     | False        | Defaults to `quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main`          |
 | spec.param.vmUnderTestTargetNodeName       | Node Name on which the VM under test will be scheduled to              | False        | Assumed to be configured to Nodes that allow DPDK traffic             |
 | spec.param.testDuration                    | How much time will the traffic generator will run                      | False        | Defaults to 5 Minutes                                                 |
-| spec.param.portBandwidthGB                 | SR-IOV NIC max bandwidth                                               | False        | Defaults to 10GB                                                      |
+| spec.param.portBandwidthGbps               | SR-IOV NIC max bandwidth                                               | False        | Defaults to 10Gbps                                                    |
 | spec.param.verbose                         | Increases checkup's log verbosity                                      | False        | "true" / "false". Defaults to "false"                                 |
 
 ### Example

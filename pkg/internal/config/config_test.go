@@ -42,7 +42,7 @@ const (
 	testVMUnderTestContainerDiskImage = "quay.io/ramlavi/kubevirt-dpdk-checkup-vm:main"
 	testVMUnderTestTargetNodeName     = "worker-dpdk2"
 	testDuration                      = "30m"
-	portBandwidthGB                   = 100
+	testPortBandwidthGbps             = 100
 )
 
 func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
@@ -74,7 +74,7 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		VMUnderTestEastMacAddress:       actualConfig.VMUnderTestEastMacAddress,
 		VMUnderTestWestMacAddress:       actualConfig.VMUnderTestWestMacAddress,
 		TestDuration:                    config.TestDurationDefault,
-		PortBandwidthGB:                 config.PortBandwidthGBDefault,
+		PortBandwidthGbps:               config.PortBandwidthGbpsDefault,
 		Verbose:                         config.VerboseDefault,
 	}
 	assert.Equal(t, expectedConfig, actualConfig)
@@ -101,7 +101,7 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 				VMUnderTestContainerDiskImage:   testVMUnderTestContainerDiskImage,
 				VMUnderTestTargetNodeName:       testVMUnderTestTargetNodeName,
 				TestDuration:                    30 * time.Minute,
-				PortBandwidthGB:                 portBandwidthGB,
+				PortBandwidthGbps:               testPortBandwidthGbps,
 				Verbose:                         true,
 			},
 		},
@@ -116,7 +116,7 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 				TrafficGenPacketsPerSecond:      testTrafficGenPacketsPerSecond,
 				VMUnderTestContainerDiskImage:   testVMUnderTestContainerDiskImage,
 				TestDuration:                    30 * time.Minute,
-				PortBandwidthGB:                 portBandwidthGB,
+				PortBandwidthGbps:               testPortBandwidthGbps,
 				Verbose:                         true,
 			},
 		},
@@ -193,10 +193,10 @@ func TestNewShouldFailWhen(t *testing.T) {
 			expectedError:  config.ErrInvalidTestDuration,
 		},
 		{
-			description:    "PortBandwidthGB is invalid",
-			key:            config.PortBandwidthGBParamName,
+			description:    "PortBandwidthGbps is invalid",
+			key:            config.PortBandwidthGbpsParamName,
 			faultyKeyValue: "0",
-			expectedError:  config.ErrInvalidPortBandwidthGB,
+			expectedError:  config.ErrInvalidPortBandwidthGbps,
 		},
 		{
 			description:    "Verbose is invalid",
@@ -247,7 +247,7 @@ func getValidUserParameters() map[string]string {
 		config.VMUnderTestContainerDiskImageParamName:   testVMUnderTestContainerDiskImage,
 		config.VMUnderTestTargetNodeNameParamName:       testVMUnderTestTargetNodeName,
 		config.TestDurationParamName:                    testDuration,
-		config.PortBandwidthGBParamName:                 fmt.Sprintf("%d", portBandwidthGB),
+		config.PortBandwidthGbpsParamName:               fmt.Sprintf("%d", testPortBandwidthGbps),
 		config.VerboseParamName:                         strconv.FormatBool(true),
 	}
 }

@@ -77,6 +77,6 @@ func printConfig(checkupConfig config.Config) {
 	log.Printf("%q: %q", "VMUnderTestEastMacAddress", checkupConfig.VMUnderTestEastMacAddress)
 	log.Printf("%q: %q", "VMUnderTestWestMacAddress", checkupConfig.VMUnderTestWestMacAddress)
 	log.Printf("%q: %q", config.TestDurationParamName, checkupConfig.TestDuration)
-	log.Printf("%q: %q", config.PortBandwidthGBParamName, fmt.Sprintf("%d", checkupConfig.PortBandwidthGB))
+	log.Printf("%q: %q", config.PortBandwidthGbpsParamName, fmt.Sprintf("%d", checkupConfig.PortBandwidthGbps))
 	log.Printf("%q: %t", config.VerboseParamName, checkupConfig.Verbose)
 }
