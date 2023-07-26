@@ -38,8 +38,8 @@ const (
 	testPodUID                        = "0123456789-0123456789"
 	networkAttachmentDefinitionName   = "intel-dpdk-network1"
 	trafficGeneratorImage             = "quay.io/ramlavi/kubevirt-dpdk-checkup-traffic-gen:main"
-	portBandwidthGB                   = 100
 	trafficGeneratorNodeLabelSelector = "node-role.kubernetes.io/worker-dpdk1"
+	portBandwidthGB                   = 100
 	trafficGeneratorPacketsPerSecond  = "6m"
 	dpdkNodeLabelSelector             = "node-role.kubernetes.io/worker-dpdk2"
 	trafficGeneratorEastMacAddress    = "DE:AD:BE:EF:00:01"
@@ -107,8 +107,8 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 				PortBandwidthGB:                   portBandwidthGB,
 				NetworkAttachmentDefinitionName:   networkAttachmentDefinitionName,
 				TrafficGeneratorImage:             trafficGeneratorImage,
-				TrafficGeneratorPacketsPerSecond:  trafficGeneratorPacketsPerSecond,
 				TrafficGeneratorNodeLabelSelector: trafficGeneratorNodeLabelSelector,
+				TrafficGeneratorPacketsPerSecond:  trafficGeneratorPacketsPerSecond,
 				DPDKNodeLabelSelector:             dpdkNodeLabelSelector,
 				TrafficGeneratorEastMacAddress:    trafficGeneratorEastHWAddress,
 				TrafficGeneratorWestMacAddress:    trafficGeneratorWestHWAddress,
@@ -274,8 +274,8 @@ func getValidUserParameters() map[string]string {
 	return map[string]string{
 		config.NetworkAttachmentDefinitionNameParamName:   networkAttachmentDefinitionName,
 		config.TrafficGeneratorImageParamName:             trafficGeneratorImage,
-		config.PortBandwidthGBParamName:                   fmt.Sprintf("%d", portBandwidthGB),
 		config.TrafficGeneratorNodeLabelSelectorParamName: trafficGeneratorNodeLabelSelector,
+		config.PortBandwidthGBParamName:                   fmt.Sprintf("%d", portBandwidthGB),
 		config.TrafficGeneratorPacketsPerSecondParamName:  trafficGeneratorPacketsPerSecond,
 		config.DPDKNodeLabelSelectorParamName:             dpdkNodeLabelSelector,
 		config.TrafficGeneratorEastMacAddressParamName:    trafficGeneratorEastMacAddress,
