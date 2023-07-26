@@ -46,8 +46,8 @@ const (
 	dpdkNodeLabelSelector             = "node-role.kubernetes.io/worker-dpdk2"
 	dpdkEastMacAddress                = "DE:AD:BE:EF:00:02"
 	dpdkWestMacAddress                = "DE:AD:BE:EF:02:00"
-	portBandwidthGB                   = 100
 	testDuration                      = "30m"
+	portBandwidthGB                   = 100
 )
 
 func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
@@ -78,8 +78,8 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		VMContainerDiskImage:             config.VMContainerDiskImageDefault,
 		DPDKEastMacAddress:               actualConfig.DPDKEastMacAddress,
 		DPDKWestMacAddress:               actualConfig.DPDKWestMacAddress,
-		PortBandwidthGB:                  config.PortBandwidthGBDefault,
 		TestDuration:                     config.TestDurationDefault,
+		PortBandwidthGB:                  config.PortBandwidthGBDefault,
 		Verbose:                          config.VerboseDefault,
 	}
 	assert.Equal(t, expectedConfig, actualConfig)
@@ -219,16 +219,16 @@ func TestNewShouldFailWhen(t *testing.T) {
 			expectedError:  config.ErrInvalidDPDKWestMacAddress,
 		},
 		{
-			description:    "PortBandwidthGB is invalid",
-			key:            config.PortBandwidthGBParamName,
-			faultyKeyValue: "0",
-			expectedError:  config.ErrInvalidPortBandwidthGB,
-		},
-		{
 			description:    "TestDuration is invalid",
 			key:            config.TestDurationParamName,
 			faultyKeyValue: "invalid value",
 			expectedError:  config.ErrInvalidTestDuration,
+		},
+		{
+			description:    "PortBandwidthGB is invalid",
+			key:            config.PortBandwidthGBParamName,
+			faultyKeyValue: "0",
+			expectedError:  config.ErrInvalidPortBandwidthGB,
 		},
 		{
 			description:    "Verbose is invalid",
@@ -282,8 +282,8 @@ func getValidUserParameters() map[string]string {
 		config.DPDKNodeLabelSelectorParamName:             dpdkNodeLabelSelector,
 		config.DPDKEastMacAddressParamName:                dpdkEastMacAddress,
 		config.DPDKWestMacAddressParamName:                dpdkWestMacAddress,
-		config.PortBandwidthGBParamName:                   fmt.Sprintf("%d", portBandwidthGB),
 		config.TestDurationParamName:                      testDuration,
+		config.PortBandwidthGBParamName:                   fmt.Sprintf("%d", portBandwidthGB),
 		config.VerboseParamName:                           strconv.FormatBool(true),
 	}
 }

@@ -41,8 +41,8 @@ const (
 	DPDKNodeLabelSelectorParamName             = "DPDKNodeLabelSelector"
 	DPDKEastMacAddressParamName                = "DPDKEastMacAddress"
 	DPDKWestMacAddressParamName                = "DPDKWestMacAddress"
-	PortBandwidthGBParamName                   = "portBandwidthGB"
 	TestDurationParamName                      = "testDuration"
+	PortBandwidthGBParamName                   = "portBandwidthGB"
 	VerboseParamName                           = "verbose"
 )
 
@@ -50,8 +50,8 @@ const (
 	TrafficGeneratorImageDefault            = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main"
 	TrafficGeneratorPacketsPerSecondDefault = "14m"
 	VMContainerDiskImageDefault             = "quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main"
-	PortBandwidthGBDefault                  = 10
 	TestDurationDefault                     = 5 * time.Minute
+	PortBandwidthGBDefault                  = 10
 	VerboseDefault                          = false
 
 	TrafficGeneratorMacAddressPrefixOctet = 0x50
@@ -77,8 +77,8 @@ var (
 	ErrInvalidTrafficGeneratorWestMacAddress   = errors.New("invalid Traffic Generator West MAC Address")
 	ErrInvalidDPDKEastMacAddress               = errors.New("invalid DPDK East MAC Address")
 	ErrInvalidDPDKWestMacAddress               = errors.New("invalid DPDK West MAC Address")
-	ErrInvalidPortBandwidthGB                  = errors.New("invalid Port Bandwidth [GB]")
 	ErrInvalidTestDuration                     = errors.New("invalid Test Duration")
+	ErrInvalidPortBandwidthGB                  = errors.New("invalid Port Bandwidth [GB]")
 	ErrInvalidVerbose                          = errors.New("invalid Verbose value [true|false]")
 )
 
@@ -95,8 +95,8 @@ type Config struct {
 	DPDKNodeLabelSelector             string
 	DPDKEastMacAddress                net.HardwareAddr
 	DPDKWestMacAddress                net.HardwareAddr
-	PortBandwidthGB                   int
 	TestDuration                      time.Duration
+	PortBandwidthGB                   int
 	Verbose                           bool
 }
 
@@ -120,8 +120,8 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		DPDKNodeLabelSelector:             baseConfig.Params[DPDKNodeLabelSelectorParamName],
 		DPDKEastMacAddress:                dpdkEastMacAddressDefault,
 		DPDKWestMacAddress:                dpdkWestMacAddressDefault,
-		PortBandwidthGB:                   PortBandwidthGBDefault,
 		TestDuration:                      TestDurationDefault,
+		PortBandwidthGB:                   PortBandwidthGBDefault,
 		Verbose:                           VerboseDefault,
 	}
 
@@ -155,6 +155,13 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 		newConfig.VMContainerDiskImage = rawVal
 	}
 
+	if rawVal := baseConfig.Params[TestDurationParamName]; rawVal != "" {
+		newConfig.TestDuration, err = time.ParseDuration(rawVal)
+		if err != nil {
+			return Config{}, ErrInvalidTestDuration
+		}
+	}
+
 	if rawVal := baseConfig.Params[VerboseParamName]; rawVal != "" {
 		newConfig.Verbose, err = strconv.ParseBool(rawVal)
 		if err != nil {
@@ -172,13 +179,6 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 	newConfig, err = setMacAddressParams(baseConfig, newConfig)
 	if err != nil {
 		return Config{}, err
-	}
-
-	if rawVal := baseConfig.Params[TestDurationParamName]; rawVal != "" {
-		newConfig.TestDuration, err = time.ParseDuration(rawVal)
-		if err != nil {
-			return Config{}, ErrInvalidTestDuration
-		}
 	}
 
 	return newConfig, nil
