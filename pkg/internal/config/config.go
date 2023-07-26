@@ -39,9 +39,9 @@ const (
 	TrafficGeneratorWestMacAddressParamName    = "trafficGeneratorWestMacAddress"
 	VMContainerDiskImageParamName              = "vmContainerDiskImage"
 	DPDKNodeLabelSelectorParamName             = "DPDKNodeLabelSelector"
-	PortBandwidthGBParamName                   = "portBandwidthGB"
 	DPDKEastMacAddressParamName                = "DPDKEastMacAddress"
 	DPDKWestMacAddressParamName                = "DPDKWestMacAddress"
+	PortBandwidthGBParamName                   = "portBandwidthGB"
 	TestDurationParamName                      = "testDuration"
 	VerboseParamName                           = "verbose"
 )
@@ -75,9 +75,9 @@ var (
 	ErrInvalidTrafficGeneratorPacketsPerSecond = errors.New("invalid Traffic Generator Packets Per Second")
 	ErrInvalidTrafficGeneratorEastMacAddress   = errors.New("invalid Traffic Generator East MAC Address")
 	ErrInvalidTrafficGeneratorWestMacAddress   = errors.New("invalid Traffic Generator West MAC Address")
-	ErrInvalidPortBandwidthGB                  = errors.New("invalid Port Bandwidth [GB]")
 	ErrInvalidDPDKEastMacAddress               = errors.New("invalid DPDK East MAC Address")
 	ErrInvalidDPDKWestMacAddress               = errors.New("invalid DPDK West MAC Address")
+	ErrInvalidPortBandwidthGB                  = errors.New("invalid Port Bandwidth [GB]")
 	ErrInvalidTestDuration                     = errors.New("invalid Test Duration")
 	ErrInvalidVerbose                          = errors.New("invalid Verbose value [true|false]")
 )
@@ -93,9 +93,9 @@ type Config struct {
 	TrafficGeneratorWestMacAddress    net.HardwareAddr
 	VMContainerDiskImage              string
 	DPDKNodeLabelSelector             string
-	PortBandwidthGB                   int
 	DPDKEastMacAddress                net.HardwareAddr
 	DPDKWestMacAddress                net.HardwareAddr
+	PortBandwidthGB                   int
 	TestDuration                      time.Duration
 	Verbose                           bool
 }
@@ -118,9 +118,9 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		TrafficGeneratorWestMacAddress:    trafficGeneratorWestMacAddressDefault,
 		VMContainerDiskImage:              VMContainerDiskImageDefault,
 		DPDKNodeLabelSelector:             baseConfig.Params[DPDKNodeLabelSelectorParamName],
-		PortBandwidthGB:                   PortBandwidthGBDefault,
 		DPDKEastMacAddress:                dpdkEastMacAddressDefault,
 		DPDKWestMacAddress:                dpdkWestMacAddressDefault,
+		PortBandwidthGB:                   PortBandwidthGBDefault,
 		TestDuration:                      TestDurationDefault,
 		Verbose:                           VerboseDefault,
 	}

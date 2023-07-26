@@ -44,9 +44,9 @@ const (
 	trafficGeneratorWestMacAddress    = "DE:AD:BE:EF:01:00"
 	vmContainerDiskImage              = "quay.io/ramlavi/kubevirt-dpdk-checkup-vm:main"
 	dpdkNodeLabelSelector             = "node-role.kubernetes.io/worker-dpdk2"
-	portBandwidthGB                   = 100
 	dpdkEastMacAddress                = "DE:AD:BE:EF:00:02"
 	dpdkWestMacAddress                = "DE:AD:BE:EF:02:00"
+	portBandwidthGB                   = 100
 	testDuration                      = "30m"
 )
 
@@ -76,9 +76,9 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		TrafficGeneratorEastMacAddress:   actualConfig.TrafficGeneratorEastMacAddress,
 		TrafficGeneratorWestMacAddress:   actualConfig.TrafficGeneratorWestMacAddress,
 		VMContainerDiskImage:             config.VMContainerDiskImageDefault,
-		PortBandwidthGB:                  config.PortBandwidthGBDefault,
 		DPDKEastMacAddress:               actualConfig.DPDKEastMacAddress,
 		DPDKWestMacAddress:               actualConfig.DPDKWestMacAddress,
+		PortBandwidthGB:                  config.PortBandwidthGBDefault,
 		TestDuration:                     config.TestDurationDefault,
 		Verbose:                          config.VerboseDefault,
 	}
@@ -207,12 +207,6 @@ func TestNewShouldFailWhen(t *testing.T) {
 			expectedError:  config.ErrInvalidTrafficGeneratorWestMacAddress,
 		},
 		{
-			description:    "PortBandwidthGB is invalid",
-			key:            config.PortBandwidthGBParamName,
-			faultyKeyValue: "0",
-			expectedError:  config.ErrInvalidPortBandwidthGB,
-		},
-		{
 			description:    "DPDKEastMacAddress is invalid",
 			key:            config.DPDKEastMacAddressParamName,
 			faultyKeyValue: "AB:CD:EF:GH:IJ:KH",
@@ -223,6 +217,12 @@ func TestNewShouldFailWhen(t *testing.T) {
 			key:            config.DPDKWestMacAddressParamName,
 			faultyKeyValue: "AB:CD:EF:GH:IJ:KH",
 			expectedError:  config.ErrInvalidDPDKWestMacAddress,
+		},
+		{
+			description:    "PortBandwidthGB is invalid",
+			key:            config.PortBandwidthGBParamName,
+			faultyKeyValue: "0",
+			expectedError:  config.ErrInvalidPortBandwidthGB,
 		},
 		{
 			description:    "TestDuration is invalid",
@@ -280,9 +280,9 @@ func getValidUserParameters() map[string]string {
 		config.TrafficGeneratorWestMacAddressParamName:    trafficGeneratorWestMacAddress,
 		config.VMContainerDiskImageParamName:              vmContainerDiskImage,
 		config.DPDKNodeLabelSelectorParamName:             dpdkNodeLabelSelector,
-		config.PortBandwidthGBParamName:                   fmt.Sprintf("%d", portBandwidthGB),
 		config.DPDKEastMacAddressParamName:                dpdkEastMacAddress,
 		config.DPDKWestMacAddressParamName:                dpdkWestMacAddress,
+		config.PortBandwidthGBParamName:                   fmt.Sprintf("%d", portBandwidthGB),
 		config.TestDurationParamName:                      testDuration,
 		config.VerboseParamName:                           strconv.FormatBool(true),
 	}
