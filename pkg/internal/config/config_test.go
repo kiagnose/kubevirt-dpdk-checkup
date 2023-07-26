@@ -43,8 +43,8 @@ const (
 	trafficGeneratorEastMacAddress    = "DE:AD:BE:EF:00:01"
 	trafficGeneratorWestMacAddress    = "DE:AD:BE:EF:01:00"
 	vmContainerDiskImage              = "quay.io/ramlavi/kubevirt-dpdk-checkup-vm:main"
-	portBandwidthGB                   = 100
 	dpdkNodeLabelSelector             = "node-role.kubernetes.io/worker-dpdk2"
+	portBandwidthGB                   = 100
 	dpdkEastMacAddress                = "DE:AD:BE:EF:00:02"
 	dpdkWestMacAddress                = "DE:AD:BE:EF:02:00"
 	testDuration                      = "30m"
@@ -279,8 +279,8 @@ func getValidUserParameters() map[string]string {
 		config.TrafficGeneratorEastMacAddressParamName:    trafficGeneratorEastMacAddress,
 		config.TrafficGeneratorWestMacAddressParamName:    trafficGeneratorWestMacAddress,
 		config.VMContainerDiskImageParamName:              vmContainerDiskImage,
-		config.PortBandwidthGBParamName:                   fmt.Sprintf("%d", portBandwidthGB),
 		config.DPDKNodeLabelSelectorParamName:             dpdkNodeLabelSelector,
+		config.PortBandwidthGBParamName:                   fmt.Sprintf("%d", portBandwidthGB),
 		config.DPDKEastMacAddressParamName:                dpdkEastMacAddress,
 		config.DPDKWestMacAddressParamName:                dpdkWestMacAddress,
 		config.TestDurationParamName:                      testDuration,
