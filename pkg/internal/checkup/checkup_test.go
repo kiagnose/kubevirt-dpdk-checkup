@@ -447,8 +447,8 @@ func newTestConfig() config.Config {
 		PortBandwidthGB:                 config.PortBandwidthGBDefault,
 		TrafficGenEastMacAddress:        trafficGeneratorEastHWAddress,
 		TrafficGenWestMacAddress:        trafficGeneratorWestHWAddress,
-		DPDKEastMacAddress:              vmiUnderTestEastHWAddress,
-		DPDKWestMacAddress:              vmiUnderTestWestHWAddress,
+		VMUnderTestEastMacAddress:       vmiUnderTestEastHWAddress,
+		VMUnderTestWestMacAddress:       vmiUnderTestWestHWAddress,
 		TestDuration:                    config.TestDurationDefault,
 	}
 }

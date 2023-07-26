@@ -50,10 +50,10 @@ const (
 	PortBandwidthGBDefault               = 10
 	VerboseDefault                       = false
 
-	TrafficGenMACAddressPrefixOctet = 0x50
-	DPDKMacAddressPrefixOctet       = 0x60
-	EastMACAddressSuffixOctet       = 0x01
-	WestMACAddressSuffixOctet       = 0x02
+	TrafficGenMACAddressPrefixOctet  = 0x50
+	VMUnderTestMACAddressPrefixOctet = 0x60
+	EastMACAddressSuffixOctet        = 0x01
+	WestMACAddressSuffixOctet        = 0x02
 )
 
 const (
@@ -85,8 +85,8 @@ type Config struct {
 	TrafficGenWestMacAddress        net.HardwareAddr
 	VMUnderTestContainerDiskImage   string
 	VMUnderTestTargetNodeName       string
-	DPDKEastMacAddress              net.HardwareAddr
-	DPDKWestMacAddress              net.HardwareAddr
+	VMUnderTestEastMacAddress       net.HardwareAddr
+	VMUnderTestWestMacAddress       net.HardwareAddr
 	TestDuration                    time.Duration
 	PortBandwidthGB                 int
 	Verbose                         bool
@@ -103,8 +103,16 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		WestMACAddressSuffixOctet,
 	)
 
-	dpdkEastMacAddressDefault := generateMacAddressWithPresetPrefixAndSuffix(DPDKMacAddressPrefixOctet, EastMACAddressSuffixOctet)
-	dpdkWestMacAddressDefault := generateMacAddressWithPresetPrefixAndSuffix(DPDKMacAddressPrefixOctet, WestMACAddressSuffixOctet)
+	vmUnderTestEastMACAddress := generateMacAddressWithPresetPrefixAndSuffix(
+		VMUnderTestMACAddressPrefixOctet,
+		EastMACAddressSuffixOctet,
+	)
+
+	vmUnderTestWestMacAddress := generateMacAddressWithPresetPrefixAndSuffix(
+		VMUnderTestMACAddressPrefixOctet,
+		WestMACAddressSuffixOctet,
+	)
+
 	newConfig := Config{
 		PodName:                         baseConfig.PodName,
 		PodUID:                          baseConfig.PodUID,
@@ -116,8 +124,8 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		TrafficGenWestMacAddress:        trafficGenWestMacAddress,
 		VMUnderTestContainerDiskImage:   VMUnderTestDefaultContainerDiskImage,
 		VMUnderTestTargetNodeName:       baseConfig.Params[VMUnderTestTargetNodeNameParamName],
-		DPDKEastMacAddress:              dpdkEastMacAddressDefault,
-		DPDKWestMacAddress:              dpdkWestMacAddressDefault,
+		VMUnderTestEastMacAddress:       vmUnderTestEastMACAddress,
+		VMUnderTestWestMacAddress:       vmUnderTestWestMacAddress,
 		TestDuration:                    TestDurationDefault,
 		PortBandwidthGB:                 PortBandwidthGBDefault,
 		Verbose:                         VerboseDefault,

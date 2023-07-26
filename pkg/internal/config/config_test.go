@@ -59,8 +59,8 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 
 	assert.NotNil(t, actualConfig.TrafficGenEastMacAddress)
 	assert.NotNil(t, actualConfig.TrafficGenWestMacAddress)
-	assert.NotNil(t, actualConfig.DPDKEastMacAddress)
-	assert.NotNil(t, actualConfig.DPDKWestMacAddress)
+	assert.NotNil(t, actualConfig.VMUnderTestEastMacAddress)
+	assert.NotNil(t, actualConfig.VMUnderTestWestMacAddress)
 
 	expectedConfig := config.Config{
 		PodName:                         testPodName,
@@ -71,8 +71,8 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		TrafficGenEastMacAddress:        actualConfig.TrafficGenEastMacAddress,
 		TrafficGenWestMacAddress:        actualConfig.TrafficGenWestMacAddress,
 		VMUnderTestContainerDiskImage:   config.VMUnderTestDefaultContainerDiskImage,
-		DPDKEastMacAddress:              actualConfig.DPDKEastMacAddress,
-		DPDKWestMacAddress:              actualConfig.DPDKWestMacAddress,
+		VMUnderTestEastMacAddress:       actualConfig.VMUnderTestEastMacAddress,
+		VMUnderTestWestMacAddress:       actualConfig.VMUnderTestWestMacAddress,
 		TestDuration:                    config.TestDurationDefault,
 		PortBandwidthGB:                 config.PortBandwidthGBDefault,
 		Verbose:                         config.VerboseDefault,
@@ -134,13 +134,13 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, actualConfig.TrafficGenEastMacAddress)
 			assert.NotNil(t, actualConfig.TrafficGenWestMacAddress)
-			assert.NotNil(t, actualConfig.DPDKEastMacAddress)
-			assert.NotNil(t, actualConfig.DPDKWestMacAddress)
+			assert.NotNil(t, actualConfig.VMUnderTestEastMacAddress)
+			assert.NotNil(t, actualConfig.VMUnderTestWestMacAddress)
 
 			testCase.expectedConfig.TrafficGenEastMacAddress = actualConfig.TrafficGenEastMacAddress
 			testCase.expectedConfig.TrafficGenWestMacAddress = actualConfig.TrafficGenWestMacAddress
-			testCase.expectedConfig.DPDKEastMacAddress = actualConfig.DPDKEastMacAddress
-			testCase.expectedConfig.DPDKWestMacAddress = actualConfig.DPDKWestMacAddress
+			testCase.expectedConfig.VMUnderTestEastMacAddress = actualConfig.VMUnderTestEastMacAddress
+			testCase.expectedConfig.VMUnderTestWestMacAddress = actualConfig.VMUnderTestWestMacAddress
 
 			assert.Equal(t, testCase.expectedConfig, actualConfig)
 		})
