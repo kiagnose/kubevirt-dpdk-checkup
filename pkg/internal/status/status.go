@@ -29,7 +29,7 @@ type Results struct {
 	DPDKPacketsRxDropped         int64
 	DPDKPacketsTxDropped         int64
 	TrafficGenActualNodeName     string
-	DPDKVMNode                   string
+	VMUnderTestActualNodeName    string
 }
 
 type Status struct {

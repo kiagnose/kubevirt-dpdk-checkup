@@ -145,7 +145,7 @@ kubectl get configmap dpdk-checkup-config -n <target-namespace> -o yaml
 | status.result.trafficGenOutputErrorPackets | Indicates error sending packets from traffic generator            |          |
 | status.result.trafficGenInputErrorPackets  | Indicates error receiving packets to traffic generator            |          |
 | status.result.trafficGenActualNodeName     | Node name on which the traffic generator VM was scheduled         |          |
-| status.result.DPDKVMNode                   | Node name on which the DPDK VMI was scheduled                     |          |
+| status.result.vmUnderTestActualNodeName    | Node name on which the VM under test was scheduled                |          |
 | status.result.DPDKRxTestPackets            | Number of packets packets received on the DPDK VMI                |          |
 | status.result.DPDKRxPacketDrops            | Indicates ingress packets that were dropped from DPDK application |          |
 | status.result.DPDKTxPacketDrops            | Indicates egress packets were dropped from the DPDK application   |          |

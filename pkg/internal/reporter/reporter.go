@@ -37,7 +37,7 @@ const (
 	DPDKRxDropsKey                  = "DPDKRxPacketDrops"
 	DPDKTxDropsKey                  = "DPDKTxPacketDrops"
 	TrafficGenActualNodeNameKey     = "trafficGenActualNodeName"
-	DPDKVMNodeKey                   = "DPDKVMNode"
+	VMUnderTestActualNodeNameKey    = "vmUnderTestActualNodeName"
 )
 
 type Reporter struct {
@@ -75,7 +75,7 @@ func formatResults(checkupStatus status.Status) map[string]string {
 		DPDKRxDropsKey:                  fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsRxDropped),
 		DPDKTxDropsKey:                  fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsTxDropped),
 		TrafficGenActualNodeNameKey:     checkupStatus.Results.TrafficGenActualNodeName,
-		DPDKVMNodeKey:                   checkupStatus.Results.DPDKVMNode,
+		VMUnderTestActualNodeNameKey:    checkupStatus.Results.VMUnderTestActualNodeName,
 	}
 
 	return formattedResults

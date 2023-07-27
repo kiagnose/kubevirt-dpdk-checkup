@@ -136,7 +136,7 @@ func (c *Checkup) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	c.results.DPDKVMNode = c.vmiUnderTest.Status.NodeName
+	c.results.VMUnderTestActualNodeName = c.vmiUnderTest.Status.NodeName
 	c.results.TrafficGenActualNodeName = c.trafficGen.Status.NodeName
 
 	if c.results.TrafficGenOutputErrorPackets != 0 || c.results.TrafficGenInputErrorPackets != 0 {

@@ -103,7 +103,7 @@ var _ = Describe("Execute the checkup Job", func() {
 		Expect(configMap.Data).NotTo(BeNil())
 		Expect(configMap.Data["status.succeeded"]).To(Equal("true"), fmt.Sprintf("should succeed %+v", prettifyData(configMap.Data)))
 		Expect(configMap.Data["status.failureReason"]).To(BeEmpty(), fmt.Sprintf("should be empty %+v", prettifyData(configMap.Data)))
-		Expect(configMap.Data["status.result.DPDKVMNode"]).ToNot(BeEmpty(),
+		Expect(configMap.Data["status.result.vmUnderTestActualNodeName"]).ToNot(BeEmpty(),
 			fmt.Sprintf("DPDKVMNode should not be empty %+v", prettifyData(configMap.Data)))
 		Expect(configMap.Data["status.result.trafficGenActualNodeName"]).ToNot(BeEmpty(),
 			fmt.Sprintf("trafficGeneratorNode should not be empty %+v", prettifyData(configMap.Data)))

@@ -58,7 +58,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 		expectedDPDKRxTestPackets            = 0
 		expectedDPDKPacketsRxDropped         = 0
 		expectedDPDKPacketsTxDropped         = 0
-		expectedDPDKVMNode                   = "dpdk-node01"
+		expectedVMUnderTestActualNodeName    = "dpdk-node01"
 		expectedTrafficGenActualNodeName     = "dpdk-node02"
 	)
 
@@ -84,7 +84,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 			DPDKRxTestPackets:            expectedDPDKRxTestPackets,
 			DPDKPacketsRxDropped:         expectedDPDKPacketsRxDropped,
 			DPDKPacketsTxDropped:         expectedDPDKPacketsTxDropped,
-			DPDKVMNode:                   expectedDPDKVMNode,
+			VMUnderTestActualNodeName:    expectedVMUnderTestActualNodeName,
 			TrafficGenActualNodeName:     expectedTrafficGenActualNodeName,
 		}
 
@@ -102,7 +102,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 			"status.result.DPDKRxPacketDrops":            fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsRxDropped),
 			"status.result.DPDKTxPacketDrops":            fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsTxDropped),
 			"status.result.trafficGenActualNodeName":     checkupStatus.Results.TrafficGenActualNodeName,
-			"status.result.DPDKVMNode":                   checkupStatus.Results.DPDKVMNode,
+			"status.result.vmUnderTestActualNodeName":    checkupStatus.Results.VMUnderTestActualNodeName,
 		}
 
 		assert.Equal(t, expectedReportData, getCheckupData(t, fakeClient, testNamespace, testConfigMapName))
