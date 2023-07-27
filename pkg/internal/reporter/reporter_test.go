@@ -55,7 +55,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 		expectedTrafficGenSentPackets        = 0
 		expectedTrafficGenOutputErrorPackets = 0
 		expectedTrafficGenInputErrorPackets  = 0
-		expectedDPDKRxTestPackets            = 0
+		expectedVMUnderTestReceivedPackets   = 0
 		expectedDPDKPacketsRxDropped         = 0
 		expectedDPDKPacketsTxDropped         = 0
 		expectedVMUnderTestActualNodeName    = "dpdk-node01"
@@ -81,7 +81,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 			TrafficGenSentPackets:        expectedTrafficGenSentPackets,
 			TrafficGenOutputErrorPackets: expectedTrafficGenOutputErrorPackets,
 			TrafficGenInputErrorPackets:  expectedTrafficGenInputErrorPackets,
-			DPDKRxTestPackets:            expectedDPDKRxTestPackets,
+			VMUnderTestReceivedPackets:   expectedVMUnderTestReceivedPackets,
 			DPDKPacketsRxDropped:         expectedDPDKPacketsRxDropped,
 			DPDKPacketsTxDropped:         expectedDPDKPacketsTxDropped,
 			VMUnderTestActualNodeName:    expectedVMUnderTestActualNodeName,
@@ -98,7 +98,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 			"status.result.trafficGenSentPackets":        fmt.Sprintf("%d", checkupStatus.Results.TrafficGenSentPackets),
 			"status.result.trafficGenOutputErrorPackets": fmt.Sprintf("%d", checkupStatus.Results.TrafficGenOutputErrorPackets),
 			"status.result.trafficGenInputErrorPackets":  fmt.Sprintf("%d", checkupStatus.Results.TrafficGenInputErrorPackets),
-			"status.result.DPDKRxTestPackets":            fmt.Sprintf("%d", checkupStatus.Results.DPDKRxTestPackets),
+			"status.result.vmUnderTestReceivedPackets":   fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestReceivedPackets),
 			"status.result.DPDKRxPacketDrops":            fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsRxDropped),
 			"status.result.DPDKTxPacketDrops":            fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsTxDropped),
 			"status.result.trafficGenActualNodeName":     checkupStatus.Results.TrafficGenActualNodeName,

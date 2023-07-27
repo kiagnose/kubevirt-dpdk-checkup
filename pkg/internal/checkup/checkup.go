@@ -149,9 +149,9 @@ func (c *Checkup) Run(ctx context.Context) error {
 			c.results.DPDKPacketsRxDropped, c.results.DPDKPacketsTxDropped)
 	}
 
-	if c.results.TrafficGenSentPackets != c.results.DPDKRxTestPackets {
+	if c.results.TrafficGenSentPackets != c.results.VMUnderTestReceivedPackets {
 		return fmt.Errorf("not all generated packets had reached DPDK VM: Sent from traffic generator: %d; Received on DPDK VM: %d",
-			c.results.TrafficGenSentPackets, c.results.DPDKRxTestPackets)
+			c.results.TrafficGenSentPackets, c.results.VMUnderTestReceivedPackets)
 	}
 
 	return nil
