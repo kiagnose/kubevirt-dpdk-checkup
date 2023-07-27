@@ -88,7 +88,7 @@ func RetValue(retcode string) string {
 // SafeExpectBatchWithResponse runs the batch from `expected`, connecting to a VMI's console and
 // waiting for the batch to return with a response until timeout.
 // It validates that the commands arrive to the console.
-// NOTE: This functions inherits limitations from `ExpectBatchWithValidatedSend`, refer to it for more information.
+// NOTE: This functions inherits limitations from `expectBatchWithValidatedSend`, refer to it for more information.
 func SafeExpectBatchWithResponse(serialConsoleClient vmiSerialConsoleClient,
 	vmiNamespace,
 	vmiName string,
@@ -100,28 +100,28 @@ func SafeExpectBatchWithResponse(serialConsoleClient vmiSerialConsoleClient,
 	}
 	defer expecter.Close()
 
-	resp, err := ExpectBatchWithValidatedSend(expecter, expected, timeout)
+	resp, err := expectBatchWithValidatedSend(expecter, expected, timeout)
 	if err != nil {
 		log.Printf("%v", resp)
 	}
 	return resp, err
 }
 
-// ExpectBatchWithValidatedSend adds the expect.BSnd command to the exect.BExp expression.
+// expectBatchWithValidatedSend adds the expect.BSnd command to the exect.BExp expression.
 // It is done to make sure the match was found in the result of the expect.BSnd
 // command and not in a leftover that wasn't removed from the buffer.
 // NOTE: the method contains the following limitations:
 //   - Use of `BatchSwitchCase`
 //   - Multiline commands
 //   - No more than one sequential send or receive
-func ExpectBatchWithValidatedSend(expecter expect.Expecter, batch []expect.Batcher, timeout time.Duration) ([]expect.BatchRes, error) {
+func expectBatchWithValidatedSend(expecter expect.Expecter, batch []expect.Batcher, timeout time.Duration) ([]expect.BatchRes, error) {
 	sendFlag := false
 	expectFlag := false
 	previousSend := ""
 
 	const minimumRequiredBatches = 2
 	if len(batch) < minimumRequiredBatches {
-		return nil, fmt.Errorf("ExpectBatchWithValidatedSend requires at least 2 batchers, supplied %v", batch)
+		return nil, fmt.Errorf("expectBatchWithValidatedSend requires at least 2 batchers, supplied %v", batch)
 	}
 
 	for i, batcher := range batch {
@@ -133,7 +133,7 @@ func ExpectBatchWithValidatedSend(expecter expect.Expecter, batch []expect.Batch
 			expectFlag = true
 			sendFlag = false
 			if _, ok := batch[i].(*expect.BExp); !ok {
-				return nil, fmt.Errorf("ExpectBatchWithValidatedSend support only expect of type BExp")
+				return nil, fmt.Errorf("expectBatchWithValidatedSend support only expect of type BExp")
 			}
 			bExp, _ := batch[i].(*expect.BExp)
 			previousSend = regexp.QuoteMeta(previousSend)
@@ -149,9 +149,9 @@ func ExpectBatchWithValidatedSend(expecter expect.Expecter, batch []expect.Batch
 			expectFlag = false
 			previousSend = batcher.Arg()
 		case expect.BatchSwitchCase:
-			return nil, fmt.Errorf("ExpectBatchWithValidatedSend doesn't support BatchSwitchCase")
+			return nil, fmt.Errorf("expectBatchWithValidatedSend doesn't support BatchSwitchCase")
 		default:
-			return nil, fmt.Errorf("unknown command: ExpectBatchWithValidatedSend supports only BatchExpect and BatchSend")
+			return nil, fmt.Errorf("unknown command: expectBatchWithValidatedSend supports only BatchExpect and BatchSend")
 		}
 	}
 
