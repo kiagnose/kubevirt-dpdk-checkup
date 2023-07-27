@@ -139,9 +139,9 @@ func (c *Checkup) Run(ctx context.Context) error {
 	c.results.DPDKVMNode = c.vmiUnderTest.Status.NodeName
 	c.results.TrafficGeneratorNode = c.trafficGen.Status.NodeName
 
-	if c.results.TrafficGenOutputErrorPackets != 0 || c.results.TrafficGeneratorInErrorPackets != 0 {
+	if c.results.TrafficGenOutputErrorPackets != 0 || c.results.TrafficGenInputErrorPackets != 0 {
 		return fmt.Errorf("detected Error Packets on the traffic generator's side: Oerrors %d Ierrors %d",
-			c.results.TrafficGenOutputErrorPackets, c.results.TrafficGeneratorInErrorPackets)
+			c.results.TrafficGenOutputErrorPackets, c.results.TrafficGenInputErrorPackets)
 	}
 
 	if c.results.DPDKPacketsRxDropped != 0 || c.results.DPDKPacketsTxDropped != 0 {
