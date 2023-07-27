@@ -47,6 +47,14 @@ func NewExpecter(serialConsoleClient vmiSerialConsoleClient,
 	vmiName string,
 	timeout time.Duration,
 	opts ...expect.Option) (expect.Expecter, <-chan error, error) {
+	return spawnConsole(serialConsoleClient, vmiNamespace, vmiName, timeout, opts...)
+}
+
+func spawnConsole(serialConsoleClient vmiSerialConsoleClient,
+	vmiNamespace,
+	vmiName string,
+	timeout time.Duration,
+	opts ...expect.Option) (*expect.GExpect, <-chan error, error) {
 	vmiReader, vmiWriter := io.Pipe()
 	expecterReader, expecterWriter := io.Pipe()
 	resCh := make(chan error)
