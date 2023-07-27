@@ -56,7 +56,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 		expectedTrafficGenOutputErrorPackets = 0
 		expectedTrafficGenInputErrorPackets  = 0
 		expectedVMUnderTestReceivedPackets   = 0
-		expectedDPDKPacketsRxDropped         = 0
+		expectedVMUnderTestRxDroppedPackets  = 0
 		expectedDPDKPacketsTxDropped         = 0
 		expectedVMUnderTestActualNodeName    = "dpdk-node01"
 		expectedTrafficGenActualNodeName     = "dpdk-node02"
@@ -82,7 +82,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 			TrafficGenOutputErrorPackets: expectedTrafficGenOutputErrorPackets,
 			TrafficGenInputErrorPackets:  expectedTrafficGenInputErrorPackets,
 			VMUnderTestReceivedPackets:   expectedVMUnderTestReceivedPackets,
-			DPDKPacketsRxDropped:         expectedDPDKPacketsRxDropped,
+			VMUnderTestRxDroppedPackets:  expectedVMUnderTestRxDroppedPackets,
 			DPDKPacketsTxDropped:         expectedDPDKPacketsTxDropped,
 			VMUnderTestActualNodeName:    expectedVMUnderTestActualNodeName,
 			TrafficGenActualNodeName:     expectedTrafficGenActualNodeName,
@@ -99,7 +99,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 			"status.result.trafficGenOutputErrorPackets": fmt.Sprintf("%d", checkupStatus.Results.TrafficGenOutputErrorPackets),
 			"status.result.trafficGenInputErrorPackets":  fmt.Sprintf("%d", checkupStatus.Results.TrafficGenInputErrorPackets),
 			"status.result.vmUnderTestReceivedPackets":   fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestReceivedPackets),
-			"status.result.DPDKRxPacketDrops":            fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsRxDropped),
+			"status.result.vmUnderTestRxDroppedPackets":  fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestRxDroppedPackets),
 			"status.result.DPDKTxPacketDrops":            fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsTxDropped),
 			"status.result.trafficGenActualNodeName":     checkupStatus.Results.TrafficGenActualNodeName,
 			"status.result.vmUnderTestActualNodeName":    checkupStatus.Results.VMUnderTestActualNodeName,

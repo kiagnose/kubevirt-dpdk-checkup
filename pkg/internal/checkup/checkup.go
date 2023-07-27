@@ -144,9 +144,9 @@ func (c *Checkup) Run(ctx context.Context) error {
 			c.results.TrafficGenOutputErrorPackets, c.results.TrafficGenInputErrorPackets)
 	}
 
-	if c.results.DPDKPacketsRxDropped != 0 || c.results.DPDKPacketsTxDropped != 0 {
+	if c.results.VMUnderTestRxDroppedPackets != 0 || c.results.DPDKPacketsTxDropped != 0 {
 		return fmt.Errorf("detected packets dropped on the DPDK VM's side: RX: %d; TX: %d",
-			c.results.DPDKPacketsRxDropped, c.results.DPDKPacketsTxDropped)
+			c.results.VMUnderTestRxDroppedPackets, c.results.DPDKPacketsTxDropped)
 	}
 
 	if c.results.TrafficGenSentPackets != c.results.VMUnderTestReceivedPackets {
