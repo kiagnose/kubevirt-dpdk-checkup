@@ -36,7 +36,7 @@ const (
 	DPDKRxTestPacketsKey            = "DPDKRxTestPackets"
 	DPDKRxDropsKey                  = "DPDKRxPacketDrops"
 	DPDKTxDropsKey                  = "DPDKTxPacketDrops"
-	TrafficGeneratorNodeKey         = "trafficGeneratorNode"
+	TrafficGenActualNodeNameKey     = "trafficGenActualNodeName"
 	DPDKVMNodeKey                   = "DPDKVMNode"
 )
 
@@ -74,7 +74,7 @@ func formatResults(checkupStatus status.Status) map[string]string {
 		DPDKRxTestPacketsKey:            fmt.Sprintf("%d", checkupStatus.Results.DPDKRxTestPackets),
 		DPDKRxDropsKey:                  fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsRxDropped),
 		DPDKTxDropsKey:                  fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsTxDropped),
-		TrafficGeneratorNodeKey:         checkupStatus.Results.TrafficGeneratorNode,
+		TrafficGenActualNodeNameKey:     checkupStatus.Results.TrafficGenActualNodeName,
 		DPDKVMNodeKey:                   checkupStatus.Results.DPDKVMNode,
 	}
 

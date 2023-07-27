@@ -137,7 +137,7 @@ func (c *Checkup) Run(ctx context.Context) error {
 		return err
 	}
 	c.results.DPDKVMNode = c.vmiUnderTest.Status.NodeName
-	c.results.TrafficGeneratorNode = c.trafficGen.Status.NodeName
+	c.results.TrafficGenActualNodeName = c.trafficGen.Status.NodeName
 
 	if c.results.TrafficGenOutputErrorPackets != 0 || c.results.TrafficGenInputErrorPackets != 0 {
 		return fmt.Errorf("detected Error Packets on the traffic generator's side: Oerrors %d Ierrors %d",

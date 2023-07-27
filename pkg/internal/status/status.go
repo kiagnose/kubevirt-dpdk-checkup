@@ -28,7 +28,7 @@ type Results struct {
 	DPDKRxTestPackets            int64
 	DPDKPacketsRxDropped         int64
 	DPDKPacketsTxDropped         int64
-	TrafficGeneratorNode         string
+	TrafficGenActualNodeName     string
 	DPDKVMNode                   string
 }
 

@@ -59,7 +59,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 		expectedDPDKPacketsRxDropped         = 0
 		expectedDPDKPacketsTxDropped         = 0
 		expectedDPDKVMNode                   = "dpdk-node01"
-		expectedTrafficGeneratorNode         = "dpdk-node02"
+		expectedTrafficGenActualNodeName     = "dpdk-node02"
 	)
 
 	const (
@@ -85,7 +85,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 			DPDKPacketsRxDropped:         expectedDPDKPacketsRxDropped,
 			DPDKPacketsTxDropped:         expectedDPDKPacketsTxDropped,
 			DPDKVMNode:                   expectedDPDKVMNode,
-			TrafficGeneratorNode:         expectedTrafficGeneratorNode,
+			TrafficGenActualNodeName:     expectedTrafficGenActualNodeName,
 		}
 
 		assert.NoError(t, testReporter.Report(checkupStatus))
@@ -101,7 +101,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 			"status.result.DPDKRxTestPackets":            fmt.Sprintf("%d", checkupStatus.Results.DPDKRxTestPackets),
 			"status.result.DPDKRxPacketDrops":            fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsRxDropped),
 			"status.result.DPDKTxPacketDrops":            fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsTxDropped),
-			"status.result.trafficGeneratorNode":         checkupStatus.Results.TrafficGeneratorNode,
+			"status.result.trafficGenActualNodeName":     checkupStatus.Results.TrafficGenActualNodeName,
 			"status.result.DPDKVMNode":                   checkupStatus.Results.DPDKVMNode,
 		}
 
