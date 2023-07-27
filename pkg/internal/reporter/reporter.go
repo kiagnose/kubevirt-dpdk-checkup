@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	TrafficGeneratorTxPacketsKey       = "trafficGeneratorTxPackets"
+	TrafficGenSentPacketsKey           = "trafficGenSentPackets"
 	TrafficGeneratorOutErrorPacketsKey = "trafficGeneratorOutputErrorPackets"
 	TrafficGeneratorInErrorPacketsKey  = "trafficGeneratorInErrorPackets"
 	DPDKRxTestPacketsKey               = "DPDKRxTestPackets"
@@ -68,7 +68,7 @@ func formatResults(checkupStatus status.Status) map[string]string {
 	}
 
 	formattedResults := map[string]string{
-		TrafficGeneratorTxPacketsKey:       fmt.Sprintf("%d", checkupStatus.Results.TrafficGeneratorTxPackets),
+		TrafficGenSentPacketsKey:           fmt.Sprintf("%d", checkupStatus.Results.TrafficGenSentPackets),
 		TrafficGeneratorOutErrorPacketsKey: fmt.Sprintf("%d", checkupStatus.Results.TrafficGeneratorOutErrorPackets),
 		TrafficGeneratorInErrorPacketsKey:  fmt.Sprintf("%d", checkupStatus.Results.TrafficGeneratorInErrorPackets),
 		DPDKRxTestPacketsKey:               fmt.Sprintf("%d", checkupStatus.Results.DPDKRxTestPackets),

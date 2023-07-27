@@ -162,8 +162,8 @@ func calculateStats(trexClient trex.Client, testpmdConsole *testpmd.TestpmdConso
 	log.Printf("traffic Generator port %d Packet output errors: %d", trex.SourcePort, results.TrafficGeneratorOutErrorPackets)
 	results.TrafficGeneratorInErrorPackets = trafficGeneratorDstPortStats.Result.Ierrors
 	log.Printf("traffic Generator port %d Packet output errors: %d", trex.DestPort, results.TrafficGeneratorInErrorPackets)
-	results.TrafficGeneratorTxPackets = trafficGeneratorSrcPortStats.Result.Opackets
-	log.Printf("traffic Generator packet sent via port %d: %d", trex.SourcePort, results.TrafficGeneratorTxPackets)
+	results.TrafficGenSentPackets = trafficGeneratorSrcPortStats.Result.Opackets
+	log.Printf("traffic Generator packet sent via port %d: %d", trex.SourcePort, results.TrafficGenSentPackets)
 
 	log.Printf("get testpmd stats in DPDK VMI...")
 	var testPmdStats [testpmd.StatsArraySize]testpmd.PortStats

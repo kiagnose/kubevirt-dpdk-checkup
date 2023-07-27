@@ -141,7 +141,7 @@ kubectl get configmap dpdk-checkup-config -n <target-namespace> -o yaml
 | status.failureReason                             | Failure reason in case of a failure                               |          |
 | status.startTimestamp                            | Checkup start timestamp                                           | RFC 3339 |
 | status.completionTimestamp                       | Checkup completion timestamp                                      | RFC 3339 |
-| status.result.trafficGeneratorTxPackets          | Number of packets sent from the traffic generator                 |          |
+| status.result.trafficGenSentPackets              | Number of packets sent from the traffic generator                 |          |
 | status.result.trafficGeneratorOutputErrorPackets | Indicates error sending packets from traffic generator            |          |
 | status.result.trafficGeneratorInErrorPackets     | Indicates error receiving packets to traffic generator            |          |
 | status.result.trafficGeneratorNode               | Node name on which the traffic generator VM was scheduled         |          |
