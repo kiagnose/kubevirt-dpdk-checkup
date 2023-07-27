@@ -57,7 +57,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 		expectedTrafficGenInputErrorPackets  = 0
 		expectedVMUnderTestReceivedPackets   = 0
 		expectedVMUnderTestRxDroppedPackets  = 0
-		expectedDPDKPacketsTxDropped         = 0
+		expectedVMUnderTestTxDroppedPackets  = 0
 		expectedVMUnderTestActualNodeName    = "dpdk-node01"
 		expectedTrafficGenActualNodeName     = "dpdk-node02"
 	)
@@ -83,7 +83,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 			TrafficGenInputErrorPackets:  expectedTrafficGenInputErrorPackets,
 			VMUnderTestReceivedPackets:   expectedVMUnderTestReceivedPackets,
 			VMUnderTestRxDroppedPackets:  expectedVMUnderTestRxDroppedPackets,
-			DPDKPacketsTxDropped:         expectedDPDKPacketsTxDropped,
+			VMUnderTestTxDroppedPackets:  expectedVMUnderTestTxDroppedPackets,
 			VMUnderTestActualNodeName:    expectedVMUnderTestActualNodeName,
 			TrafficGenActualNodeName:     expectedTrafficGenActualNodeName,
 		}
@@ -100,7 +100,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 			"status.result.trafficGenInputErrorPackets":  fmt.Sprintf("%d", checkupStatus.Results.TrafficGenInputErrorPackets),
 			"status.result.vmUnderTestReceivedPackets":   fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestReceivedPackets),
 			"status.result.vmUnderTestRxDroppedPackets":  fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestRxDroppedPackets),
-			"status.result.DPDKTxPacketDrops":            fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsTxDropped),
+			"status.result.vmUnderTestTxDroppedPackets":  fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestTxDroppedPackets),
 			"status.result.trafficGenActualNodeName":     checkupStatus.Results.TrafficGenActualNodeName,
 			"status.result.vmUnderTestActualNodeName":    checkupStatus.Results.VMUnderTestActualNodeName,
 		}

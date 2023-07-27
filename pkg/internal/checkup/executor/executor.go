@@ -171,8 +171,8 @@ func calculateStats(trexClient trex.Client, testpmdConsole *testpmd.TestpmdConso
 		return status.Results{}, err
 	}
 	results.VMUnderTestRxDroppedPackets = testPmdStats[testpmd.StatsSummary].RXDropped
-	results.DPDKPacketsTxDropped = testPmdStats[testpmd.StatsSummary].TXDropped
-	log.Printf("DPDK side packets Dropped: Rx: %d; TX: %d", results.VMUnderTestRxDroppedPackets, results.DPDKPacketsTxDropped)
+	results.VMUnderTestTxDroppedPackets = testPmdStats[testpmd.StatsSummary].TXDropped
+	log.Printf("DPDK side packets Dropped: Rx: %d; TX: %d", results.VMUnderTestRxDroppedPackets, results.VMUnderTestTxDroppedPackets)
 	results.VMUnderTestReceivedPackets =
 		testPmdStats[testpmd.StatsSummary].RXTotal - testPmdStats[testpmd.StatsPort0].TXPackets - testPmdStats[testpmd.StatsPort1].RXPackets
 	log.Printf("DPDK side test packets received (including dropped, excluding non-related packets): %d", results.VMUnderTestReceivedPackets)

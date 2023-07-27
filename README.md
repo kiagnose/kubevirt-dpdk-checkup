@@ -148,4 +148,4 @@ kubectl get configmap dpdk-checkup-config -n <target-namespace> -o yaml
 | status.result.vmUnderTestActualNodeName    | Node name on which the VM under test was scheduled                |          |
 | status.result.vmUnderTestReceivedPackets   | Number of packets packets received on the VM under test           |          |
 | status.result.vmUnderTestRxDroppedPackets  | Indicates ingress packets that were dropped from DPDK application |          |
-| status.result.DPDKTxPacketDrops            | Indicates egress packets were dropped from the DPDK application   |          |
+| status.result.vmUnderTestTxDroppedPackets  | Indicates egress packets were dropped from the DPDK application   |          |

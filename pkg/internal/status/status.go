@@ -27,7 +27,7 @@ type Results struct {
 	TrafficGenInputErrorPackets  int64
 	VMUnderTestReceivedPackets   int64
 	VMUnderTestRxDroppedPackets  int64
-	DPDKPacketsTxDropped         int64
+	VMUnderTestTxDroppedPackets  int64
 	TrafficGenActualNodeName     string
 	VMUnderTestActualNodeName    string
 }

@@ -35,7 +35,7 @@ const (
 	TrafficGenInputErrorPacketsKey  = "trafficGenInputErrorPackets"
 	VMUnderTestReceivedPacketsKey   = "vmUnderTestReceivedPackets"
 	VMUnderTestRxDroppedPacketsKey  = "vmUnderTestRxDroppedPackets"
-	DPDKTxDropsKey                  = "DPDKTxPacketDrops"
+	VMUnderTestTxDroppedPacketsKey  = "vmUnderTestTxDroppedPackets"
 	TrafficGenActualNodeNameKey     = "trafficGenActualNodeName"
 	VMUnderTestActualNodeNameKey    = "vmUnderTestActualNodeName"
 )
@@ -73,7 +73,7 @@ func formatResults(checkupStatus status.Status) map[string]string {
 		TrafficGenInputErrorPacketsKey:  fmt.Sprintf("%d", checkupStatus.Results.TrafficGenInputErrorPackets),
 		VMUnderTestReceivedPacketsKey:   fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestReceivedPackets),
 		VMUnderTestRxDroppedPacketsKey:  fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestRxDroppedPackets),
-		DPDKTxDropsKey:                  fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsTxDropped),
+		VMUnderTestTxDroppedPacketsKey:  fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestTxDroppedPackets),
 		TrafficGenActualNodeNameKey:     checkupStatus.Results.TrafficGenActualNodeName,
 		VMUnderTestActualNodeNameKey:    checkupStatus.Results.VMUnderTestActualNodeName,
 	}
