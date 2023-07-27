@@ -60,11 +60,11 @@ func NewConfig(cfg config.Config) Config {
 		latencyCPU:                     latencyCPU,
 		trafficCPUs:                    trafficCPUs,
 		numOfTrafficCPUs:               numOfTrafficCPUs,
-		portBandwidthGB:                fmt.Sprintf("%d", cfg.PortBandwidthGB),
-		trafficGeneratorEastMacAddress: cfg.TrafficGeneratorEastMacAddress.String(),
-		trafficGeneratorWestMacAddress: cfg.TrafficGeneratorWestMacAddress.String(),
-		DPDKEastMacAddress:             cfg.DPDKEastMacAddress.String(),
-		DPDKWestMacAddress:             cfg.DPDKWestMacAddress.String(),
+		portBandwidthGB:                fmt.Sprintf("%d", cfg.PortBandwidthGbps),
+		trafficGeneratorEastMacAddress: cfg.TrafficGenEastMacAddress.String(),
+		trafficGeneratorWestMacAddress: cfg.TrafficGenWestMacAddress.String(),
+		DPDKEastMacAddress:             cfg.VMUnderTestEastMacAddress.String(),
+		DPDKWestMacAddress:             cfg.VMUnderTestWestMacAddress.String(),
 	}
 }
 

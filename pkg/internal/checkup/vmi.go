@@ -57,10 +57,10 @@ func newVMIUnderTest(name string, checkupConfig config.Config) *kvcorev1.Virtual
 	optionsToApply := baseOptions(checkupConfig)
 
 	optionsToApply = append(optionsToApply,
-		vmi.WithAffinity(Affinity(checkupConfig.DPDKNodeLabelSelector, checkupConfig.PodUID)),
-		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.DPDKEastMacAddress.String(), config.VMIEastNICPCIAddress),
-		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.DPDKWestMacAddress.String(), config.VMIWestNICPCIAddress),
-		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMContainerDiskImage),
+		vmi.WithAffinity(Affinity(checkupConfig.VMUnderTestTargetNodeName, checkupConfig.PodUID)),
+		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.VMUnderTestEastMacAddress.String(), config.VMIEastNICPCIAddress),
+		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.VMUnderTestWestMacAddress.String(), config.VMIWestNICPCIAddress),
+		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMUnderTestContainerDiskImage),
 		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword, nil)),
 	)
 
@@ -74,10 +74,10 @@ func newTrafficGen(name string, checkupConfig config.Config, configMapName strin
 	optionsToApply := baseOptions(checkupConfig)
 
 	optionsToApply = append(optionsToApply,
-		vmi.WithAffinity(Affinity(checkupConfig.TrafficGeneratorNodeLabelSelector, checkupConfig.PodUID)),
-		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.TrafficGeneratorEastMacAddress.String(), config.VMIEastNICPCIAddress),
-		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.TrafficGeneratorWestMacAddress.String(), config.VMIWestNICPCIAddress),
-		vmi.WithContainerDisk(rootDiskName, checkupConfig.TrafficGeneratorImage),
+		vmi.WithAffinity(Affinity(checkupConfig.TrafficGenTargetNodeName, checkupConfig.PodUID)),
+		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.TrafficGenEastMacAddress.String(), config.VMIEastNICPCIAddress),
+		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.TrafficGenWestMacAddress.String(), config.VMIWestNICPCIAddress),
+		vmi.WithContainerDisk(rootDiskName, checkupConfig.TrafficGenContainerDiskImage),
 		vmi.WithCloudInitNoCloudVolume(
 			cloudInitDiskName,
 			CloudInit(config.VMIUsername, config.VMIPassword, trafficGenBootCommands(configDiskSerial)),

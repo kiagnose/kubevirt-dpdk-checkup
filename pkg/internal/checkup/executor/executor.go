@@ -61,12 +61,12 @@ func New(client vmiSerialConsoleClient, namespace string, cfg config.Config) Exe
 		vmiUsername:                      config.VMIUsername,
 		vmiPassword:                      config.VMIPassword,
 		vmiUnderTestEastNICPCIAddress:    config.VMIEastNICPCIAddress,
-		trafficGenEastMACAddress:         cfg.TrafficGeneratorEastMacAddress.String(),
+		trafficGenEastMACAddress:         cfg.TrafficGenEastMacAddress.String(),
 		vmiUnderTestWestNICPCIAddress:    config.VMIWestNICPCIAddress,
-		trafficGenWestMACAddress:         cfg.TrafficGeneratorWestMacAddress.String(),
+		trafficGenWestMACAddress:         cfg.TrafficGenWestMacAddress.String(),
 		testDuration:                     cfg.TestDuration,
 		verbosePrintsEnabled:             cfg.Verbose,
-		trafficGeneratorPacketsPerSecond: cfg.TrafficGeneratorPacketsPerSecond,
+		trafficGeneratorPacketsPerSecond: cfg.TrafficGenPacketsPerSecond,
 	}
 }
 
