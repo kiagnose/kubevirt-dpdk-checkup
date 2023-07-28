@@ -101,9 +101,7 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 	}
 
 	testpmdConsole := testpmd.NewTestpmdConsole(
-		e.vmiSerialClient,
-		e.namespace,
-		vmiUnderTestName,
+		vmiUnderTestConsoleExpecter,
 		e.vmiUnderTestEastNICPCIAddress,
 		e.trafficGenEastMACAddress,
 		e.vmiUnderTestWestNICPCIAddress,
