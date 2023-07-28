@@ -52,14 +52,14 @@ func TestReportShouldSucceed(t *testing.T) {
 
 func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 	const (
-		expectedTrafficGeneratorTxPackets       = 0
-		expectedTrafficGeneratorOutErrorPackets = 0
-		expectedTrafficGeneratorInErrorPackets  = 0
-		expectedDPDKRxTestPackets               = 0
-		expectedDPDKPacketsRxDropped            = 0
-		expectedDPDKPacketsTxDropped            = 0
-		expectedDPDKVMNode                      = "dpdk-node01"
-		expectedTrafficGeneratorNode            = "dpdk-node02"
+		expectedTrafficGenSentPackets        = 0
+		expectedTrafficGenOutputErrorPackets = 0
+		expectedTrafficGenInputErrorPackets  = 0
+		expectedVMUnderTestReceivedPackets   = 0
+		expectedVMUnderTestRxDroppedPackets  = 0
+		expectedVMUnderTestTxDroppedPackets  = 0
+		expectedVMUnderTestActualNodeName    = "dpdk-node01"
+		expectedTrafficGenActualNodeName     = "dpdk-node02"
 	)
 
 	const (
@@ -78,31 +78,31 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 		checkupStatus.FailureReason = []string{}
 		checkupStatus.CompletionTimestamp = time.Now()
 		checkupStatus.Results = status.Results{
-			TrafficGeneratorTxPackets:       expectedTrafficGeneratorTxPackets,
-			TrafficGeneratorOutErrorPackets: expectedTrafficGeneratorOutErrorPackets,
-			TrafficGeneratorInErrorPackets:  expectedTrafficGeneratorInErrorPackets,
-			DPDKRxTestPackets:               expectedDPDKRxTestPackets,
-			DPDKPacketsRxDropped:            expectedDPDKPacketsRxDropped,
-			DPDKPacketsTxDropped:            expectedDPDKPacketsTxDropped,
-			DPDKVMNode:                      expectedDPDKVMNode,
-			TrafficGeneratorNode:            expectedTrafficGeneratorNode,
+			TrafficGenSentPackets:        expectedTrafficGenSentPackets,
+			TrafficGenOutputErrorPackets: expectedTrafficGenOutputErrorPackets,
+			TrafficGenInputErrorPackets:  expectedTrafficGenInputErrorPackets,
+			VMUnderTestReceivedPackets:   expectedVMUnderTestReceivedPackets,
+			VMUnderTestRxDroppedPackets:  expectedVMUnderTestRxDroppedPackets,
+			VMUnderTestTxDroppedPackets:  expectedVMUnderTestTxDroppedPackets,
+			VMUnderTestActualNodeName:    expectedVMUnderTestActualNodeName,
+			TrafficGenActualNodeName:     expectedTrafficGenActualNodeName,
 		}
 
 		assert.NoError(t, testReporter.Report(checkupStatus))
 
 		expectedReportData := map[string]string{
-			"status.succeeded":                                 strconv.FormatBool(true),
-			"status.failureReason":                             "",
-			"status.startTimestamp":                            timestamp(checkupStatus.StartTimestamp),
-			"status.completionTimestamp":                       timestamp(checkupStatus.CompletionTimestamp),
-			"status.result.trafficGeneratorTxPackets":          fmt.Sprintf("%d", checkupStatus.Results.TrafficGeneratorTxPackets),
-			"status.result.trafficGeneratorOutputErrorPackets": fmt.Sprintf("%d", checkupStatus.Results.TrafficGeneratorOutErrorPackets),
-			"status.result.trafficGeneratorInErrorPackets":     fmt.Sprintf("%d", checkupStatus.Results.TrafficGeneratorOutErrorPackets),
-			"status.result.DPDKRxTestPackets":                  fmt.Sprintf("%d", checkupStatus.Results.DPDKRxTestPackets),
-			"status.result.DPDKRxPacketDrops":                  fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsRxDropped),
-			"status.result.DPDKTxPacketDrops":                  fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsTxDropped),
-			"status.result.trafficGeneratorNode":               checkupStatus.Results.TrafficGeneratorNode,
-			"status.result.DPDKVMNode":                         checkupStatus.Results.DPDKVMNode,
+			"status.succeeded":                           strconv.FormatBool(true),
+			"status.failureReason":                       "",
+			"status.startTimestamp":                      timestamp(checkupStatus.StartTimestamp),
+			"status.completionTimestamp":                 timestamp(checkupStatus.CompletionTimestamp),
+			"status.result.trafficGenSentPackets":        fmt.Sprintf("%d", checkupStatus.Results.TrafficGenSentPackets),
+			"status.result.trafficGenOutputErrorPackets": fmt.Sprintf("%d", checkupStatus.Results.TrafficGenOutputErrorPackets),
+			"status.result.trafficGenInputErrorPackets":  fmt.Sprintf("%d", checkupStatus.Results.TrafficGenInputErrorPackets),
+			"status.result.vmUnderTestReceivedPackets":   fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestReceivedPackets),
+			"status.result.vmUnderTestRxDroppedPackets":  fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestRxDroppedPackets),
+			"status.result.vmUnderTestTxDroppedPackets":  fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestTxDroppedPackets),
+			"status.result.trafficGenActualNodeName":     checkupStatus.Results.TrafficGenActualNodeName,
+			"status.result.vmUnderTestActualNodeName":    checkupStatus.Results.VMUnderTestActualNodeName,
 		}
 
 		assert.Equal(t, expectedReportData, getCheckupData(t, fakeClient, testNamespace, testConfigMapName))

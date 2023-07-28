@@ -136,22 +136,22 @@ func (c *Checkup) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	c.results.DPDKVMNode = c.vmiUnderTest.Status.NodeName
-	c.results.TrafficGeneratorNode = c.trafficGen.Status.NodeName
+	c.results.VMUnderTestActualNodeName = c.vmiUnderTest.Status.NodeName
+	c.results.TrafficGenActualNodeName = c.trafficGen.Status.NodeName
 
-	if c.results.TrafficGeneratorOutErrorPackets != 0 || c.results.TrafficGeneratorInErrorPackets != 0 {
+	if c.results.TrafficGenOutputErrorPackets != 0 || c.results.TrafficGenInputErrorPackets != 0 {
 		return fmt.Errorf("detected Error Packets on the traffic generator's side: Oerrors %d Ierrors %d",
-			c.results.TrafficGeneratorOutErrorPackets, c.results.TrafficGeneratorInErrorPackets)
+			c.results.TrafficGenOutputErrorPackets, c.results.TrafficGenInputErrorPackets)
 	}
 
-	if c.results.DPDKPacketsRxDropped != 0 || c.results.DPDKPacketsTxDropped != 0 {
+	if c.results.VMUnderTestRxDroppedPackets != 0 || c.results.VMUnderTestTxDroppedPackets != 0 {
 		return fmt.Errorf("detected packets dropped on the DPDK VM's side: RX: %d; TX: %d",
-			c.results.DPDKPacketsRxDropped, c.results.DPDKPacketsTxDropped)
+			c.results.VMUnderTestRxDroppedPackets, c.results.VMUnderTestTxDroppedPackets)
 	}
 
-	if c.results.TrafficGeneratorTxPackets != c.results.DPDKRxTestPackets {
+	if c.results.TrafficGenSentPackets != c.results.VMUnderTestReceivedPackets {
 		return fmt.Errorf("not all generated packets had reached DPDK VM: Sent from traffic generator: %d; Received on DPDK VM: %d",
-			c.results.TrafficGeneratorTxPackets, c.results.DPDKRxTestPackets)
+			c.results.TrafficGenSentPackets, c.results.VMUnderTestReceivedPackets)
 	}
 
 	return nil

@@ -158,24 +158,24 @@ func calculateStats(trexClient trex.Client, testpmdConsole *testpmd.TestpmdConso
 		return status.Results{}, err
 	}
 
-	results.TrafficGeneratorOutErrorPackets = trafficGeneratorSrcPortStats.Result.Oerrors
-	log.Printf("traffic Generator port %d Packet output errors: %d", trex.SourcePort, results.TrafficGeneratorOutErrorPackets)
-	results.TrafficGeneratorInErrorPackets = trafficGeneratorDstPortStats.Result.Ierrors
-	log.Printf("traffic Generator port %d Packet output errors: %d", trex.DestPort, results.TrafficGeneratorInErrorPackets)
-	results.TrafficGeneratorTxPackets = trafficGeneratorSrcPortStats.Result.Opackets
-	log.Printf("traffic Generator packet sent via port %d: %d", trex.SourcePort, results.TrafficGeneratorTxPackets)
+	results.TrafficGenOutputErrorPackets = trafficGeneratorSrcPortStats.Result.Oerrors
+	log.Printf("traffic Generator port %d Packet output errors: %d", trex.SourcePort, results.TrafficGenOutputErrorPackets)
+	results.TrafficGenInputErrorPackets = trafficGeneratorDstPortStats.Result.Ierrors
+	log.Printf("traffic Generator port %d Packet output errors: %d", trex.DestPort, results.TrafficGenInputErrorPackets)
+	results.TrafficGenSentPackets = trafficGeneratorSrcPortStats.Result.Opackets
+	log.Printf("traffic Generator packet sent via port %d: %d", trex.SourcePort, results.TrafficGenSentPackets)
 
 	log.Printf("get testpmd stats in DPDK VMI...")
 	var testPmdStats [testpmd.StatsArraySize]testpmd.PortStats
 	if testPmdStats, err = testpmdConsole.GetStats(); err != nil {
 		return status.Results{}, err
 	}
-	results.DPDKPacketsRxDropped = testPmdStats[testpmd.StatsSummary].RXDropped
-	results.DPDKPacketsTxDropped = testPmdStats[testpmd.StatsSummary].TXDropped
-	log.Printf("DPDK side packets Dropped: Rx: %d; TX: %d", results.DPDKPacketsRxDropped, results.DPDKPacketsTxDropped)
-	results.DPDKRxTestPackets =
+	results.VMUnderTestRxDroppedPackets = testPmdStats[testpmd.StatsSummary].RXDropped
+	results.VMUnderTestTxDroppedPackets = testPmdStats[testpmd.StatsSummary].TXDropped
+	log.Printf("DPDK side packets Dropped: Rx: %d; TX: %d", results.VMUnderTestRxDroppedPackets, results.VMUnderTestTxDroppedPackets)
+	results.VMUnderTestReceivedPackets =
 		testPmdStats[testpmd.StatsSummary].RXTotal - testPmdStats[testpmd.StatsPort0].TXPackets - testPmdStats[testpmd.StatsPort1].RXPackets
-	log.Printf("DPDK side test packets received (including dropped, excluding non-related packets): %d", results.DPDKRxTestPackets)
+	log.Printf("DPDK side test packets received (including dropped, excluding non-related packets): %d", results.VMUnderTestReceivedPackets)
 
 	return results, nil
 }

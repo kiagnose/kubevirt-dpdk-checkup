@@ -30,14 +30,14 @@ import (
 )
 
 const (
-	TrafficGeneratorTxPacketsKey       = "trafficGeneratorTxPackets"
-	TrafficGeneratorOutErrorPacketsKey = "trafficGeneratorOutputErrorPackets"
-	TrafficGeneratorInErrorPacketsKey  = "trafficGeneratorInErrorPackets"
-	DPDKRxTestPacketsKey               = "DPDKRxTestPackets"
-	DPDKRxDropsKey                     = "DPDKRxPacketDrops"
-	DPDKTxDropsKey                     = "DPDKTxPacketDrops"
-	TrafficGeneratorNodeKey            = "trafficGeneratorNode"
-	DPDKVMNodeKey                      = "DPDKVMNode"
+	TrafficGenSentPacketsKey        = "trafficGenSentPackets"
+	TrafficGenOutputErrorPacketsKey = "trafficGenOutputErrorPackets"
+	TrafficGenInputErrorPacketsKey  = "trafficGenInputErrorPackets"
+	VMUnderTestReceivedPacketsKey   = "vmUnderTestReceivedPackets"
+	VMUnderTestRxDroppedPacketsKey  = "vmUnderTestRxDroppedPackets"
+	VMUnderTestTxDroppedPacketsKey  = "vmUnderTestTxDroppedPackets"
+	TrafficGenActualNodeNameKey     = "trafficGenActualNodeName"
+	VMUnderTestActualNodeNameKey    = "vmUnderTestActualNodeName"
 )
 
 type Reporter struct {
@@ -68,14 +68,14 @@ func formatResults(checkupStatus status.Status) map[string]string {
 	}
 
 	formattedResults := map[string]string{
-		TrafficGeneratorTxPacketsKey:       fmt.Sprintf("%d", checkupStatus.Results.TrafficGeneratorTxPackets),
-		TrafficGeneratorOutErrorPacketsKey: fmt.Sprintf("%d", checkupStatus.Results.TrafficGeneratorOutErrorPackets),
-		TrafficGeneratorInErrorPacketsKey:  fmt.Sprintf("%d", checkupStatus.Results.TrafficGeneratorInErrorPackets),
-		DPDKRxTestPacketsKey:               fmt.Sprintf("%d", checkupStatus.Results.DPDKRxTestPackets),
-		DPDKRxDropsKey:                     fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsRxDropped),
-		DPDKTxDropsKey:                     fmt.Sprintf("%d", checkupStatus.Results.DPDKPacketsTxDropped),
-		TrafficGeneratorNodeKey:            checkupStatus.Results.TrafficGeneratorNode,
-		DPDKVMNodeKey:                      checkupStatus.Results.DPDKVMNode,
+		TrafficGenSentPacketsKey:        fmt.Sprintf("%d", checkupStatus.Results.TrafficGenSentPackets),
+		TrafficGenOutputErrorPacketsKey: fmt.Sprintf("%d", checkupStatus.Results.TrafficGenOutputErrorPackets),
+		TrafficGenInputErrorPacketsKey:  fmt.Sprintf("%d", checkupStatus.Results.TrafficGenInputErrorPackets),
+		VMUnderTestReceivedPacketsKey:   fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestReceivedPackets),
+		VMUnderTestRxDroppedPacketsKey:  fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestRxDroppedPackets),
+		VMUnderTestTxDroppedPacketsKey:  fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestTxDroppedPackets),
+		TrafficGenActualNodeNameKey:     checkupStatus.Results.TrafficGenActualNodeName,
+		VMUnderTestActualNodeNameKey:    checkupStatus.Results.VMUnderTestActualNodeName,
 	}
 
 	return formattedResults

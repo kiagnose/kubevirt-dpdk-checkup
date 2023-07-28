@@ -22,14 +22,14 @@ package status
 import kstatus "github.com/kiagnose/kiagnose/kiagnose/status"
 
 type Results struct {
-	TrafficGeneratorTxPackets       int64
-	TrafficGeneratorOutErrorPackets int64
-	TrafficGeneratorInErrorPackets  int64
-	DPDKRxTestPackets               int64
-	DPDKPacketsRxDropped            int64
-	DPDKPacketsTxDropped            int64
-	TrafficGeneratorNode            string
-	DPDKVMNode                      string
+	TrafficGenSentPackets        int64
+	TrafficGenOutputErrorPackets int64
+	TrafficGenInputErrorPackets  int64
+	VMUnderTestReceivedPackets   int64
+	VMUnderTestRxDroppedPackets  int64
+	VMUnderTestTxDroppedPackets  int64
+	TrafficGenActualNodeName     string
+	VMUnderTestActualNodeName    string
 }
 
 type Status struct {
