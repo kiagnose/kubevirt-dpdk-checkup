@@ -84,9 +84,7 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 	}
 
 	trexClient := trex.NewClient(
-		e.vmiSerialClient,
-		e.namespace,
-		trafficGenVMIName,
+		trafficGenConsoleExpecter,
 		e.trafficGeneratorPacketsPerSecond,
 		e.testDuration,
 		e.verbosePrintsEnabled,
