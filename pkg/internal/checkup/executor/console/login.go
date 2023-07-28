@@ -35,13 +35,14 @@ func LoginToCentOS(serialConsoleClient vmiSerialConsoleClient, vmiNamespace, vmi
 		promptTimeout     = 5 * time.Second
 	)
 
-	expecter, _, err := NewExpecter(serialConsoleClient, vmiNamespace, vmiName, connectionTimeout)
+	expecter := NewExpecter(serialConsoleClient, vmiNamespace, vmiName)
+	genExpect, err := expecter.spawnConsole(connectionTimeout)
 	if err != nil {
 		return err
 	}
-	defer expecter.Close()
+	defer genExpect.Close()
 
-	err = expecter.Send("\n")
+	err = genExpect.Send("\n")
 	if err != nil {
 		return err
 	}
@@ -54,7 +55,7 @@ func LoginToCentOS(serialConsoleClient vmiSerialConsoleClient, vmiNamespace, vmi
 		&expect.BSnd{S: "\n"},
 		&expect.BExp{R: loggedInPromptRegex},
 	}
-	_, err = expecter.ExpectBatch(b, promptTimeout)
+	_, err = genExpect.ExpectBatch(b, promptTimeout)
 	if err == nil {
 		return nil
 	}
@@ -91,17 +92,17 @@ func LoginToCentOS(serialConsoleClient vmiSerialConsoleClient, vmiNamespace, vmi
 		&expect.BExp{R: PromptExpression},
 	}
 	const loginTimeout = 2 * time.Minute
-	res, err := expecter.ExpectBatch(b, loginTimeout)
+	res, err := genExpect.ExpectBatch(b, loginTimeout)
 	if err != nil {
 		log.Printf("Login attempt failed: %+v", res)
 		// Try once more since sometimes the login prompt is ripped apart by asynchronous daemon updates
-		if retryRes, retryErr := expecter.ExpectBatch(b, 1*time.Minute); retryErr != nil {
+		if retryRes, retryErr := genExpect.ExpectBatch(b, 1*time.Minute); retryErr != nil {
 			log.Printf("Retried login attempt after two minutes failed: %+v", retryRes)
 			return retryErr
 		}
 	}
 
-	err = configureConsole(expecter, false)
+	err = configureConsole(genExpect, false)
 	if err != nil {
 		return err
 	}

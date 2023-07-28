@@ -36,6 +36,13 @@ type vmiSerialConsoleClient interface {
 	VMISerialConsole(namespace, name string, timeout time.Duration) (kubecli.StreamInterface, error)
 }
 
+type Expecter struct {
+	serialConsoleClient vmiSerialConsoleClient
+	vmiNamespace        string
+	vmiName             string
+	opts                []expect.Option
+}
+
 const (
 	PromptExpression = `(\$ |\# )`
 	CRLF             = "\r\n"
@@ -45,24 +52,24 @@ const (
 func NewExpecter(serialConsoleClient vmiSerialConsoleClient,
 	vmiNamespace,
 	vmiName string,
-	timeout time.Duration,
-	opts ...expect.Option) (expect.Expecter, <-chan error, error) {
-	return spawnConsole(serialConsoleClient, vmiNamespace, vmiName, timeout, opts...)
+	opts ...expect.Option) Expecter {
+	return Expecter{
+		serialConsoleClient: serialConsoleClient,
+		vmiNamespace:        vmiNamespace,
+		vmiName:             vmiName,
+		opts:                opts,
+	}
 }
 
-func spawnConsole(serialConsoleClient vmiSerialConsoleClient,
-	vmiNamespace,
-	vmiName string,
-	timeout time.Duration,
-	opts ...expect.Option) (*expect.GExpect, <-chan error, error) {
+func (e Expecter) spawnConsole(timeout time.Duration) (*expect.GExpect, error) {
 	vmiReader, vmiWriter := io.Pipe()
 	expecterReader, expecterWriter := io.Pipe()
 	resCh := make(chan error)
 
 	startTime := time.Now()
-	con, err := serialConsoleClient.VMISerialConsole(vmiNamespace, vmiName, timeout)
+	con, err := e.serialConsoleClient.VMISerialConsole(e.vmiNamespace, e.vmiName, timeout)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	timeout -= time.Since(startTime)
 
@@ -73,8 +80,8 @@ func spawnConsole(serialConsoleClient vmiSerialConsoleClient,
 		})
 	}()
 
-	opts = append(opts, expect.SendTimeout(timeout), expect.Verbose(true))
-	return expect.SpawnGeneric(&expect.GenOptions{
+	e.opts = append(e.opts, expect.SendTimeout(timeout), expect.Verbose(true))
+	genExpect, _, err := expect.SpawnGeneric(&expect.GenOptions{
 		In:  vmiWriter,
 		Out: expecterReader,
 		Wait: func() error {
@@ -86,7 +93,8 @@ func spawnConsole(serialConsoleClient vmiSerialConsoleClient,
 			return nil
 		},
 		Check: func() bool { return true },
-	}, timeout, opts...)
+	}, timeout, e.opts...)
+	return genExpect, err
 }
 
 func RetValue(retcode string) string {
@@ -102,13 +110,14 @@ func SafeExpectBatchWithResponse(serialConsoleClient vmiSerialConsoleClient,
 	vmiName string,
 	expected []expect.Batcher,
 	timeout time.Duration) ([]expect.BatchRes, error) {
-	expecter, _, err := NewExpecter(serialConsoleClient, vmiNamespace, vmiName, timeout)
+	expecter := NewExpecter(serialConsoleClient, vmiNamespace, vmiName)
+	genExpect, err := expecter.spawnConsole(timeout)
 	if err != nil {
 		return nil, err
 	}
-	defer expecter.Close()
+	defer genExpect.Close()
 
-	resp, err := expectBatchWithValidatedSend(expecter, expected, timeout)
+	resp, err := expectBatchWithValidatedSend(genExpect, expected, timeout)
 	if err != nil {
 		log.Printf("%v", resp)
 	}
