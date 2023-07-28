@@ -85,11 +85,11 @@ func NewClient(vmiSerialClient vmiSerialConsoleClient,
 
 func (c Client) StartServer() error {
 	command := "systemctl start " + SystemdUnitFileName
-	_, err := console.SafeExpectBatchWithResponse(c.vmiSerialClient, c.namespace, c.vmiName,
-		[]expect.Batcher{
-			&expect.BSnd{S: command + "\n"},
-			&expect.BExp{R: shellPrompt},
-		},
+	consoleExpecter := console.NewExpecter(c.vmiSerialClient, c.namespace, c.vmiName)
+	_, err := consoleExpecter.SafeExpectBatchWithResponse([]expect.Batcher{
+		&expect.BSnd{S: command + "\n"},
+		&expect.BExp{R: shellPrompt},
+	},
 		batchTimeout,
 	)
 	return err
@@ -206,11 +206,11 @@ func (c Client) printTrexServiceFailLogs() error {
 
 func (c Client) getTrexServiceStatus() (string, error) {
 	command := fmt.Sprintf("systemctl status %s | cat", SystemdUnitFileName)
-	resp, err := console.SafeExpectBatchWithResponse(c.vmiSerialClient, c.namespace, c.vmiName,
-		[]expect.Batcher{
-			&expect.BSnd{S: command + "\n"},
-			&expect.BExp{R: shellPrompt},
-		},
+	consoleExpecter := console.NewExpecter(c.vmiSerialClient, c.namespace, c.vmiName)
+	resp, err := consoleExpecter.SafeExpectBatchWithResponse([]expect.Batcher{
+		&expect.BSnd{S: command + "\n"},
+		&expect.BExp{R: shellPrompt},
+	},
 		batchTimeout,
 	)
 	return resp[0].Output, err
@@ -218,11 +218,11 @@ func (c Client) getTrexServiceStatus() (string, error) {
 
 func (c Client) getTrexServiceJournalctl() (string, error) {
 	command := fmt.Sprintf("journalctl | grep %s", SystemdUnitFileName)
-	resp, err := console.SafeExpectBatchWithResponse(c.vmiSerialClient, c.namespace, c.vmiName,
-		[]expect.Batcher{
-			&expect.BSnd{S: command + "\n"},
-			&expect.BExp{R: shellPrompt},
-		},
+	consoleExpecter := console.NewExpecter(c.vmiSerialClient, c.namespace, c.vmiName)
+	resp, err := consoleExpecter.SafeExpectBatchWithResponse([]expect.Batcher{
+		&expect.BSnd{S: command + "\n"},
+		&expect.BExp{R: shellPrompt},
+	},
 		batchTimeout,
 	)
 	return resp[0].Output, err
@@ -240,11 +240,11 @@ func (c Client) getStartTrafficCmd(port PortIdx) string {
 
 func (c Client) runTrexConsoleCmd(command string) (string, error) {
 	shellCommand := fmt.Sprintf("cd %s && echo %q | ./trex-console -q", BinDirectory, command)
-	resp, err := console.SafeExpectBatchWithResponse(c.vmiSerialClient, c.namespace, c.vmiName,
-		[]expect.Batcher{
-			&expect.BSnd{S: shellCommand + "\n"},
-			&expect.BExp{R: shellPrompt},
-		},
+	consoleExpecter := console.NewExpecter(c.vmiSerialClient, c.namespace, c.vmiName)
+	resp, err := consoleExpecter.SafeExpectBatchWithResponse([]expect.Batcher{
+		&expect.BSnd{S: shellCommand + "\n"},
+		&expect.BExp{R: shellPrompt},
+	},
 		batchTimeout,
 	)
 
@@ -259,11 +259,11 @@ func (c Client) runTrexConsoleCmdWithJSONResponse(command, requestKey string) (s
 	trexConsoleCommand := verboseOn + command
 	shellCommand := fmt.Sprintf("cd %s && echo %q | ./trex-console -q", BinDirectory, trexConsoleCommand)
 
-	resp, err := console.SafeExpectBatchWithResponse(c.vmiSerialClient, c.namespace, c.vmiName,
-		[]expect.Batcher{
-			&expect.BSnd{S: shellCommand + "\n"},
-			&expect.BExp{R: shellPrompt},
-		},
+	consoleExpecter := console.NewExpecter(c.vmiSerialClient, c.namespace, c.vmiName)
+	resp, err := consoleExpecter.SafeExpectBatchWithResponse([]expect.Batcher{
+		&expect.BSnd{S: shellCommand + "\n"},
+		&expect.BExp{R: shellPrompt},
+	},
 		batchTimeout,
 	)
 

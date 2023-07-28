@@ -93,13 +93,13 @@ func (t TestpmdConsole) Run() error {
 
 	testpmdCmd := buildTestpmdCmd(t.vmiEastNICPCIAddress, t.vmiWestNICPCIAddress, t.vmiEastEthPeerMACAddress, t.vmiWestEthPeerMACAddress)
 
-	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, t.vmiName,
-		[]expect.Batcher{
-			&expect.BSnd{S: testpmdCmd + "\n"},
-			&expect.BExp{R: testpmdPrompt},
-			&expect.BSnd{S: "start" + "\n"},
-			&expect.BExp{R: testpmdPrompt},
-		},
+	consoleExpecter := console.NewExpecter(t.vmiSerialClient, t.namespace, t.vmiName)
+	resp, err := consoleExpecter.SafeExpectBatchWithResponse([]expect.Batcher{
+		&expect.BSnd{S: testpmdCmd + "\n"},
+		&expect.BExp{R: testpmdPrompt},
+		&expect.BSnd{S: "start" + "\n"},
+		&expect.BExp{R: testpmdPrompt},
+	},
 		batchTimeout,
 	)
 
@@ -117,11 +117,11 @@ func (t TestpmdConsole) ClearStats() error {
 
 	const testpmdCmd = "clear fwd stats all"
 
-	_, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, t.vmiName,
-		[]expect.Batcher{
-			&expect.BSnd{S: testpmdCmd + "\n"},
-			&expect.BExp{R: testpmdPrompt},
-		},
+	consoleExpecter := console.NewExpecter(t.vmiSerialClient, t.namespace, t.vmiName)
+	_, err := consoleExpecter.SafeExpectBatchWithResponse([]expect.Batcher{
+		&expect.BSnd{S: testpmdCmd + "\n"},
+		&expect.BExp{R: testpmdPrompt},
+	},
 		batchTimeout,
 	)
 
@@ -139,11 +139,11 @@ func (t TestpmdConsole) GetStats() ([StatsArraySize]PortStats, error) {
 
 	testpmdCmd := "show fwd stats all"
 
-	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, t.vmiName,
-		[]expect.Batcher{
-			&expect.BSnd{S: testpmdCmd + "\n"},
-			&expect.BExp{R: testpmdPromt},
-		},
+	consoleExpecter := console.NewExpecter(t.vmiSerialClient, t.namespace, t.vmiName)
+	resp, err := consoleExpecter.SafeExpectBatchWithResponse([]expect.Batcher{
+		&expect.BSnd{S: testpmdCmd + "\n"},
+		&expect.BExp{R: testpmdPromt},
+	},
 		batchTimeout,
 	)
 

@@ -105,13 +105,9 @@ func RetValue(retcode string) string {
 // waiting for the batch to return with a response until timeout.
 // It validates that the commands arrive to the console.
 // NOTE: This functions inherits limitations from `expectBatchWithValidatedSend`, refer to it for more information.
-func SafeExpectBatchWithResponse(serialConsoleClient vmiSerialConsoleClient,
-	vmiNamespace,
-	vmiName string,
-	expected []expect.Batcher,
+func (e Expecter) SafeExpectBatchWithResponse(expected []expect.Batcher,
 	timeout time.Duration) ([]expect.BatchRes, error) {
-	expecter := NewExpecter(serialConsoleClient, vmiNamespace, vmiName)
-	genExpect, err := expecter.spawnConsole(timeout)
+	genExpect, err := e.spawnConsole(timeout)
 	if err != nil {
 		return nil, err
 	}
