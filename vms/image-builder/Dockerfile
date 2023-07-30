@@ -1,4 +1,4 @@
-FROM quay.io/centos/centos:stream8
+FROM quay.io/centos/centos:stream9
 
-RUN dnf install -y libguestfs-tools && \
+RUN dnf install -y guestfs-tools && \
     dnf clean all
