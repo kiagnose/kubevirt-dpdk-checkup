@@ -31,6 +31,7 @@ const (
 	CfgFileName                = "trex_cfg.yaml"
 	StreamPyFileName           = "testpmd.py"
 	StreamPeerParamsPyFileName = "testpmd_addr.py"
+	StreamsPyPath              = "/opt/tests"
 	ExecutionScriptName        = "run_trex_daemon"
 	BinDirectory               = "/opt/trex"
 	SystemdUnitFileName        = "trex.service"

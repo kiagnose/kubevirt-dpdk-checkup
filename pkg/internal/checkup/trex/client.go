@@ -60,10 +60,6 @@ const (
 )
 
 const (
-	StreamsPyPath = "/opt/tests"
-)
-
-const (
 	shellPrompt  = "# "
 	batchTimeout = 30 * time.Second
 )
