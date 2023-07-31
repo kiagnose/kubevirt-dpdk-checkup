@@ -44,7 +44,7 @@ const (
 
 const (
 	TrafficGenDefaultContainerDiskImage  = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main"
-	TrafficGenDefaultPacketsPerSecond    = "14m"
+	TrafficGenDefaultPacketsPerSecond    = "8m"
 	VMUnderTestDefaultContainerDiskImage = "quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main"
 	TestDurationDefault                  = 5 * time.Minute
 	PortBandwidthGbpsDefault             = 10
