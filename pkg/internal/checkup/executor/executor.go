@@ -165,17 +165,19 @@ func calculateStats(trexClient trex.Client, testpmdConsole *testpmd.TestpmdConso
 	results.TrafficGenSentPackets = trafficGeneratorSrcPortStats.Result.Opackets
 	log.Printf("traffic Generator packet sent via port %d: %d", trex.SourcePort, results.TrafficGenSentPackets)
 
-	log.Printf("get testpmd stats in DPDK VMI...")
+	log.Printf("get testpmd stats in VM-Under-Test...")
 	var testPmdStats [testpmd.StatsArraySize]testpmd.PortStats
 	if testPmdStats, err = testpmdConsole.GetStats(); err != nil {
 		return status.Results{}, err
 	}
 	results.VMUnderTestRxDroppedPackets = testPmdStats[testpmd.StatsSummary].RXDropped
 	results.VMUnderTestTxDroppedPackets = testPmdStats[testpmd.StatsSummary].TXDropped
-	log.Printf("DPDK side packets Dropped: Rx: %d; TX: %d", results.VMUnderTestRxDroppedPackets, results.VMUnderTestTxDroppedPackets)
+	log.Printf("VMI-Under-Test's side packets Dropped: Rx: %d; TX: %d",
+		results.VMUnderTestRxDroppedPackets, results.VMUnderTestTxDroppedPackets)
 	results.VMUnderTestReceivedPackets =
 		testPmdStats[testpmd.StatsSummary].RXTotal - testPmdStats[testpmd.StatsPort0].TXPackets - testPmdStats[testpmd.StatsPort1].RXPackets
-	log.Printf("DPDK side test packets received (including dropped, excluding non-related packets): %d", results.VMUnderTestReceivedPackets)
+	log.Printf("VMI-Under-Test's side test packets received (including dropped, excluding non-related packets): %d",
+		results.VMUnderTestReceivedPackets)
 
 	return results, nil
 }

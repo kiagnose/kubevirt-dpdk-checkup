@@ -145,12 +145,12 @@ func (c *Checkup) Run(ctx context.Context) error {
 	}
 
 	if c.results.VMUnderTestRxDroppedPackets != 0 || c.results.VMUnderTestTxDroppedPackets != 0 {
-		return fmt.Errorf("detected packets dropped on the DPDK VM's side: RX: %d; TX: %d",
+		return fmt.Errorf("detected packets dropped on the VM-Under-Test's side: RX: %d; TX: %d",
 			c.results.VMUnderTestRxDroppedPackets, c.results.VMUnderTestTxDroppedPackets)
 	}
 
 	if c.results.TrafficGenSentPackets != c.results.VMUnderTestReceivedPackets {
-		return fmt.Errorf("not all generated packets had reached DPDK VM: Sent from traffic generator: %d; Received on DPDK VM: %d",
+		return fmt.Errorf("not all generated packets had reached VM-Under-Test: Sent from traffic generator: %d; Received on VM-Under-Test: %d",
 			c.results.TrafficGenSentPackets, c.results.VMUnderTestReceivedPackets)
 	}
 
