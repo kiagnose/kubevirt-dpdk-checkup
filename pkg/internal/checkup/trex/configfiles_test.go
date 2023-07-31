@@ -20,7 +20,9 @@
 package trex_test
 
 import (
+	"fmt"
 	"net"
+	"path"
 	"testing"
 
 	assert "github.com/stretchr/testify/require"
@@ -134,15 +136,15 @@ func TestExecutionScript(t *testing.T) {
 func TestSystemdUnitFile(t *testing.T) {
 	actualSystemdUnitFile := trex.GenerateSystemdUnitFile()
 
-	expectedSystemdUnitFile := `[Unit]
+	expectedSystemdUnitFile := fmt.Sprintf(`[Unit]
 Description=TRex Server
 [Service]
-WorkingDirectory=/opt/trex
-ExecStart=/opt/trex/run_trex_daemon
+WorkingDirectory=%s
+ExecStart=%s
 Restart=no
 User=root
 Group=root
-`
+`, trex.BinDirectory, path.Join(trex.BinDirectory, trex.ExecutionScriptName))
 	assert.Equal(t, expectedSystemdUnitFile, actualSystemdUnitFile)
 }
 
