@@ -43,7 +43,7 @@ type GlobalStatsResult struct {
 	MTotalClients           int64   `json:"m_total_clients"`
 	MTotalNatActive         int64   `json:"m_total_nat_active"`
 	MTotalNatLearnError     int64   `json:"m_total_nat_learn_error"`
-	MTotalNatNoFid          int64   `json:"m_total_nat_no_fid "`
+	MTotalNatNoFid          int64   `json:"m_total_nat_no_fid"`
 	MTotalNatOpen           int64   `json:"m_total_nat_open"`
 	MTotalNatSynWait        int64   `json:"m_total_nat_syn_wait"`
 	MTotalNatTimeOut        int64   `json:"m_total_nat_time_out"`
