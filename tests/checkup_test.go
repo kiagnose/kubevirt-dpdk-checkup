@@ -283,19 +283,27 @@ func newRoleBinding(name, serviceAccountName, roleName string) *rbacv1.RoleBindi
 }
 
 func newConfigMap() *corev1.ConfigMap {
+	testConfig := map[string]string{
+		"spec.timeout": "10m",
+		"spec.param.networkAttachmentDefinitionName": networkAttachmentDefinitionName,
+		"spec.param.trafficGenPacketsPerSecond":      "8m",
+		"spec.param.testDuration":                    "1m",
+		"spec.param.verbose":                         "true",
+	}
+
+	if trafficGenContainerDiskImage != "" {
+		testConfig["spec.param.trafficGenContainerDiskImage"] = trafficGenContainerDiskImage
+	}
+
+	if vmUnderTestContainerDiskImage != "" {
+		testConfig["spec.param.vmUnderTestContainerDiskImage"] = vmUnderTestContainerDiskImage
+	}
+
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testConfigMapName,
 		},
-		Data: map[string]string{
-			"spec.timeout": "10m",
-			"spec.param.networkAttachmentDefinitionName": networkAttachmentDefinitionName,
-			"spec.param.trafficGenContainerDiskImage":    trafficGenContainerDiskImage,
-			"spec.param.trafficGenPacketsPerSecond":      "8m",
-			"spec.param.vmUnderTestContainerDiskImage":   vmUnderTestContainerDiskImage,
-			"spec.param.testDuration":                    "1m",
-			"spec.param.verbose":                         "true",
-		},
+		Data: testConfig,
 	}
 }
 
