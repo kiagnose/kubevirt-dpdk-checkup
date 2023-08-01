@@ -64,12 +64,12 @@ var _ = BeforeSuite(func() {
 	testNamespace = os.Getenv(namespaceEnvVarName)
 	Expect(testNamespace).NotTo(BeEmpty())
 
+	networkAttachmentDefinitionName = os.Getenv(networkAttachmentDefinitionNameVarName)
+	Expect(networkAttachmentDefinitionName).NotTo(BeEmpty())
+
 	if testCheckupImageName = os.Getenv(checkupImageEnvVarName); testCheckupImageName == "" {
 		testCheckupImageName = defaultCheckupImageName
 	}
-
-	networkAttachmentDefinitionName = os.Getenv(networkAttachmentDefinitionNameVarName)
-	Expect(networkAttachmentDefinitionName).NotTo(BeEmpty())
 
 	trafficGenContainerDiskImage = os.Getenv(trafficGenContainerDiskImageVarName)
 
