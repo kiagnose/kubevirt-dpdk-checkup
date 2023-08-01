@@ -38,7 +38,7 @@ const (
 	namespaceEnvVarName                    = "TEST_NAMESPACE"
 	checkupImageEnvVarName                 = "TEST_CHECKUP_IMAGE"
 	networkAttachmentDefinitionNameVarName = "NETWORK_ATTACHMENT_DEFINITION_NAME"
-	trafficGeneratorImageVarName           = "TRAFFIC_GEN_IMAGE_URL"
+	trafficGenContainerDiskImageVarName    = "TRAFFIC_GEN_CONTAINER_DISK_IMAGE"
 	vmContainerDiskImageEnvVarName         = "VM_CONTAINER_DISK_IMAGE_URL"
 )
 
@@ -53,7 +53,7 @@ var (
 	testNamespace                   string
 	testCheckupImageName            string
 	networkAttachmentDefinitionName string
-	trafficGeneratorImage           string
+	trafficGenContainerDiskImage    string
 	vmContainerDiskImage            string
 )
 
@@ -77,7 +77,7 @@ var _ = BeforeSuite(func() {
 		networkAttachmentDefinitionName = defaultNetworkAttachmentDefinitionName
 	}
 
-	trafficGeneratorImage = os.Getenv(trafficGeneratorImageVarName)
+	trafficGenContainerDiskImage = os.Getenv(trafficGenContainerDiskImageVarName)
 
 	vmContainerDiskImage = os.Getenv(vmContainerDiskImageEnvVarName)
 })

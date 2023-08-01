@@ -290,7 +290,7 @@ func newConfigMap() *corev1.ConfigMap {
 		Data: map[string]string{
 			"spec.timeout": "10m",
 			"spec.param.networkAttachmentDefinitionName": networkAttachmentDefinitionName,
-			"spec.param.trafficGenContainerDiskImage":    trafficGeneratorImage,
+			"spec.param.trafficGenContainerDiskImage":    trafficGenContainerDiskImage,
 			"spec.param.trafficGenPacketsPerSecond":      "8m",
 			"spec.param.vmUnderTestContainerDiskImage":   vmContainerDiskImage,
 			"spec.param.testDuration":                    "1m",
