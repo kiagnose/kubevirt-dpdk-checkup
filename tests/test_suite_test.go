@@ -42,10 +42,7 @@ const (
 	vmUnderTestContainerDiskImageEnvVarName = "VM_UNDER_TEST_CONTAINER_DISK_IMAGE"
 )
 
-const (
-	defaultCheckupImageName                = "quay.io/kiagnose/kubevirt-dpdk-checkup:main"
-	defaultNetworkAttachmentDefinitionName = "intel-dpdk-network-1"
-)
+const defaultCheckupImageName = "quay.io/kiagnose/kubevirt-dpdk-checkup:main"
 
 var (
 	virtClient                      kubecli.KubevirtClient
@@ -71,9 +68,8 @@ var _ = BeforeSuite(func() {
 		testCheckupImageName = defaultCheckupImageName
 	}
 
-	if networkAttachmentDefinitionName = os.Getenv(networkAttachmentDefinitionNameVarName); networkAttachmentDefinitionName == "" {
-		networkAttachmentDefinitionName = defaultNetworkAttachmentDefinitionName
-	}
+	networkAttachmentDefinitionName = os.Getenv(networkAttachmentDefinitionNameVarName)
+	Expect(networkAttachmentDefinitionName).NotTo(BeEmpty())
 
 	trafficGenContainerDiskImage = os.Getenv(trafficGenContainerDiskImageVarName)
 
