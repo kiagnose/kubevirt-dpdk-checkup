@@ -322,7 +322,7 @@ func newCheckupJob() *batchv1.Job {
 					Containers: []corev1.Container{
 						{
 							Name:            testCheckupJobName,
-							Image:           testImageName,
+							Image:           testCheckupImageName,
 							ImagePullPolicy: corev1.PullAlways,
 							SecurityContext: newSecurityContext(),
 							Env: []corev1.EnvVar{

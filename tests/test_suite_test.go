@@ -36,7 +36,7 @@ func TestKubevirtDpdkCheckup(t *testing.T) {
 
 const (
 	namespaceEnvVarName                    = "TEST_NAMESPACE"
-	imageEnvVarName                        = "TEST_IMAGE"
+	checkupImageEnvVarName                 = "TEST_CHECKUP_IMAGE"
 	networkAttachmentDefinitionNameVarName = "NETWORK_ATTACHMENT_DEFINITION_NAME"
 	trafficGeneratorImageVarName           = "TRAFFIC_GEN_IMAGE_URL"
 	vmContainerDiskImageEnvVarName         = "VM_CONTAINER_DISK_IMAGE_URL"
@@ -44,14 +44,14 @@ const (
 
 const (
 	defaultNamespace                       = "kiagnose-demo"
-	defaultImageName                       = "quay.io/kiagnose/kubevirt-dpdk-checkup:main"
+	defaultCheckupImageName                = "quay.io/kiagnose/kubevirt-dpdk-checkup:main"
 	defaultNetworkAttachmentDefinitionName = "intel-dpdk-network-1"
 )
 
 var (
 	virtClient                      kubecli.KubevirtClient
 	testNamespace                   string
-	testImageName                   string
+	testCheckupImageName            string
 	networkAttachmentDefinitionName string
 	trafficGeneratorImage           string
 	vmContainerDiskImage            string
@@ -69,8 +69,8 @@ var _ = BeforeSuite(func() {
 		testNamespace = defaultNamespace
 	}
 
-	if testImageName = os.Getenv(imageEnvVarName); testImageName == "" {
-		testImageName = defaultImageName
+	if testCheckupImageName = os.Getenv(checkupImageEnvVarName); testCheckupImageName == "" {
+		testCheckupImageName = defaultCheckupImageName
 	}
 
 	if networkAttachmentDefinitionName = os.Getenv(networkAttachmentDefinitionNameVarName); networkAttachmentDefinitionName == "" {

@@ -61,7 +61,7 @@ test/e2e:
 	           --volume $(shell dirname $(KUBECONFIG)):/root/.kube:Z,ro \
 	           --workdir $(CURDIR) \
 	           -e KUBECONFIG=/root/.kube/$(shell basename $(KUBECONFIG)) \
-	           -e TEST_IMAGE=$(TEST_IMAGE) \
+	           -e TEST_CHECKUP_IMAGE=$(TEST_CHECKUP_IMAGE) \
 	           -e TEST_NAMESPACE=$(TEST_NAMESPACE) \
 	           -e NETWORK_ATTACHMENT_DEFINITION_NAME=$(NETWORK_ATTACHMENT_DEFINITION_NAME) \
 	           -e TRAFFIC_GEN_IMAGE_URL=$(TRAFFIC_GEN_IMAGE_URL) \
