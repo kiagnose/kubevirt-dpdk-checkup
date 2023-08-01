@@ -35,11 +35,11 @@ func TestKubevirtDpdkCheckup(t *testing.T) {
 }
 
 const (
-	namespaceEnvVarName                    = "TEST_NAMESPACE"
-	checkupImageEnvVarName                 = "TEST_CHECKUP_IMAGE"
-	networkAttachmentDefinitionNameVarName = "NETWORK_ATTACHMENT_DEFINITION_NAME"
-	trafficGenContainerDiskImageVarName    = "TRAFFIC_GEN_CONTAINER_DISK_IMAGE"
-	vmContainerDiskImageEnvVarName         = "VM_CONTAINER_DISK_IMAGE_URL"
+	namespaceEnvVarName                     = "TEST_NAMESPACE"
+	checkupImageEnvVarName                  = "TEST_CHECKUP_IMAGE"
+	networkAttachmentDefinitionNameVarName  = "NETWORK_ATTACHMENT_DEFINITION_NAME"
+	trafficGenContainerDiskImageVarName     = "TRAFFIC_GEN_CONTAINER_DISK_IMAGE"
+	vmUnderTestContainerDiskImageEnvVarName = "VM_UNDER_TEST_CONTAINER_DISK_IMAGE"
 )
 
 const (
@@ -54,7 +54,7 @@ var (
 	testCheckupImageName            string
 	networkAttachmentDefinitionName string
 	trafficGenContainerDiskImage    string
-	vmContainerDiskImage            string
+	vmUnderTestContainerDiskImage   string
 )
 
 var _ = BeforeSuite(func() {
@@ -79,5 +79,5 @@ var _ = BeforeSuite(func() {
 
 	trafficGenContainerDiskImage = os.Getenv(trafficGenContainerDiskImageVarName)
 
-	vmContainerDiskImage = os.Getenv(vmContainerDiskImageEnvVarName)
+	vmUnderTestContainerDiskImage = os.Getenv(vmUnderTestContainerDiskImageEnvVarName)
 })
