@@ -43,7 +43,6 @@ const (
 )
 
 const (
-	defaultNamespace                       = "kiagnose-demo"
 	defaultCheckupImageName                = "quay.io/kiagnose/kubevirt-dpdk-checkup:main"
 	defaultNetworkAttachmentDefinitionName = "intel-dpdk-network-1"
 )
@@ -65,9 +64,8 @@ var _ = BeforeSuite(func() {
 	virtClient, err = kubecli.GetKubevirtClientFromFlags("", kubeconfig)
 	Expect(err).NotTo(HaveOccurred())
 
-	if testNamespace = os.Getenv(namespaceEnvVarName); testNamespace == "" {
-		testNamespace = defaultNamespace
-	}
+	testNamespace = os.Getenv(namespaceEnvVarName)
+	Expect(testNamespace).NotTo(BeEmpty())
 
 	if testCheckupImageName = os.Getenv(checkupImageEnvVarName); testCheckupImageName == "" {
 		testCheckupImageName = defaultCheckupImageName
