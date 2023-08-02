@@ -35,26 +35,22 @@ func TestKubevirtDpdkCheckup(t *testing.T) {
 }
 
 const (
-	namespaceEnvVarName                    = "TEST_NAMESPACE"
-	imageEnvVarName                        = "TEST_IMAGE"
-	networkAttachmentDefinitionNameVarName = "NETWORK_ATTACHMENT_DEFINITION_NAME"
-	trafficGeneratorImageVarName           = "TRAFFIC_GEN_IMAGE_URL"
-	vmContainerDiskImageEnvVarName         = "VM_CONTAINER_DISK_IMAGE_URL"
+	namespaceEnvVarName                     = "TEST_NAMESPACE"
+	checkupImageEnvVarName                  = "TEST_CHECKUP_IMAGE"
+	networkAttachmentDefinitionNameVarName  = "NETWORK_ATTACHMENT_DEFINITION_NAME"
+	trafficGenContainerDiskImageVarName     = "TRAFFIC_GEN_CONTAINER_DISK_IMAGE"
+	vmUnderTestContainerDiskImageEnvVarName = "VM_UNDER_TEST_CONTAINER_DISK_IMAGE"
 )
 
-const (
-	defaultNamespace                       = "kiagnose-demo"
-	defaultImageName                       = "quay.io/kiagnose/kubevirt-dpdk-checkup:main"
-	defaultNetworkAttachmentDefinitionName = "intel-dpdk-network-1"
-)
+const defaultCheckupImageName = "quay.io/kiagnose/kubevirt-dpdk-checkup:main"
 
 var (
 	virtClient                      kubecli.KubevirtClient
 	testNamespace                   string
-	testImageName                   string
+	testCheckupImageName            string
 	networkAttachmentDefinitionName string
-	trafficGeneratorImage           string
-	vmContainerDiskImage            string
+	trafficGenContainerDiskImage    string
+	vmUnderTestContainerDiskImage   string
 )
 
 var _ = BeforeSuite(func() {
@@ -65,19 +61,17 @@ var _ = BeforeSuite(func() {
 	virtClient, err = kubecli.GetKubevirtClientFromFlags("", kubeconfig)
 	Expect(err).NotTo(HaveOccurred())
 
-	if testNamespace = os.Getenv(namespaceEnvVarName); testNamespace == "" {
-		testNamespace = defaultNamespace
+	testNamespace = os.Getenv(namespaceEnvVarName)
+	Expect(testNamespace).NotTo(BeEmpty())
+
+	networkAttachmentDefinitionName = os.Getenv(networkAttachmentDefinitionNameVarName)
+	Expect(networkAttachmentDefinitionName).NotTo(BeEmpty())
+
+	if testCheckupImageName = os.Getenv(checkupImageEnvVarName); testCheckupImageName == "" {
+		testCheckupImageName = defaultCheckupImageName
 	}
 
-	if testImageName = os.Getenv(imageEnvVarName); testImageName == "" {
-		testImageName = defaultImageName
-	}
+	trafficGenContainerDiskImage = os.Getenv(trafficGenContainerDiskImageVarName)
 
-	if networkAttachmentDefinitionName = os.Getenv(networkAttachmentDefinitionNameVarName); networkAttachmentDefinitionName == "" {
-		networkAttachmentDefinitionName = defaultNetworkAttachmentDefinitionName
-	}
-
-	trafficGeneratorImage = os.Getenv(trafficGeneratorImageVarName)
-
-	vmContainerDiskImage = os.Getenv(vmContainerDiskImageEnvVarName)
+	vmUnderTestContainerDiskImage = os.Getenv(vmUnderTestContainerDiskImageEnvVarName)
 })

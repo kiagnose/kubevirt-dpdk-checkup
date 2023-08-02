@@ -290,9 +290,9 @@ func newConfigMap() *corev1.ConfigMap {
 		Data: map[string]string{
 			"spec.timeout": "10m",
 			"spec.param.networkAttachmentDefinitionName": networkAttachmentDefinitionName,
-			"spec.param.trafficGenContainerDiskImage":    trafficGeneratorImage,
+			"spec.param.trafficGenContainerDiskImage":    trafficGenContainerDiskImage,
 			"spec.param.trafficGenPacketsPerSecond":      "8m",
-			"spec.param.vmUnderTestContainerDiskImage":   vmContainerDiskImage,
+			"spec.param.vmUnderTestContainerDiskImage":   vmUnderTestContainerDiskImage,
 			"spec.param.testDuration":                    "1m",
 			"spec.param.verbose":                         "true",
 		},
@@ -322,7 +322,7 @@ func newCheckupJob() *batchv1.Job {
 					Containers: []corev1.Container{
 						{
 							Name:            testCheckupJobName,
-							Image:           testImageName,
+							Image:           testCheckupImageName,
 							ImagePullPolicy: corev1.PullAlways,
 							SecurityContext: newSecurityContext(),
 							Env: []corev1.EnvVar{

@@ -61,11 +61,11 @@ test/e2e:
 	           --volume $(shell dirname $(KUBECONFIG)):/root/.kube:Z,ro \
 	           --workdir $(CURDIR) \
 	           -e KUBECONFIG=/root/.kube/$(shell basename $(KUBECONFIG)) \
-	           -e TEST_IMAGE=$(TEST_IMAGE) \
+	           -e TEST_CHECKUP_IMAGE=$(TEST_CHECKUP_IMAGE) \
 	           -e TEST_NAMESPACE=$(TEST_NAMESPACE) \
 	           -e NETWORK_ATTACHMENT_DEFINITION_NAME=$(NETWORK_ATTACHMENT_DEFINITION_NAME) \
-	           -e TRAFFIC_GEN_IMAGE_URL=$(TRAFFIC_GEN_IMAGE_URL) \
-	           -e VM_CONTAINER_DISK_IMAGE_URL=$(VM_CONTAINER_DISK_IMAGE_URL) \
+	           -e TRAFFIC_GEN_CONTAINER_DISK_IMAGE=$(TRAFFIC_GEN_CONTAINER_DISK_IMAGE) \
+	           -e VM_UNDER_TEST_CONTAINER_DISK_IMAGE=$(VM_UNDER_TEST_CONTAINER_DISK_IMAGE) \
 	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go test ./tests/... $(E2E_TEST_ARGS)
 .PHONY: test/e2e
 
