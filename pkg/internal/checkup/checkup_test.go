@@ -55,7 +55,9 @@ const (
 func TestCheckupShouldSucceed(t *testing.T) {
 	testClient := newClientStub()
 	testConfig := newTestConfig()
-	testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
+
+	expectedResults := successfulRunResults()
+	testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{results: expectedResults})
 
 	assert.NoError(t, testCheckup.Setup(context.Background()))
 
@@ -74,8 +76,6 @@ func TestCheckupShouldSucceed(t *testing.T) {
 	assert.Empty(t, testClient.createdConfigMaps)
 
 	actualResults := testCheckup.Results()
-	expectedResults := status.Results{}
-
 	assert.Equal(t, expectedResults, actualResults)
 }
 
@@ -195,7 +195,7 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 			testClient := newClientStub()
 			testConfig := newTestConfig()
 
-			testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
+			testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{results: successfulRunResults()})
 
 			assert.NoError(t, testCheckup.Setup(context.Background()))
 			assert.NoError(t, testCheckup.Run(context.Background()))
@@ -211,7 +211,7 @@ func TestTrafficGenCMTeardownFailure(t *testing.T) {
 	testClient := newClientStub()
 	testConfig := newTestConfig()
 
-	testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
+	testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{results: successfulRunResults()})
 
 	assert.NoError(t, testCheckup.Setup(context.Background()))
 	assert.NotEmpty(t, testClient.createdConfigMaps)
@@ -227,6 +227,7 @@ func TestTrafficGenCMTeardownFailure(t *testing.T) {
 func TestRunFailure(t *testing.T) {
 	const (
 		executeFailureMsg               = "failed to execute dpdk checkup"
+		trafficGenNoPacketsSentErrMsg   = "no packets were sent from the traffic generator"
 		trafficGenIOPacketsErrMsg       = "detected Error Packets on the traffic generator's side: Oerrors %d Ierrors %d"
 		vmUnderTestDroppedPacketsErrMsg = "detected packets dropped on the VM-Under-Test's side: RX: %d; TX: %d"
 		packetsDontMatchErrMsg          = "not all generated packets had reached VM-Under-Test: Sent from traffic generator:" +
@@ -253,6 +254,13 @@ func TestRunFailure(t *testing.T) {
 			executorFailure: errors.New(executeFailureMsg),
 			results:         status.Results{},
 			expectedRunErr:  errors.New(executeFailureMsg),
+		},
+		{
+			description: "fail because no packets sent from traffic generator",
+			results: status.Results{
+				TrafficGenSentPackets: 0,
+			},
+			expectedRunErr: errors.New(trafficGenNoPacketsSentErrMsg),
 		},
 		{
 			description: "fail because found err packets on traffic generator side",
@@ -476,6 +484,14 @@ func (cs *clientStub) VMIName(namePrefix string) string {
 	}
 
 	return ""
+}
+
+func successfulRunResults() status.Results {
+	const sentPackets = 10
+	return status.Results{
+		TrafficGenSentPackets:      sentPackets,
+		VMUnderTestReceivedPackets: sentPackets,
+	}
 }
 
 type executorStub struct {
