@@ -50,7 +50,7 @@ func Run(rawEnv map[string]string, namespace string) error {
 		return err
 	}
 
-	printConfig(cfg)
+	printConfig(baseConfig, cfg)
 
 	dpdkCheckupExecutor := executor.New(c, namespace, cfg)
 	l := launcher.New(
@@ -64,8 +64,9 @@ func Run(rawEnv map[string]string, namespace string) error {
 	return l.Run(ctx)
 }
 
-func printConfig(checkupConfig config.Config) {
+func printConfig(baseConfig kconfig.Config, checkupConfig config.Config) {
 	log.Println("Using the following config:")
+	log.Printf("%q: %q", "timeout", baseConfig.Timeout)
 	log.Printf("%q: %q", config.NetworkAttachmentDefinitionNameParamName, checkupConfig.NetworkAttachmentDefinitionName)
 	log.Printf("%q: %q", config.TrafficGenContainerDiskImageParamName, checkupConfig.TrafficGenContainerDiskImage)
 	log.Printf("%q: %q", config.TrafficGenTargetNodeNameParamName, checkupConfig.TrafficGenTargetNodeName)
