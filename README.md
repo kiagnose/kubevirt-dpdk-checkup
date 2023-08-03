@@ -135,17 +135,17 @@ After the checkup Job had completed, the results are made available at the user-
 kubectl get configmap dpdk-checkup-config -n <target-namespace> -o yaml
 ```
 
-| Key                                        | Description                                                       | Remarks  |
-|--------------------------------------------|-------------------------------------------------------------------|----------|
-| status.succeeded                           | Has the checkup succeeded                                         |          |
-| status.failureReason                       | Failure reason in case of a failure                               |          |
-| status.startTimestamp                      | Checkup start timestamp                                           | RFC 3339 |
-| status.completionTimestamp                 | Checkup completion timestamp                                      | RFC 3339 |
-| status.result.trafficGenSentPackets        | Number of packets sent from the traffic generator                 |          |
-| status.result.trafficGenOutputErrorPackets | Indicates error sending packets from traffic generator            |          |
-| status.result.trafficGenInputErrorPackets  | Indicates error receiving packets to traffic generator            |          |
-| status.result.trafficGenActualNodeName     | Node name on which the traffic generator VM was scheduled         |          |
-| status.result.vmUnderTestActualNodeName    | Node name on which the VM under test was scheduled                |          |
-| status.result.vmUnderTestReceivedPackets   | Number of packets received on the VM under test                   |          |
-| status.result.vmUnderTestRxDroppedPackets  | Indicates ingress packets that were dropped from DPDK application |          |
-| status.result.vmUnderTestTxDroppedPackets  | Indicates egress packets were dropped from the DPDK application   |          |
+| Key                                        | Description                                                            | Remarks  |
+|--------------------------------------------|------------------------------------------------------------------------|----------|
+| status.succeeded                           | Specifies if the checkup is successful (`true`) or not (`false`)       |          |
+| status.failureReason                       | The reason for failure if the checkup fails                            |          |
+| status.startTimestamp                      | The time when the checkup started                                      | RFC 3339 |
+| status.completionTimestamp                 | The time when the checkup has completed                                | RFC 3339 |
+| status.result.trafficGenSentPackets        | The number of packets sent from the traffic generator                  |          |
+| status.result.trafficGenOutputErrorPackets | The number of error packets sent from the traffic generator            |          |
+| status.result.trafficGenInputErrorPackets  | The number of error packets received by the traffic generator          |          |
+| status.result.trafficGenActualNodeName     | The node on which the traffic generator VM was scheduled               |          |
+| status.result.vmUnderTestActualNodeName    | The node on which the VM under test was scheduled                      |          |
+| status.result.vmUnderTestReceivedPackets   | The number of packets received on the VM under test                    |          |
+| status.result.vmUnderTestRxDroppedPackets  | The ingress traffic packets that were dropped by the DPDK application  |          |
+| status.result.vmUnderTestTxDroppedPackets  | The egress traffic packets that were dropped from the DPDK application |          |
