@@ -56,11 +56,16 @@ const (
 func newVMIUnderTest(name string, checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
 	optionsToApply := baseOptions(checkupConfig)
 
+	imagePullPolicy := k8scorev1.PullIfNotPresent
+	if checkupConfig.VMUnderTestAlwaysPullContainerDiskImage {
+		imagePullPolicy = k8scorev1.PullAlways
+	}
+
 	optionsToApply = append(optionsToApply,
 		vmi.WithAffinity(Affinity(checkupConfig.VMUnderTestTargetNodeName, checkupConfig.PodUID)),
 		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.VMUnderTestEastMacAddress.String(), config.VMIEastNICPCIAddress),
 		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.VMUnderTestWestMacAddress.String(), config.VMIWestNICPCIAddress),
-		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMUnderTestContainerDiskImage, k8scorev1.PullAlways),
+		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMUnderTestContainerDiskImage, imagePullPolicy),
 		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword, nil)),
 	)
 
