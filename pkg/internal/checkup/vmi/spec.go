@@ -194,14 +194,14 @@ func WithMultusNetwork(name, networkAttachmentDefinitionName string) Option {
 	}
 }
 
-func WithContainerDisk(volumeName, imageName string) Option {
+func WithContainerDisk(volumeName, imageName string, imagePullPolicy corev1.PullPolicy) Option {
 	return func(vmi *kvcorev1.VirtualMachineInstance) {
 		newVolume := kvcorev1.Volume{
 			Name: volumeName,
 			VolumeSource: kvcorev1.VolumeSource{
 				ContainerDisk: &kvcorev1.ContainerDiskSource{
 					Image:           imageName,
-					ImagePullPolicy: corev1.PullAlways,
+					ImagePullPolicy: imagePullPolicy,
 				},
 			},
 		}

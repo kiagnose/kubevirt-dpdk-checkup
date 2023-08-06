@@ -60,7 +60,7 @@ func newVMIUnderTest(name string, checkupConfig config.Config) *kvcorev1.Virtual
 		vmi.WithAffinity(Affinity(checkupConfig.VMUnderTestTargetNodeName, checkupConfig.PodUID)),
 		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.VMUnderTestEastMacAddress.String(), config.VMIEastNICPCIAddress),
 		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.VMUnderTestWestMacAddress.String(), config.VMIWestNICPCIAddress),
-		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMUnderTestContainerDiskImage),
+		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMUnderTestContainerDiskImage, k8scorev1.PullAlways),
 		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword, nil)),
 	)
 
@@ -77,7 +77,7 @@ func newTrafficGen(name string, checkupConfig config.Config, configMapName strin
 		vmi.WithAffinity(Affinity(checkupConfig.TrafficGenTargetNodeName, checkupConfig.PodUID)),
 		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.TrafficGenEastMacAddress.String(), config.VMIEastNICPCIAddress),
 		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.TrafficGenWestMacAddress.String(), config.VMIWestNICPCIAddress),
-		vmi.WithContainerDisk(rootDiskName, checkupConfig.TrafficGenContainerDiskImage),
+		vmi.WithContainerDisk(rootDiskName, checkupConfig.TrafficGenContainerDiskImage, k8scorev1.PullAlways),
 		vmi.WithCloudInitNoCloudVolume(
 			cloudInitDiskName,
 			CloudInit(config.VMIUsername, config.VMIPassword, trafficGenBootCommands(configDiskSerial)),
