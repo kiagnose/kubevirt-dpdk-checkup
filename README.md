@@ -65,18 +65,20 @@ roleRef:
 
 ## Configuration
 
-| Key                                        | Description                                                            | Is Mandatory | Remarks                                                               |
-|--------------------------------------------|------------------------------------------------------------------------|--------------|-----------------------------------------------------------------------|
-| spec.timeout                               | How much time before the checkup will try to close itself              | True         |                                                                       |
-| spec.param.networkAttachmentDefinitionName | NetworkAttachmentDefinition name of the SR-IOV NICs connected          | True         | Assumed to be in the same namespace                                   |
-| spec.param.trafficGenContainerDiskImage    | Traffic generator's container disk image                               | False        | Defaults to `quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main` |
-| spec.param.trafficGenTargetNodeName        | Node Name on which the traffic generator VM will be scheduled to       | False        | Assumed to be configured to Nodes that allow DPDK traffic             |
-| spec.param.trafficGenPacketsPerSecond      | Amount of packets per second. format: <amount>[/k/m] k-kilo; m-million | False        | Defaults to 8m                                                        |
-| spec.param.vmUnderTestContainerDiskImage   | VM under test container disk image                                     | False        | Defaults to `quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main`          |
-| spec.param.vmUnderTestTargetNodeName       | Node Name on which the VM under test will be scheduled to              | False        | Assumed to be configured to Nodes that allow DPDK traffic             |
-| spec.param.testDuration                    | How much time will the traffic generator will run                      | False        | Defaults to 5 Minutes                                                 |
-| spec.param.portBandwidthGbps               | SR-IOV NIC max bandwidth                                               | False        | Defaults to 10Gbps                                                    |
-| spec.param.verbose                         | Increases checkup's log verbosity                                      | False        | "true" / "false". Defaults to "false"                                 |
+| Key                                                | Description                                                            | Is Mandatory | Remarks                                                               |
+|----------------------------------------------------|------------------------------------------------------------------------|--------------|-----------------------------------------------------------------------|
+| spec.timeout                                       | How much time before the checkup will try to close itself              | True         |                                                                       |
+| spec.param.networkAttachmentDefinitionName         | NetworkAttachmentDefinition name of the SR-IOV NICs connected          | True         | Assumed to be in the same namespace                                   |
+| spec.param.trafficGenContainerDiskImage            | Traffic generator's container disk image                               | False        | Defaults to `quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main` |
+| spec.param.trafficGenAlwaysPullContainerDiskImage  | Set the container disk image pull policy to Always                     | False        | Defaults to false                                                     |
+| spec.param.trafficGenTargetNodeName                | Node Name on which the traffic generator VM will be scheduled to       | False        | Assumed to be configured to Nodes that allow DPDK traffic             |
+| spec.param.trafficGenPacketsPerSecond              | Amount of packets per second. format: <amount>[/k/m] k-kilo; m-million | False        | Defaults to 8m                                                        |
+| spec.param.vmUnderTestContainerDiskImage           | VM under test container disk image                                     | False        | Defaults to `quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main`          |
+| spec.param.vmUnderTestAlwaysPullContainerDiskImage | Set the container disk image pull policy to Always                     | False        | Defaults to false                                                     |
+| spec.param.vmUnderTestTargetNodeName               | Node Name on which the VM under test will be scheduled to              | False        | Assumed to be configured to Nodes that allow DPDK traffic             |
+| spec.param.testDuration                            | How much time will the traffic generator will run                      | False        | Defaults to 5 Minutes                                                 |
+| spec.param.portBandwidthGbps                       | SR-IOV NIC max bandwidth                                               | False        | Defaults to 10Gbps                                                    |
+| spec.param.verbose                                 | Increases checkup's log verbosity                                      | False        | "true" / "false". Defaults to "false"                                 |
 
 ### Example
 
