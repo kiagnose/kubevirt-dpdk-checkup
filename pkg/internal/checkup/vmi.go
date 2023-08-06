@@ -73,11 +73,16 @@ func newTrafficGen(name string, checkupConfig config.Config, configMapName strin
 
 	optionsToApply := baseOptions(checkupConfig)
 
+	imagePullPolicy := k8scorev1.PullIfNotPresent
+	if checkupConfig.TrafficGenAlwaysPullContainerDiskImage {
+		imagePullPolicy = k8scorev1.PullAlways
+	}
+
 	optionsToApply = append(optionsToApply,
 		vmi.WithAffinity(Affinity(checkupConfig.TrafficGenTargetNodeName, checkupConfig.PodUID)),
 		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.TrafficGenEastMacAddress.String(), config.VMIEastNICPCIAddress),
 		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.TrafficGenWestMacAddress.String(), config.VMIWestNICPCIAddress),
-		vmi.WithContainerDisk(rootDiskName, checkupConfig.TrafficGenContainerDiskImage, k8scorev1.PullAlways),
+		vmi.WithContainerDisk(rootDiskName, checkupConfig.TrafficGenContainerDiskImage, imagePullPolicy),
 		vmi.WithCloudInitNoCloudVolume(
 			cloudInitDiskName,
 			CloudInit(config.VMIUsername, config.VMIPassword, trafficGenBootCommands(configDiskSerial)),
