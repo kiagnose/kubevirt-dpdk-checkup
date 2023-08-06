@@ -31,24 +31,26 @@ import (
 )
 
 const (
-	NetworkAttachmentDefinitionNameParamName = "networkAttachmentDefinitionName"
-	TrafficGenContainerDiskImageParamName    = "trafficGenContainerDiskImage"
-	TrafficGenTargetNodeNameParamName        = "trafficGenTargetNodeName"
-	TrafficGenPacketsPerSecondParamName      = "trafficGenPacketsPerSecond"
-	VMUnderTestContainerDiskImageParamName   = "vmUnderTestContainerDiskImage"
-	VMUnderTestTargetNodeNameParamName       = "vmUnderTestTargetNodeName"
-	TestDurationParamName                    = "testDuration"
-	PortBandwidthGbpsParamName               = "portBandwidthGbps"
-	VerboseParamName                         = "verbose"
+	NetworkAttachmentDefinitionNameParamName        = "networkAttachmentDefinitionName"
+	TrafficGenContainerDiskImageParamName           = "trafficGenContainerDiskImage"
+	TrafficGenAlwaysPullContainerDiskImageParamName = "trafficGenAlwaysPullContainerDiskImage"
+	TrafficGenTargetNodeNameParamName               = "trafficGenTargetNodeName"
+	TrafficGenPacketsPerSecondParamName             = "trafficGenPacketsPerSecond"
+	VMUnderTestContainerDiskImageParamName          = "vmUnderTestContainerDiskImage"
+	VMUnderTestTargetNodeNameParamName              = "vmUnderTestTargetNodeName"
+	TestDurationParamName                           = "testDuration"
+	PortBandwidthGbpsParamName                      = "portBandwidthGbps"
+	VerboseParamName                                = "verbose"
 )
 
 const (
-	TrafficGenDefaultContainerDiskImage  = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main"
-	TrafficGenDefaultPacketsPerSecond    = "8m"
-	VMUnderTestDefaultContainerDiskImage = "quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main"
-	TestDurationDefault                  = 5 * time.Minute
-	PortBandwidthGbpsDefault             = 10
-	VerboseDefault                       = false
+	TrafficGenDefaultContainerDiskImage           = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main"
+	TrafficGenAlwaysPullContainerDiskImageDefault = false
+	TrafficGenDefaultPacketsPerSecond             = "8m"
+	VMUnderTestDefaultContainerDiskImage          = "quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main"
+	TestDurationDefault                           = 5 * time.Minute
+	PortBandwidthGbpsDefault                      = 10
+	VerboseDefault                                = false
 
 	TrafficGenMACAddressPrefixOctet  = 0x50
 	VMUnderTestMACAddressPrefixOctet = 0x60
@@ -65,30 +67,32 @@ const (
 )
 
 var (
-	ErrInvalidNetworkAttachmentDefinitionName = errors.New("invalid Network-Attachment-Definition Name")
-	ErrIllegalTargetNodeNamesCombination      = errors.New("illegal Traffic Generator and VM under test target node names combination")
-	ErrInvalidTrafficGenPacketsPerSecond      = errors.New("invalid Traffic Generator Packets Per Second")
-	ErrInvalidTestDuration                    = errors.New("invalid Test Duration")
-	ErrInvalidPortBandwidthGbps               = errors.New("invalid Port Bandwidth [Gbps]")
-	ErrInvalidVerbose                         = errors.New("invalid Verbose value [true|false]")
+	ErrInvalidNetworkAttachmentDefinitionName        = errors.New("invalid Network-Attachment-Definition Name")
+	ErrInvalidTrafficGenAlwaysPullContainerDiskImage = errors.New("invalid Traffic generator always pull container disk image value")
+	ErrIllegalTargetNodeNamesCombination             = errors.New("illegal Traffic Generator and VM under test target node names combination")
+	ErrInvalidTrafficGenPacketsPerSecond             = errors.New("invalid Traffic Generator Packets Per Second")
+	ErrInvalidTestDuration                           = errors.New("invalid Test Duration")
+	ErrInvalidPortBandwidthGbps                      = errors.New("invalid Port Bandwidth [Gbps]")
+	ErrInvalidVerbose                                = errors.New("invalid Verbose value [true|false]")
 )
 
 type Config struct {
-	PodName                         string
-	PodUID                          string
-	NetworkAttachmentDefinitionName string
-	TrafficGenContainerDiskImage    string
-	TrafficGenTargetNodeName        string
-	TrafficGenPacketsPerSecond      string
-	TrafficGenEastMacAddress        net.HardwareAddr
-	TrafficGenWestMacAddress        net.HardwareAddr
-	VMUnderTestContainerDiskImage   string
-	VMUnderTestTargetNodeName       string
-	VMUnderTestEastMacAddress       net.HardwareAddr
-	VMUnderTestWestMacAddress       net.HardwareAddr
-	TestDuration                    time.Duration
-	PortBandwidthGbps               int
-	Verbose                         bool
+	PodName                                string
+	PodUID                                 string
+	NetworkAttachmentDefinitionName        string
+	TrafficGenContainerDiskImage           string
+	TrafficGenAlwaysPullContainerDiskImage bool
+	TrafficGenTargetNodeName               string
+	TrafficGenPacketsPerSecond             string
+	TrafficGenEastMacAddress               net.HardwareAddr
+	TrafficGenWestMacAddress               net.HardwareAddr
+	VMUnderTestContainerDiskImage          string
+	VMUnderTestTargetNodeName              string
+	VMUnderTestEastMacAddress              net.HardwareAddr
+	VMUnderTestWestMacAddress              net.HardwareAddr
+	TestDuration                           time.Duration
+	PortBandwidthGbps                      int
+	Verbose                                bool
 }
 
 func New(baseConfig kconfig.Config) (Config, error) {
@@ -113,21 +117,22 @@ func New(baseConfig kconfig.Config) (Config, error) {
 	)
 
 	newConfig := Config{
-		PodName:                         baseConfig.PodName,
-		PodUID:                          baseConfig.PodUID,
-		NetworkAttachmentDefinitionName: baseConfig.Params[NetworkAttachmentDefinitionNameParamName],
-		TrafficGenContainerDiskImage:    TrafficGenDefaultContainerDiskImage,
-		TrafficGenTargetNodeName:        baseConfig.Params[TrafficGenTargetNodeNameParamName],
-		TrafficGenPacketsPerSecond:      TrafficGenDefaultPacketsPerSecond,
-		TrafficGenEastMacAddress:        trafficGenEastMacAddress,
-		TrafficGenWestMacAddress:        trafficGenWestMacAddress,
-		VMUnderTestContainerDiskImage:   VMUnderTestDefaultContainerDiskImage,
-		VMUnderTestTargetNodeName:       baseConfig.Params[VMUnderTestTargetNodeNameParamName],
-		VMUnderTestEastMacAddress:       vmUnderTestEastMACAddress,
-		VMUnderTestWestMacAddress:       vmUnderTestWestMacAddress,
-		TestDuration:                    TestDurationDefault,
-		PortBandwidthGbps:               PortBandwidthGbpsDefault,
-		Verbose:                         VerboseDefault,
+		PodName:                                baseConfig.PodName,
+		PodUID:                                 baseConfig.PodUID,
+		NetworkAttachmentDefinitionName:        baseConfig.Params[NetworkAttachmentDefinitionNameParamName],
+		TrafficGenContainerDiskImage:           TrafficGenDefaultContainerDiskImage,
+		TrafficGenAlwaysPullContainerDiskImage: TrafficGenAlwaysPullContainerDiskImageDefault,
+		TrafficGenTargetNodeName:               baseConfig.Params[TrafficGenTargetNodeNameParamName],
+		TrafficGenPacketsPerSecond:             TrafficGenDefaultPacketsPerSecond,
+		TrafficGenEastMacAddress:               trafficGenEastMacAddress,
+		TrafficGenWestMacAddress:               trafficGenWestMacAddress,
+		VMUnderTestContainerDiskImage:          VMUnderTestDefaultContainerDiskImage,
+		VMUnderTestTargetNodeName:              baseConfig.Params[VMUnderTestTargetNodeNameParamName],
+		VMUnderTestEastMacAddress:              vmUnderTestEastMACAddress,
+		VMUnderTestWestMacAddress:              vmUnderTestWestMacAddress,
+		TestDuration:                           TestDurationDefault,
+		PortBandwidthGbps:                      PortBandwidthGbpsDefault,
+		Verbose:                                VerboseDefault,
 	}
 
 	if newConfig.NetworkAttachmentDefinitionName == "" {
@@ -147,6 +152,13 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 
 	if rawVal := baseConfig.Params[TrafficGenContainerDiskImageParamName]; rawVal != "" {
 		newConfig.TrafficGenContainerDiskImage = rawVal
+	}
+
+	if rawVal := baseConfig.Params[TrafficGenAlwaysPullContainerDiskImageParamName]; rawVal != "" {
+		newConfig.TrafficGenAlwaysPullContainerDiskImage, err = strconv.ParseBool(rawVal)
+		if err != nil {
+			return Config{}, ErrInvalidTrafficGenAlwaysPullContainerDiskImage
+		}
 	}
 
 	if rawVal := baseConfig.Params[TrafficGenPacketsPerSecondParamName]; rawVal != "" {

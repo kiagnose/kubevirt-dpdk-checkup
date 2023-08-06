@@ -23,6 +23,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 
 	kconfig "github.com/kiagnose/kiagnose/kiagnose/config"
 
@@ -69,6 +70,10 @@ func printConfig(baseConfig kconfig.Config, checkupConfig config.Config) {
 	log.Printf("%q: %q", "timeout", baseConfig.Timeout)
 	log.Printf("%q: %q", config.NetworkAttachmentDefinitionNameParamName, checkupConfig.NetworkAttachmentDefinitionName)
 	log.Printf("%q: %q", config.TrafficGenContainerDiskImageParamName, checkupConfig.TrafficGenContainerDiskImage)
+	log.Printf("%q: %q",
+		config.TrafficGenAlwaysPullContainerDiskImageParamName,
+		strconv.FormatBool(checkupConfig.TrafficGenAlwaysPullContainerDiskImage),
+	)
 	log.Printf("%q: %q", config.TrafficGenTargetNodeNameParamName, checkupConfig.TrafficGenTargetNodeName)
 	log.Printf("%q: %q", config.TrafficGenPacketsPerSecondParamName, checkupConfig.TrafficGenPacketsPerSecond)
 	log.Printf("%q: %q", "TrafficGenEastMacAddress", checkupConfig.TrafficGenEastMacAddress)
