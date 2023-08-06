@@ -79,6 +79,10 @@ func printConfig(baseConfig kconfig.Config, checkupConfig config.Config) {
 	log.Printf("%q: %q", "TrafficGenEastMacAddress", checkupConfig.TrafficGenEastMacAddress)
 	log.Printf("%q: %q", "TrafficGenWestMacAddress", checkupConfig.TrafficGenWestMacAddress)
 	log.Printf("%q: %q", config.VMUnderTestContainerDiskImageParamName, checkupConfig.VMUnderTestContainerDiskImage)
+	log.Printf("%q: %q",
+		config.VMUnderTestAlwaysPullContainerDiskImageParamName,
+		strconv.FormatBool(checkupConfig.VMUnderTestAlwaysPullContainerDiskImage),
+	)
 	log.Printf("%q: %q", config.VMUnderTestTargetNodeNameParamName, checkupConfig.VMUnderTestTargetNodeName)
 	log.Printf("%q: %q", "VMUnderTestEastMacAddress", checkupConfig.VMUnderTestEastMacAddress)
 	log.Printf("%q: %q", "VMUnderTestWestMacAddress", checkupConfig.VMUnderTestWestMacAddress)

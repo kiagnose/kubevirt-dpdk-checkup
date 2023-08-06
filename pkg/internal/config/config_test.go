@@ -33,17 +33,18 @@ import (
 )
 
 const (
-	testPodName                                = "my-pod"
-	testPodUID                                 = "0123456789-0123456789"
-	networkAttachmentDefinitionName            = "intel-dpdk-network1"
-	testTrafficGenContainerDiskImage           = "quay.io/ramlavi/kubevirt-dpdk-checkup-traffic-gen:main"
-	testTrafficGenAlwaysPullContainerDiskImage = true
-	testTrafficGenTargetNodeName               = "worker-dpdk1"
-	testTrafficGenPacketsPerSecond             = "6m"
-	testVMUnderTestContainerDiskImage          = "quay.io/ramlavi/kubevirt-dpdk-checkup-vm:main"
-	testVMUnderTestTargetNodeName              = "worker-dpdk2"
-	testDuration                               = "30m"
-	testPortBandwidthGbps                      = 100
+	testPodName                                 = "my-pod"
+	testPodUID                                  = "0123456789-0123456789"
+	networkAttachmentDefinitionName             = "intel-dpdk-network1"
+	testTrafficGenContainerDiskImage            = "quay.io/ramlavi/kubevirt-dpdk-checkup-traffic-gen:main"
+	testTrafficGenAlwaysPullContainerDiskImage  = true
+	testTrafficGenTargetNodeName                = "worker-dpdk1"
+	testTrafficGenPacketsPerSecond              = "6m"
+	testVMUnderTestContainerDiskImage           = "quay.io/ramlavi/kubevirt-dpdk-checkup-vm:main"
+	testVMUnderTestAlwaysPullContainerDiskImage = true
+	testVMUnderTestTargetNodeName               = "worker-dpdk2"
+	testDuration                                = "30m"
+	testPortBandwidthGbps                       = 100
 )
 
 func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
@@ -64,20 +65,21 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 	assert.NotNil(t, actualConfig.VMUnderTestWestMacAddress)
 
 	expectedConfig := config.Config{
-		PodName:                                testPodName,
-		PodUID:                                 testPodUID,
-		NetworkAttachmentDefinitionName:        networkAttachmentDefinitionName,
-		TrafficGenContainerDiskImage:           config.TrafficGenDefaultContainerDiskImage,
-		TrafficGenAlwaysPullContainerDiskImage: config.TrafficGenAlwaysPullContainerDiskImageDefault,
-		TrafficGenPacketsPerSecond:             config.TrafficGenDefaultPacketsPerSecond,
-		TrafficGenEastMacAddress:               actualConfig.TrafficGenEastMacAddress,
-		TrafficGenWestMacAddress:               actualConfig.TrafficGenWestMacAddress,
-		VMUnderTestContainerDiskImage:          config.VMUnderTestDefaultContainerDiskImage,
-		VMUnderTestEastMacAddress:              actualConfig.VMUnderTestEastMacAddress,
-		VMUnderTestWestMacAddress:              actualConfig.VMUnderTestWestMacAddress,
-		TestDuration:                           config.TestDurationDefault,
-		PortBandwidthGbps:                      config.PortBandwidthGbpsDefault,
-		Verbose:                                config.VerboseDefault,
+		PodName:                                 testPodName,
+		PodUID:                                  testPodUID,
+		NetworkAttachmentDefinitionName:         networkAttachmentDefinitionName,
+		TrafficGenContainerDiskImage:            config.TrafficGenDefaultContainerDiskImage,
+		TrafficGenAlwaysPullContainerDiskImage:  config.TrafficGenAlwaysPullContainerDiskImageDefault,
+		TrafficGenPacketsPerSecond:              config.TrafficGenDefaultPacketsPerSecond,
+		TrafficGenEastMacAddress:                actualConfig.TrafficGenEastMacAddress,
+		TrafficGenWestMacAddress:                actualConfig.TrafficGenWestMacAddress,
+		VMUnderTestContainerDiskImage:           config.VMUnderTestDefaultContainerDiskImage,
+		VMUnderTestAlwaysPullContainerDiskImage: config.VMUnderTestAlwaysPullContainerDiskImageDefault,
+		VMUnderTestEastMacAddress:               actualConfig.VMUnderTestEastMacAddress,
+		VMUnderTestWestMacAddress:               actualConfig.VMUnderTestWestMacAddress,
+		TestDuration:                            config.TestDurationDefault,
+		PortBandwidthGbps:                       config.PortBandwidthGbpsDefault,
+		Verbose:                                 config.VerboseDefault,
 	}
 	assert.Equal(t, expectedConfig, actualConfig)
 }
@@ -94,34 +96,36 @@ func TestNewShouldApplyUserConfigWhen(t *testing.T) {
 			"config is valid and both Node Selectors are set",
 			getValidUserParametersWithNodeSelectors(),
 			config.Config{
-				PodName:                                testPodName,
-				PodUID:                                 testPodUID,
-				NetworkAttachmentDefinitionName:        networkAttachmentDefinitionName,
-				TrafficGenContainerDiskImage:           testTrafficGenContainerDiskImage,
-				TrafficGenAlwaysPullContainerDiskImage: testTrafficGenAlwaysPullContainerDiskImage,
-				TrafficGenTargetNodeName:               testTrafficGenTargetNodeName,
-				TrafficGenPacketsPerSecond:             testTrafficGenPacketsPerSecond,
-				VMUnderTestContainerDiskImage:          testVMUnderTestContainerDiskImage,
-				VMUnderTestTargetNodeName:              testVMUnderTestTargetNodeName,
-				TestDuration:                           30 * time.Minute,
-				PortBandwidthGbps:                      testPortBandwidthGbps,
-				Verbose:                                true,
+				PodName:                                 testPodName,
+				PodUID:                                  testPodUID,
+				NetworkAttachmentDefinitionName:         networkAttachmentDefinitionName,
+				TrafficGenContainerDiskImage:            testTrafficGenContainerDiskImage,
+				TrafficGenAlwaysPullContainerDiskImage:  testTrafficGenAlwaysPullContainerDiskImage,
+				TrafficGenTargetNodeName:                testTrafficGenTargetNodeName,
+				TrafficGenPacketsPerSecond:              testTrafficGenPacketsPerSecond,
+				VMUnderTestContainerDiskImage:           testVMUnderTestContainerDiskImage,
+				VMUnderTestAlwaysPullContainerDiskImage: testVMUnderTestAlwaysPullContainerDiskImage,
+				VMUnderTestTargetNodeName:               testVMUnderTestTargetNodeName,
+				TestDuration:                            30 * time.Minute,
+				PortBandwidthGbps:                       testPortBandwidthGbps,
+				Verbose:                                 true,
 			},
 		},
 		{
 			"config is valid and both Node Selectors are not set",
 			getValidUserParametersWithOutNodeSelectors(),
 			config.Config{
-				PodName:                                testPodName,
-				PodUID:                                 testPodUID,
-				NetworkAttachmentDefinitionName:        networkAttachmentDefinitionName,
-				TrafficGenContainerDiskImage:           testTrafficGenContainerDiskImage,
-				TrafficGenAlwaysPullContainerDiskImage: testTrafficGenAlwaysPullContainerDiskImage,
-				TrafficGenPacketsPerSecond:             testTrafficGenPacketsPerSecond,
-				VMUnderTestContainerDiskImage:          testVMUnderTestContainerDiskImage,
-				TestDuration:                           30 * time.Minute,
-				PortBandwidthGbps:                      testPortBandwidthGbps,
-				Verbose:                                true,
+				PodName:                                 testPodName,
+				PodUID:                                  testPodUID,
+				NetworkAttachmentDefinitionName:         networkAttachmentDefinitionName,
+				TrafficGenContainerDiskImage:            testTrafficGenContainerDiskImage,
+				TrafficGenAlwaysPullContainerDiskImage:  testTrafficGenAlwaysPullContainerDiskImage,
+				TrafficGenPacketsPerSecond:              testTrafficGenPacketsPerSecond,
+				VMUnderTestContainerDiskImage:           testVMUnderTestContainerDiskImage,
+				VMUnderTestAlwaysPullContainerDiskImage: testVMUnderTestAlwaysPullContainerDiskImage,
+				TestDuration:                            30 * time.Minute,
+				PortBandwidthGbps:                       testPortBandwidthGbps,
+				Verbose:                                 true,
 			},
 		},
 	}
@@ -197,6 +201,12 @@ func TestNewShouldFailWhen(t *testing.T) {
 			expectedError:  config.ErrInvalidTrafficGenPacketsPerSecond,
 		},
 		{
+			description:    "vmUnderTestAlwaysPullContainerDiskImage is invalid",
+			key:            config.VMUnderTestAlwaysPullContainerDiskImageParamName,
+			faultyKeyValue: "maybe",
+			expectedError:  config.ErrInvalidVMUnderTestAlwaysPullContainerDiskImage,
+		},
+		{
 			description:    "TestDuration is invalid",
 			key:            config.TestDurationParamName,
 			faultyKeyValue: "invalid value",
@@ -250,15 +260,16 @@ func getValidUserParametersWithOutNodeSelectors() map[string]string {
 
 func getValidUserParameters() map[string]string {
 	return map[string]string{
-		config.NetworkAttachmentDefinitionNameParamName:        networkAttachmentDefinitionName,
-		config.TrafficGenContainerDiskImageParamName:           testTrafficGenContainerDiskImage,
-		config.TrafficGenAlwaysPullContainerDiskImageParamName: strconv.FormatBool(testTrafficGenAlwaysPullContainerDiskImage),
-		config.TrafficGenTargetNodeNameParamName:               testTrafficGenTargetNodeName,
-		config.TrafficGenPacketsPerSecondParamName:             testTrafficGenPacketsPerSecond,
-		config.VMUnderTestContainerDiskImageParamName:          testVMUnderTestContainerDiskImage,
-		config.VMUnderTestTargetNodeNameParamName:              testVMUnderTestTargetNodeName,
-		config.TestDurationParamName:                           testDuration,
-		config.PortBandwidthGbpsParamName:                      fmt.Sprintf("%d", testPortBandwidthGbps),
-		config.VerboseParamName:                                strconv.FormatBool(true),
+		config.NetworkAttachmentDefinitionNameParamName:         networkAttachmentDefinitionName,
+		config.TrafficGenContainerDiskImageParamName:            testTrafficGenContainerDiskImage,
+		config.TrafficGenAlwaysPullContainerDiskImageParamName:  strconv.FormatBool(testTrafficGenAlwaysPullContainerDiskImage),
+		config.TrafficGenTargetNodeNameParamName:                testTrafficGenTargetNodeName,
+		config.TrafficGenPacketsPerSecondParamName:              testTrafficGenPacketsPerSecond,
+		config.VMUnderTestContainerDiskImageParamName:           testVMUnderTestContainerDiskImage,
+		config.VMUnderTestAlwaysPullContainerDiskImageParamName: strconv.FormatBool(testVMUnderTestAlwaysPullContainerDiskImage),
+		config.VMUnderTestTargetNodeNameParamName:               testVMUnderTestTargetNodeName,
+		config.TestDurationParamName:                            testDuration,
+		config.PortBandwidthGbpsParamName:                       fmt.Sprintf("%d", testPortBandwidthGbps),
+		config.VerboseParamName:                                 strconv.FormatBool(true),
 	}
 }
