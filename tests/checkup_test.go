@@ -285,10 +285,12 @@ func newRoleBinding(name, serviceAccountName, roleName string) *rbacv1.RoleBindi
 func newConfigMap() *corev1.ConfigMap {
 	testConfig := map[string]string{
 		"spec.timeout": "10m",
-		"spec.param.networkAttachmentDefinitionName": networkAttachmentDefinitionName,
-		"spec.param.trafficGenPacketsPerSecond":      "8m",
-		"spec.param.testDuration":                    "1m",
-		"spec.param.verbose":                         "true",
+		"spec.param.networkAttachmentDefinitionName":         networkAttachmentDefinitionName,
+		"spec.param.trafficGenPacketsPerSecond":              "8m",
+		"spec.param.trafficGenAlwaysPullContainerDiskImage":  "true",
+		"spec.param.vmUnderTestAlwaysPullContainerDiskImage": "true",
+		"spec.param.testDuration":                            "1m",
+		"spec.param.verbose":                                 "true",
 	}
 
 	if trafficGenContainerDiskImage != "" {
