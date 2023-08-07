@@ -22,6 +22,7 @@ package reporter_test
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -50,12 +51,12 @@ func TestReportShouldSucceed(t *testing.T) {
 	assert.NoError(t, testReporter.Report(status.Status{}))
 }
 
-func TestReportShouldSuccessfullyReportResults(t *testing.T) {
-	const (
-		failureReason1 = "some reason"
-		failureReason2 = "some other reason"
-	)
+type checkupFailureCase struct {
+	description    string
+	failureReasons []string
+}
 
+func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 	t.Run("on checkup success", func(t *testing.T) {
 		const (
 			expectedTrafficGenSentPackets        = 0
@@ -108,47 +109,43 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 	})
 
 	t.Run("on checkup failure", func(t *testing.T) {
-		fakeClient := fake.NewSimpleClientset(newConfigMap())
-		testReporter := reporter.New(fakeClient, testNamespace, testConfigMapName)
+		const (
+			failureReason1 = "some reason"
+			failureReason2 = "some other reason"
+		)
 
-		var checkupStatus status.Status
-		checkupStatus.StartTimestamp = time.Now()
-		assert.NoError(t, testReporter.Report(checkupStatus))
-
-		checkupStatus.FailureReason = []string{failureReason1}
-		checkupStatus.CompletionTimestamp = time.Now()
-		assert.NoError(t, testReporter.Report(checkupStatus))
-
-		expectedReportData := map[string]string{
-			"status.succeeded":           strconv.FormatBool(false),
-			"status.failureReason":       failureReason1,
-			"status.startTimestamp":      timestamp(checkupStatus.StartTimestamp),
-			"status.completionTimestamp": timestamp(checkupStatus.CompletionTimestamp),
+		testCases := []checkupFailureCase{
+			{
+				description:    "with no results",
+				failureReasons: []string{failureReason1},
+			},
+			{
+				description:    "with no results and multiple failures",
+				failureReasons: []string{failureReason1, failureReason2},
+			},
 		}
 
-		assert.Equal(t, expectedReportData, getCheckupData(t, fakeClient, testNamespace, testConfigMapName))
-	})
+		for _, testCase := range testCases {
+			t.Run(testCase.description, func(t *testing.T) {
+				fakeClient := fake.NewSimpleClientset(newConfigMap())
+				testReporter := reporter.New(fakeClient, testNamespace, testConfigMapName)
 
-	t.Run("on checkup with multiple failures", func(t *testing.T) {
-		fakeClient := fake.NewSimpleClientset(newConfigMap())
-		testReporter := reporter.New(fakeClient, testNamespace, testConfigMapName)
+				var checkupStatus status.Status
+				checkupStatus.StartTimestamp = time.Now()
+				assert.NoError(t, testReporter.Report(checkupStatus))
 
-		var checkupStatus status.Status
-		checkupStatus.StartTimestamp = time.Now()
-		checkupStatus.CompletionTimestamp = time.Now()
-		assert.NoError(t, testReporter.Report(checkupStatus))
-
-		checkupStatus.FailureReason = []string{failureReason1, failureReason2}
-		assert.NoError(t, testReporter.Report(checkupStatus))
-
-		expectedReportData := map[string]string{
-			"status.succeeded":           strconv.FormatBool(false),
-			"status.failureReason":       failureReason1 + "," + failureReason2,
-			"status.startTimestamp":      timestamp(checkupStatus.StartTimestamp),
-			"status.completionTimestamp": timestamp(checkupStatus.CompletionTimestamp),
+				checkupStatus.CompletionTimestamp = time.Now()
+				checkupStatus.FailureReason = testCase.failureReasons
+				expectedReportData := map[string]string{
+					"status.succeeded":           strconv.FormatBool(false),
+					"status.failureReason":       strings.Join(checkupStatus.FailureReason, ","),
+					"status.startTimestamp":      timestamp(checkupStatus.StartTimestamp),
+					"status.completionTimestamp": timestamp(checkupStatus.CompletionTimestamp),
+				}
+				assert.NoError(t, testReporter.Report(checkupStatus))
+				assert.Equal(t, expectedReportData, getCheckupData(t, fakeClient, testNamespace, testConfigMapName))
+			})
 		}
-
-		assert.Equal(t, expectedReportData, getCheckupData(t, fakeClient, testNamespace, testConfigMapName))
 	})
 }
 
