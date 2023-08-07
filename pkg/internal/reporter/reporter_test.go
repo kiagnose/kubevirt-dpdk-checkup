@@ -54,6 +54,7 @@ func TestReportShouldSucceed(t *testing.T) {
 type checkupFailureCase struct {
 	description    string
 	failureReasons []string
+	results        *status.Results
 }
 
 func TestReportShouldSuccessfullyReportResults(t *testing.T) {
@@ -97,6 +98,16 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 		const (
 			failureReason1 = "some reason"
 			failureReason2 = "some other reason"
+			failureReason3 = "some result related reason"
+
+			expectedTrafficGenSentPackets        = 100
+			expectedTrafficGenOutputErrorPackets = 1
+			expectedTrafficGenInputErrorPackets  = 2
+			expectedVMUnderTestReceivedPackets   = 90
+			expectedVMUnderTestRxDroppedPackets  = 3
+			expectedVMUnderTestTxDroppedPackets  = 4
+			expectedVMUnderTestActualNodeName    = "dpdk-node01"
+			expectedTrafficGenActualNodeName     = "dpdk-node02"
 		)
 
 		testCases := []checkupFailureCase{
@@ -107,6 +118,20 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 			{
 				description:    "with no results and multiple failures",
 				failureReasons: []string{failureReason1, failureReason2},
+			},
+			{
+				description:    "with results",
+				failureReasons: []string{failureReason3},
+				results: &status.Results{
+					TrafficGenSentPackets:        expectedTrafficGenSentPackets,
+					TrafficGenOutputErrorPackets: expectedTrafficGenOutputErrorPackets,
+					TrafficGenInputErrorPackets:  expectedTrafficGenInputErrorPackets,
+					VMUnderTestReceivedPackets:   expectedVMUnderTestReceivedPackets,
+					VMUnderTestRxDroppedPackets:  expectedVMUnderTestRxDroppedPackets,
+					VMUnderTestTxDroppedPackets:  expectedVMUnderTestTxDroppedPackets,
+					VMUnderTestActualNodeName:    expectedVMUnderTestActualNodeName,
+					TrafficGenActualNodeName:     expectedTrafficGenActualNodeName,
+				},
 			},
 		}
 
@@ -121,7 +146,13 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 
 				checkupStatus.CompletionTimestamp = time.Now()
 				checkupStatus.FailureReason = testCase.failureReasons
-				expectedReportData := createBasicExpectedReporterConfigmapData(false, checkupStatus)
+				var expectedReportData map[string]string
+				if testCase.results != nil {
+					checkupStatus.Results = *testCase.results
+					expectedReportData = createExpectedReporterConfigmapDataWithResults(false, checkupStatus)
+				} else {
+					expectedReportData = createBasicExpectedReporterConfigmapData(false, checkupStatus)
+				}
 				assert.NoError(t, testReporter.Report(checkupStatus))
 				assert.Equal(t, expectedReportData, getCheckupData(t, fakeClient, testNamespace, testConfigMapName))
 			})
