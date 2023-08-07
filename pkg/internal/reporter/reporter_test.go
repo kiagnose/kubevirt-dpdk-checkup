@@ -52,22 +52,21 @@ func TestReportShouldSucceed(t *testing.T) {
 
 func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 	const (
-		expectedTrafficGenSentPackets        = 0
-		expectedTrafficGenOutputErrorPackets = 0
-		expectedTrafficGenInputErrorPackets  = 0
-		expectedVMUnderTestReceivedPackets   = 0
-		expectedVMUnderTestRxDroppedPackets  = 0
-		expectedVMUnderTestTxDroppedPackets  = 0
-		expectedVMUnderTestActualNodeName    = "dpdk-node01"
-		expectedTrafficGenActualNodeName     = "dpdk-node02"
-	)
-
-	const (
 		failureReason1 = "some reason"
 		failureReason2 = "some other reason"
 	)
 
 	t.Run("on checkup success", func(t *testing.T) {
+		const (
+			expectedTrafficGenSentPackets        = 0
+			expectedTrafficGenOutputErrorPackets = 0
+			expectedTrafficGenInputErrorPackets  = 0
+			expectedVMUnderTestReceivedPackets   = 0
+			expectedVMUnderTestRxDroppedPackets  = 0
+			expectedVMUnderTestTxDroppedPackets  = 0
+			expectedVMUnderTestActualNodeName    = "dpdk-node01"
+			expectedTrafficGenActualNodeName     = "dpdk-node02"
+		)
 		fakeClient := fake.NewSimpleClientset(newConfigMap())
 		testReporter := reporter.New(fakeClient, testNamespace, testConfigMapName)
 
