@@ -59,10 +59,10 @@ type checkupFailureCase struct {
 func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 	t.Run("on checkup success", func(t *testing.T) {
 		const (
-			expectedTrafficGenSentPackets        = 0
+			expectedTrafficGenSentPackets        = 100
 			expectedTrafficGenOutputErrorPackets = 0
 			expectedTrafficGenInputErrorPackets  = 0
-			expectedVMUnderTestReceivedPackets   = 0
+			expectedVMUnderTestReceivedPackets   = 100
 			expectedVMUnderTestRxDroppedPackets  = 0
 			expectedVMUnderTestTxDroppedPackets  = 0
 			expectedVMUnderTestActualNodeName    = "dpdk-node01"
