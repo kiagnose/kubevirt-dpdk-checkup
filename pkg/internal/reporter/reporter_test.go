@@ -89,22 +89,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 		}
 
 		assert.NoError(t, testReporter.Report(checkupStatus))
-
-		expectedReportData := map[string]string{
-			"status.succeeded":                           strconv.FormatBool(true),
-			"status.failureReason":                       "",
-			"status.startTimestamp":                      timestamp(checkupStatus.StartTimestamp),
-			"status.completionTimestamp":                 timestamp(checkupStatus.CompletionTimestamp),
-			"status.result.trafficGenSentPackets":        fmt.Sprintf("%d", checkupStatus.Results.TrafficGenSentPackets),
-			"status.result.trafficGenOutputErrorPackets": fmt.Sprintf("%d", checkupStatus.Results.TrafficGenOutputErrorPackets),
-			"status.result.trafficGenInputErrorPackets":  fmt.Sprintf("%d", checkupStatus.Results.TrafficGenInputErrorPackets),
-			"status.result.vmUnderTestReceivedPackets":   fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestReceivedPackets),
-			"status.result.vmUnderTestRxDroppedPackets":  fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestRxDroppedPackets),
-			"status.result.vmUnderTestTxDroppedPackets":  fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestTxDroppedPackets),
-			"status.result.trafficGenActualNodeName":     checkupStatus.Results.TrafficGenActualNodeName,
-			"status.result.vmUnderTestActualNodeName":    checkupStatus.Results.VMUnderTestActualNodeName,
-		}
-
+		expectedReportData := createExpectedReporterConfigmapDataWithResults(true, checkupStatus)
 		assert.Equal(t, expectedReportData, getCheckupData(t, fakeClient, testNamespace, testConfigMapName))
 	})
 
@@ -136,12 +121,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 
 				checkupStatus.CompletionTimestamp = time.Now()
 				checkupStatus.FailureReason = testCase.failureReasons
-				expectedReportData := map[string]string{
-					"status.succeeded":           strconv.FormatBool(false),
-					"status.failureReason":       strings.Join(checkupStatus.FailureReason, ","),
-					"status.startTimestamp":      timestamp(checkupStatus.StartTimestamp),
-					"status.completionTimestamp": timestamp(checkupStatus.CompletionTimestamp),
-				}
+				expectedReportData := createBasicExpectedReporterConfigmapData(false, checkupStatus)
 				assert.NoError(t, testReporter.Report(checkupStatus))
 				assert.Equal(t, expectedReportData, getCheckupData(t, fakeClient, testNamespace, testConfigMapName))
 			})
@@ -156,6 +136,28 @@ func TestReportShouldFailWhenCannotUpdateConfigMap(t *testing.T) {
 	testReporter := reporter.New(fakeClient, testNamespace, testConfigMapName)
 
 	assert.ErrorContains(t, testReporter.Report(status.Status{}), "not found")
+}
+
+func createBasicExpectedReporterConfigmapData(succeeded bool, checkupStatus status.Status) map[string]string {
+	return map[string]string{
+		"status.succeeded":           strconv.FormatBool(succeeded),
+		"status.failureReason":       strings.Join(checkupStatus.FailureReason, ","),
+		"status.startTimestamp":      timestamp(checkupStatus.StartTimestamp),
+		"status.completionTimestamp": timestamp(checkupStatus.CompletionTimestamp),
+	}
+}
+
+func createExpectedReporterConfigmapDataWithResults(succeeded bool, checkupStatus status.Status) map[string]string {
+	results := createBasicExpectedReporterConfigmapData(succeeded, checkupStatus)
+	results["status.result.trafficGenSentPackets"] = fmt.Sprintf("%d", checkupStatus.Results.TrafficGenSentPackets)
+	results["status.result.trafficGenOutputErrorPackets"] = fmt.Sprintf("%d", checkupStatus.Results.TrafficGenOutputErrorPackets)
+	results["status.result.trafficGenInputErrorPackets"] = fmt.Sprintf("%d", checkupStatus.Results.TrafficGenInputErrorPackets)
+	results["status.result.vmUnderTestReceivedPackets"] = fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestReceivedPackets)
+	results["status.result.vmUnderTestRxDroppedPackets"] = fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestRxDroppedPackets)
+	results["status.result.vmUnderTestTxDroppedPackets"] = fmt.Sprintf("%d", checkupStatus.Results.VMUnderTestTxDroppedPackets)
+	results["status.result.trafficGenActualNodeName"] = checkupStatus.Results.TrafficGenActualNodeName
+	results["status.result.vmUnderTestActualNodeName"] = checkupStatus.Results.VMUnderTestActualNodeName
+	return results
 }
 
 func getCheckupData(t *testing.T, client kubernetes.Interface, configMapNamespace, configMapName string) map[string]string {
