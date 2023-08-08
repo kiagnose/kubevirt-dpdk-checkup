@@ -41,6 +41,10 @@ const (
 	testKubeVirtDPDKCheckerRoleName     = "kubevirt-dpdk-checker"
 	testConfigMapName                   = "dpdk-checkup-config"
 	testCheckupJobName                  = "dpdk-checkup"
+
+	testTimeout = 10 * time.Minute
+	jobGrace    = 5 * time.Minute
+	jobTimeout  = testTimeout + jobGrace
 )
 
 var _ = Describe("Execute the checkup Job", func() {
@@ -91,7 +95,7 @@ var _ = Describe("Execute the checkup Job", func() {
 			}
 
 			return jobConditions
-		}, 15*time.Minute, 5*time.Second).Should(
+		}, jobTimeout, 5*time.Second).Should(
 			ContainElement(MatchFields(IgnoreExtras, Fields{
 				"Type":   Equal(batchv1.JobComplete),
 				"Status": Equal(corev1.ConditionTrue),
@@ -284,7 +288,7 @@ func newRoleBinding(name, serviceAccountName, roleName string) *rbacv1.RoleBindi
 
 func newConfigMap() *corev1.ConfigMap {
 	testConfig := map[string]string{
-		"spec.timeout": "10m",
+		"spec.timeout": testTimeout.String(),
 		"spec.param.networkAttachmentDefinitionName": networkAttachmentDefinitionName,
 		"spec.param.trafficGenPacketsPerSecond":      "8m",
 		"spec.param.testDuration":                    "1m",
