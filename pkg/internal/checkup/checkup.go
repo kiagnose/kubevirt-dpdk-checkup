@@ -23,6 +23,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	k8scorev1 "k8s.io/api/core/v1"
@@ -139,25 +140,32 @@ func (c *Checkup) Run(ctx context.Context) error {
 	c.results.VMUnderTestActualNodeName = c.vmiUnderTest.Status.NodeName
 	c.results.TrafficGenActualNodeName = c.trafficGen.Status.NodeName
 
+	var runErrors []string
 	if c.results.TrafficGenSentPackets == 0 {
-		return fmt.Errorf("no packets were sent from the traffic generator")
+		runErrors = append(runErrors, "no packets were sent from the traffic generator")
 	}
 
 	if c.results.TrafficGenOutputErrorPackets != 0 || c.results.TrafficGenInputErrorPackets != 0 {
-		return fmt.Errorf("detected Error Packets on the traffic generator's side: Oerrors %d Ierrors %d",
-			c.results.TrafficGenOutputErrorPackets, c.results.TrafficGenInputErrorPackets)
+		runErrors = append(runErrors, fmt.Sprintf("detected Error Packets on the traffic generator's side: Oerrors %d Ierrors %d",
+			c.results.TrafficGenOutputErrorPackets, c.results.TrafficGenInputErrorPackets))
 	}
 
 	if c.results.VMUnderTestRxDroppedPackets != 0 || c.results.VMUnderTestTxDroppedPackets != 0 {
-		return fmt.Errorf("detected packets dropped on the VM-Under-Test's side: RX: %d; TX: %d",
-			c.results.VMUnderTestRxDroppedPackets, c.results.VMUnderTestTxDroppedPackets)
+		runErrors = append(runErrors, fmt.Sprintf("detected packets dropped on the VM-Under-Test's side: RX: %d; TX: %d",
+			c.results.VMUnderTestRxDroppedPackets, c.results.VMUnderTestTxDroppedPackets))
 	}
 
 	if c.results.TrafficGenSentPackets != c.results.VMUnderTestReceivedPackets {
-		return fmt.Errorf("not all generated packets had reached VM-Under-Test: Sent from traffic generator: %d; Received on VM-Under-Test: %d",
-			c.results.TrafficGenSentPackets, c.results.VMUnderTestReceivedPackets)
+		runErrors = append(runErrors, fmt.Sprintf("not all generated packets had reached VM-Under-Test: "+
+			"Sent from traffic generator: %d; Received on VM-Under-Test: %d",
+			c.results.TrafficGenSentPackets,
+			c.results.VMUnderTestReceivedPackets),
+		)
 	}
 
+	if len(runErrors) > 0 {
+		return fmt.Errorf("%s", strings.Join(runErrors, ", "))
+	}
 	return nil
 }
 
