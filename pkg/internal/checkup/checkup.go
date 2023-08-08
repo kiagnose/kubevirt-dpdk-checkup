@@ -139,6 +139,10 @@ func (c *Checkup) Run(ctx context.Context) error {
 	c.results.VMUnderTestActualNodeName = c.vmiUnderTest.Status.NodeName
 	c.results.TrafficGenActualNodeName = c.trafficGen.Status.NodeName
 
+	if c.results.TrafficGenSentPackets == 0 {
+		return fmt.Errorf("no packets were sent from the traffic generator")
+	}
+
 	if c.results.TrafficGenOutputErrorPackets != 0 || c.results.TrafficGenInputErrorPackets != 0 {
 		return fmt.Errorf("detected Error Packets on the traffic generator's side: Oerrors %d Ierrors %d",
 			c.results.TrafficGenOutputErrorPackets, c.results.TrafficGenInputErrorPackets)

@@ -22,6 +22,7 @@ package checkup_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"strings"
 	"testing"
@@ -54,7 +55,9 @@ const (
 func TestCheckupShouldSucceed(t *testing.T) {
 	testClient := newClientStub()
 	testConfig := newTestConfig()
-	testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
+
+	expectedResults := successfulRunResults()
+	testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{results: expectedResults})
 
 	assert.NoError(t, testCheckup.Setup(context.Background()))
 
@@ -73,8 +76,6 @@ func TestCheckupShouldSucceed(t *testing.T) {
 	assert.Empty(t, testClient.createdConfigMaps)
 
 	actualResults := testCheckup.Results()
-	expectedResults := status.Results{}
-
 	assert.Equal(t, expectedResults, actualResults)
 }
 
@@ -194,7 +195,7 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 			testClient := newClientStub()
 			testConfig := newTestConfig()
 
-			testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
+			testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{results: successfulRunResults()})
 
 			assert.NoError(t, testCheckup.Setup(context.Background()))
 			assert.NoError(t, testCheckup.Run(context.Background()))
@@ -210,7 +211,7 @@ func TestTrafficGenCMTeardownFailure(t *testing.T) {
 	testClient := newClientStub()
 	testConfig := newTestConfig()
 
-	testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{})
+	testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{results: successfulRunResults()})
 
 	assert.NoError(t, testCheckup.Setup(context.Background()))
 	assert.NotEmpty(t, testClient.createdConfigMaps)
@@ -224,27 +225,92 @@ func TestTrafficGenCMTeardownFailure(t *testing.T) {
 }
 
 func TestRunFailure(t *testing.T) {
-	expectedExecutionFailure := errors.New("failed to execute dpdk checkup")
+	const (
+		executeFailureMsg               = "failed to execute dpdk checkup"
+		trafficGenNoPacketsSentErrMsg   = "no packets were sent from the traffic generator"
+		trafficGenIOPacketsErrMsg       = "detected Error Packets on the traffic generator's side: Oerrors %d Ierrors %d"
+		vmUnderTestDroppedPacketsErrMsg = "detected packets dropped on the VM-Under-Test's side: RX: %d; TX: %d"
+		packetsDontMatchErrMsg          = "not all generated packets had reached VM-Under-Test: Sent from traffic generator:" +
+			" %d; Received on VM-Under-Test: %d"
 
-	testClient := newClientStub()
-	testConfig := newTestConfig()
-	testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{executeErr: expectedExecutionFailure})
+		trafficGenSentPackets       = 10
+		trafficGenOutputErrPackets  = 1
+		trafficGenInputErrPackets   = 2
+		vmUnderTestTxDroppedPackets = 3
+		vmUnderTestRxDroppedPackets = 4
+		vmUnderTestReceivedPackets  = trafficGenSentPackets - 1
+	)
 
-	assert.NoError(t, testCheckup.Setup(context.Background()))
+	type FailTestCase struct {
+		description     string
+		executorFailure error
+		results         status.Results
+		expectedRunErr  error
+	}
 
-	vmiUnderTestName := testClient.VMIName(checkup.VMIUnderTestNamePrefix)
-	assert.NotEmpty(t, vmiUnderTestName)
+	testCases := []FailTestCase{
+		{
+			description:     "Run Execute fails",
+			executorFailure: errors.New(executeFailureMsg),
+			results:         status.Results{},
+			expectedRunErr:  errors.New(executeFailureMsg),
+		},
+		{
+			description: "fail because no packets sent from traffic generator",
+			results: status.Results{
+				TrafficGenSentPackets: 0,
+			},
+			expectedRunErr: errors.New(trafficGenNoPacketsSentErrMsg),
+		},
+		{
+			description: "fail because found err packets on traffic generator side",
+			results: status.Results{
+				TrafficGenSentPackets:        trafficGenSentPackets,
+				TrafficGenOutputErrorPackets: trafficGenOutputErrPackets,
+				TrafficGenInputErrorPackets:  trafficGenInputErrPackets,
+			},
+			expectedRunErr: fmt.Errorf(trafficGenIOPacketsErrMsg, trafficGenOutputErrPackets, trafficGenInputErrPackets),
+		},
+		{
+			description: "fail because found err packets on VM-under-test side",
+			results: status.Results{
+				TrafficGenSentPackets:       trafficGenSentPackets,
+				VMUnderTestTxDroppedPackets: vmUnderTestTxDroppedPackets,
+				VMUnderTestRxDroppedPackets: vmUnderTestRxDroppedPackets,
+			},
+			expectedRunErr: fmt.Errorf(vmUnderTestDroppedPacketsErrMsg, vmUnderTestRxDroppedPackets, vmUnderTestTxDroppedPackets),
+		},
+		{
+			description: "fail because packets sent from traffic generator don't equal VM-under-test packets received",
+			results: status.Results{
+				TrafficGenSentPackets:      trafficGenSentPackets,
+				VMUnderTestReceivedPackets: vmUnderTestReceivedPackets,
+			},
+			expectedRunErr: fmt.Errorf(packetsDontMatchErrMsg, trafficGenSentPackets, vmUnderTestReceivedPackets),
+		},
+	}
 
-	assert.Error(t, expectedExecutionFailure, testCheckup.Run(context.Background()))
+	for _, testCase := range testCases {
+		t.Run(testCase.description, func(t *testing.T) {
+			testClient := newClientStub()
+			testConfig := newTestConfig()
 
-	assert.NoError(t, testCheckup.Teardown(context.Background()))
+			testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{
+				results:    testCase.results,
+				executeErr: testCase.executorFailure,
+			})
 
-	assert.Empty(t, testClient.createdVMIs)
+			assert.NoError(t, testCheckup.Setup(context.Background()))
 
-	actualResults := testCheckup.Results()
-	expectedResults := status.Results{}
+			assert.ErrorContains(t, testCheckup.Run(context.Background()), testCase.expectedRunErr.Error())
 
-	assert.Equal(t, expectedResults, actualResults)
+			assert.NoError(t, testCheckup.Teardown(context.Background()))
+			assert.Empty(t, testClient.createdVMIs)
+
+			actualResults := testCheckup.Results()
+			assert.Equal(t, testCase.results, actualResults)
+		})
+	}
 }
 
 func assertPodAntiAffinityExists(t *testing.T, testClient *clientStub, vmiName, ownerUID string) {
@@ -420,16 +486,24 @@ func (cs *clientStub) VMIName(namePrefix string) string {
 	return ""
 }
 
-type executorStub struct {
-	executeErr error
+func successfulRunResults() status.Results {
+	const sentPackets = 10
+	return status.Results{
+		TrafficGenSentPackets:      sentPackets,
+		VMUnderTestReceivedPackets: sentPackets,
+	}
 }
 
-func (es executorStub) Execute(_ context.Context, vmiUnderTestName, trafficGenVMIName string) (status.Results, error) {
-	if es.executeErr != nil {
-		return status.Results{}, es.executeErr
-	}
+type executorStub struct {
+	executeErr error
+	results    status.Results
+}
 
-	return status.Results{}, nil
+func (es executorStub) Execute(_ context.Context, _, _ string) (status.Results, error) {
+	if es.executeErr != nil {
+		return es.results, es.executeErr
+	}
+	return es.results, nil
 }
 
 func newTestConfig() config.Config {
