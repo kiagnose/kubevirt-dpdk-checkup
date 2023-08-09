@@ -290,7 +290,8 @@ func TestRunFailure(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
+	for idx := range testCases {
+		testCase := testCases[idx]
 		t.Run(testCase.description, func(t *testing.T) {
 			testClient := newClientStub()
 			testConfig := newTestConfig()
