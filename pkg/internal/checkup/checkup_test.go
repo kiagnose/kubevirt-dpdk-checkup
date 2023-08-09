@@ -26,6 +26,7 @@ import (
 	"net"
 	"strings"
 	"testing"
+	"time"
 
 	assert "github.com/stretchr/testify/require"
 
@@ -178,6 +179,21 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 		vmiDeletionFailureErr := errors.New("failed to delete VMI")
 		testClient.vmiDeletionFailure = vmiDeletionFailureErr
 		assert.ErrorIs(t, testCheckup.Teardown(context.Background()), vmiDeletionFailureErr)
+	})
+	t.Run("VMIs were not disposed before timeout expiration", func(t *testing.T) {
+		testClient := newClientStub()
+		testConfig := newTestConfig()
+
+		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{results: successfulRunResults()})
+
+		assert.NoError(t, testCheckup.Setup(context.Background()))
+		assert.NoError(t, testCheckup.Run(context.Background()))
+
+		testCtx, cancel := context.WithTimeout(context.Background(), time.Nanosecond)
+		defer cancel()
+
+		testClient.skipDeletion = true
+		assert.ErrorContains(t, testCheckup.Teardown(testCtx), "timed out waiting for the condition")
 	})
 }
 
@@ -362,6 +378,7 @@ type clientStub struct {
 	createdConfigMaps        map[string]*k8scorev1.ConfigMap
 	configMapCreationFailure error
 	configMapDeletionFailure error
+	skipDeletion             bool
 }
 
 func newClientStub() *clientStub {
@@ -416,7 +433,9 @@ func (cs *clientStub) DeleteVirtualMachineInstance(_ context.Context, namespace,
 		return k8serrors.NewNotFound(schema.GroupResource{Group: "kubevirt.io", Resource: "virtualmachineinstances"}, name)
 	}
 
-	delete(cs.createdVMIs, vmiFullName)
+	if !cs.skipDeletion {
+		delete(cs.createdVMIs, vmiFullName)
+	}
 
 	return nil
 }
