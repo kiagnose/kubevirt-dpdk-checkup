@@ -174,19 +174,19 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 	}
 
 	const (
-		vmiReadFailureMsg     = "failed to delete VMI"
-		vmiDeletionFailureMsg = "failed to read VMI"
+		vmiDeletionFailureMsg = "failed to delete VMI"
+		vmiReadFailureMsg     = "failed to read VMI"
 	)
 	testCases := []FailTestCase{
 		{
-			description:     "VMI deletion fails",
-			vmiReadFailure:  errors.New(vmiReadFailureMsg),
-			expectedFailure: vmiReadFailureMsg,
-		},
-		{
-			description:        "wait for VMI deletion fails",
+			description:        "VMI deletion fails",
 			vmiDeletionFailure: errors.New(vmiDeletionFailureMsg),
 			expectedFailure:    vmiDeletionFailureMsg,
+		},
+		{
+			description:     "wait for VMI Read fails",
+			vmiReadFailure:  errors.New(vmiReadFailureMsg),
+			expectedFailure: vmiReadFailureMsg,
 		},
 	}
 
