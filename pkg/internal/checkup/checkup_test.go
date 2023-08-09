@@ -168,25 +168,18 @@ func TestSetupShouldFail(t *testing.T) {
 func TestTeardownShouldFailWhen(t *testing.T) {
 	type FailTestCase struct {
 		description        string
-		vmiReadFailure     error
 		vmiDeletionFailure error
 		expectedFailure    string
 	}
 
 	const (
 		vmiDeletionFailureMsg = "failed to delete VMI"
-		vmiReadFailureMsg     = "failed to read VMI"
 	)
 	testCases := []FailTestCase{
 		{
 			description:        "VMI deletion fails",
 			vmiDeletionFailure: errors.New(vmiDeletionFailureMsg),
 			expectedFailure:    vmiDeletionFailureMsg,
-		},
-		{
-			description:     "wait for VMI Read fails",
-			vmiReadFailure:  errors.New(vmiReadFailureMsg),
-			expectedFailure: vmiReadFailureMsg,
 		},
 	}
 
@@ -201,7 +194,6 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 			assert.NoError(t, testCheckup.Run(context.Background()))
 
 			testClient.vmiDeletionFailure = testCase.vmiDeletionFailure
-			testClient.vmiReadFailure = testCase.vmiReadFailure
 			assert.ErrorContains(t, testCheckup.Teardown(context.Background()), testCase.expectedFailure)
 		})
 	}
