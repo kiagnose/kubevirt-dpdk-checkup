@@ -176,9 +176,12 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 		assert.NoError(t, testCheckup.Setup(context.Background()))
 		assert.NoError(t, testCheckup.Run(context.Background()))
 
-		vmiDeletionFailureErr := errors.New("failed to delete VMI")
-		testClient.vmiDeletionFailure = vmiDeletionFailureErr
-		assert.ErrorIs(t, testCheckup.Teardown(context.Background()), vmiDeletionFailureErr)
+		testCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+		defer cancel()
+
+		const vmiDeletionFailureErrMsg = "failed to delete VMI"
+		testClient.vmiDeletionFailure = errors.New(vmiDeletionFailureErrMsg)
+		assert.ErrorContains(t, testCheckup.Teardown(testCtx), vmiDeletionFailureErrMsg)
 	})
 	t.Run("VMIs were not disposed before timeout expiration", func(t *testing.T) {
 		testClient := newClientStub()
