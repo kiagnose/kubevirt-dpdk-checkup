@@ -26,6 +26,7 @@ import (
 	"net"
 	"strings"
 	"testing"
+	"time"
 
 	assert "github.com/stretchr/testify/require"
 
@@ -166,45 +167,37 @@ func TestSetupShouldFail(t *testing.T) {
 }
 
 func TestTeardownShouldFailWhen(t *testing.T) {
-	type FailTestCase struct {
-		description        string
-		vmiReadFailure     error
-		vmiDeletionFailure error
-		expectedFailure    string
-	}
+	t.Run("VMI deletion fails", func(t *testing.T) {
+		testClient := newClientStub()
+		testConfig := newTestConfig()
 
-	const (
-		vmiReadFailureMsg     = "failed to delete VMI"
-		vmiDeletionFailureMsg = "failed to read VMI"
-	)
-	testCases := []FailTestCase{
-		{
-			description:     "VMI deletion fails",
-			vmiReadFailure:  errors.New(vmiReadFailureMsg),
-			expectedFailure: vmiReadFailureMsg,
-		},
-		{
-			description:        "wait for VMI deletion fails",
-			vmiDeletionFailure: errors.New(vmiDeletionFailureMsg),
-			expectedFailure:    vmiDeletionFailureMsg,
-		},
-	}
+		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{results: successfulRunResults()})
 
-	for _, testCase := range testCases {
-		t.Run(testCase.description, func(t *testing.T) {
-			testClient := newClientStub()
-			testConfig := newTestConfig()
+		assert.NoError(t, testCheckup.Setup(context.Background()))
+		assert.NoError(t, testCheckup.Run(context.Background()))
 
-			testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{results: successfulRunResults()})
+		testCtx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+		defer cancel()
 
-			assert.NoError(t, testCheckup.Setup(context.Background()))
-			assert.NoError(t, testCheckup.Run(context.Background()))
+		const vmiDeletionFailureErrMsg = "failed to delete VMI"
+		testClient.vmiDeletionFailure = errors.New(vmiDeletionFailureErrMsg)
+		assert.ErrorContains(t, testCheckup.Teardown(testCtx), vmiDeletionFailureErrMsg)
+	})
+	t.Run("VMIs were not disposed before timeout expiration", func(t *testing.T) {
+		testClient := newClientStub()
+		testConfig := newTestConfig()
 
-			testClient.vmiDeletionFailure = testCase.vmiDeletionFailure
-			testClient.vmiReadFailure = testCase.vmiReadFailure
-			assert.ErrorContains(t, testCheckup.Teardown(context.Background()), testCase.expectedFailure)
-		})
-	}
+		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{results: successfulRunResults()})
+
+		assert.NoError(t, testCheckup.Setup(context.Background()))
+		assert.NoError(t, testCheckup.Run(context.Background()))
+
+		testCtx, cancel := context.WithTimeout(context.Background(), time.Nanosecond)
+		defer cancel()
+
+		testClient.skipDeletion = true
+		assert.ErrorContains(t, testCheckup.Teardown(testCtx), "timed out waiting for the condition")
+	})
 }
 
 func TestTrafficGenCMTeardownFailure(t *testing.T) {
@@ -388,6 +381,7 @@ type clientStub struct {
 	createdConfigMaps        map[string]*k8scorev1.ConfigMap
 	configMapCreationFailure error
 	configMapDeletionFailure error
+	skipDeletion             bool
 }
 
 func newClientStub() *clientStub {
@@ -442,7 +436,9 @@ func (cs *clientStub) DeleteVirtualMachineInstance(_ context.Context, namespace,
 		return k8serrors.NewNotFound(schema.GroupResource{Group: "kubevirt.io", Resource: "virtualmachineinstances"}, name)
 	}
 
-	delete(cs.createdVMIs, vmiFullName)
+	if !cs.skipDeletion {
+		delete(cs.createdVMIs, vmiFullName)
+	}
 
 	return nil
 }

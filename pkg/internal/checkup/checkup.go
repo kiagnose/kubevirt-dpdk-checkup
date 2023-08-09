@@ -23,6 +23,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	k8scorev1 "k8s.io/api/core/v1"
@@ -162,26 +163,31 @@ func (c *Checkup) Run(ctx context.Context) error {
 }
 
 func (c *Checkup) Teardown(ctx context.Context) error {
-	const errPrefix = "teardown"
+	const errMessagePrefix = "teardown"
 
+	var teardownErrors []string
 	if err := c.deleteVMI(ctx, c.vmiUnderTest.Name); err != nil {
-		return fmt.Errorf("%s: %w", errPrefix, err)
+		teardownErrors = append(teardownErrors, fmt.Sprintf("%s: %v", errMessagePrefix, err))
 	}
 
 	if err := c.deleteVMI(ctx, c.trafficGen.Name); err != nil {
-		return fmt.Errorf("%s: %w", errPrefix, err)
+		teardownErrors = append(teardownErrors, fmt.Sprintf("%s: %v", errMessagePrefix, err))
 	}
 
 	if err := c.deleteTrafficGenCM(ctx); err != nil {
-		return fmt.Errorf("%s: %w", errPrefix, err)
+		teardownErrors = append(teardownErrors, fmt.Sprintf("%s: %v", errMessagePrefix, err))
 	}
 
 	if err := c.waitForVMIDeletion(ctx, c.vmiUnderTest.Name); err != nil {
-		return fmt.Errorf("%s: %w", errPrefix, err)
+		teardownErrors = append(teardownErrors, fmt.Sprintf("%s: %v", errMessagePrefix, err))
 	}
 
 	if err := c.waitForVMIDeletion(ctx, c.trafficGen.Name); err != nil {
-		return fmt.Errorf("%s: %w", errPrefix, err)
+		teardownErrors = append(teardownErrors, fmt.Sprintf("%s: %v", errMessagePrefix, err))
+	}
+
+	if len(teardownErrors) > 0 {
+		return fmt.Errorf("%s: %v", errMessagePrefix, strings.Join(teardownErrors, ", "))
 	}
 
 	return nil
