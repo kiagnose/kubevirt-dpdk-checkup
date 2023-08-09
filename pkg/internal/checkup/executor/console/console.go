@@ -36,6 +36,13 @@ type vmiSerialConsoleClient interface {
 	VMISerialConsole(namespace, name string, timeout time.Duration) (kubecli.StreamInterface, error)
 }
 
+type Expecter struct {
+	serialConsoleClient vmiSerialConsoleClient
+	vmiNamespace        string
+	vmiName             string
+	opts                []expect.Option
+}
+
 const (
 	PromptExpression = `(\$ |\# )`
 	CRLF             = "\r\n"
@@ -45,16 +52,24 @@ const (
 func NewExpecter(serialConsoleClient vmiSerialConsoleClient,
 	vmiNamespace,
 	vmiName string,
-	timeout time.Duration,
-	opts ...expect.Option) (expect.Expecter, <-chan error, error) {
+	opts ...expect.Option) Expecter {
+	return Expecter{
+		serialConsoleClient: serialConsoleClient,
+		vmiNamespace:        vmiNamespace,
+		vmiName:             vmiName,
+		opts:                opts,
+	}
+}
+
+func (e Expecter) spawnConsole(timeout time.Duration) (*expect.GExpect, error) {
 	vmiReader, vmiWriter := io.Pipe()
 	expecterReader, expecterWriter := io.Pipe()
 	resCh := make(chan error)
 
 	startTime := time.Now()
-	con, err := serialConsoleClient.VMISerialConsole(vmiNamespace, vmiName, timeout)
+	con, err := e.serialConsoleClient.VMISerialConsole(e.vmiNamespace, e.vmiName, timeout)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	timeout -= time.Since(startTime)
 
@@ -65,8 +80,8 @@ func NewExpecter(serialConsoleClient vmiSerialConsoleClient,
 		})
 	}()
 
-	opts = append(opts, expect.SendTimeout(timeout), expect.Verbose(true))
-	return expect.SpawnGeneric(&expect.GenOptions{
+	e.opts = append(e.opts, expect.SendTimeout(timeout), expect.Verbose(true))
+	genExpect, _, err := expect.SpawnGeneric(&expect.GenOptions{
 		In:  vmiWriter,
 		Out: expecterReader,
 		Wait: func() error {
@@ -78,7 +93,8 @@ func NewExpecter(serialConsoleClient vmiSerialConsoleClient,
 			return nil
 		},
 		Check: func() bool { return true },
-	}, timeout, opts...)
+	}, timeout, e.opts...)
+	return genExpect, err
 }
 
 func RetValue(retcode string) string {
@@ -88,40 +104,37 @@ func RetValue(retcode string) string {
 // SafeExpectBatchWithResponse runs the batch from `expected`, connecting to a VMI's console and
 // waiting for the batch to return with a response until timeout.
 // It validates that the commands arrive to the console.
-// NOTE: This functions inherits limitations from `ExpectBatchWithValidatedSend`, refer to it for more information.
-func SafeExpectBatchWithResponse(serialConsoleClient vmiSerialConsoleClient,
-	vmiNamespace,
-	vmiName string,
-	expected []expect.Batcher,
+// NOTE: This functions inherits limitations from `expectBatchWithValidatedSend`, refer to it for more information.
+func (e Expecter) SafeExpectBatchWithResponse(expected []expect.Batcher,
 	timeout time.Duration) ([]expect.BatchRes, error) {
-	expecter, _, err := NewExpecter(serialConsoleClient, vmiNamespace, vmiName, timeout)
+	genExpect, err := e.spawnConsole(timeout)
 	if err != nil {
 		return nil, err
 	}
-	defer expecter.Close()
+	defer genExpect.Close()
 
-	resp, err := ExpectBatchWithValidatedSend(expecter, expected, timeout)
+	resp, err := expectBatchWithValidatedSend(genExpect, expected, timeout)
 	if err != nil {
 		log.Printf("%v", resp)
 	}
 	return resp, err
 }
 
-// ExpectBatchWithValidatedSend adds the expect.BSnd command to the exect.BExp expression.
+// expectBatchWithValidatedSend adds the expect.BSnd command to the exect.BExp expression.
 // It is done to make sure the match was found in the result of the expect.BSnd
 // command and not in a leftover that wasn't removed from the buffer.
 // NOTE: the method contains the following limitations:
 //   - Use of `BatchSwitchCase`
 //   - Multiline commands
 //   - No more than one sequential send or receive
-func ExpectBatchWithValidatedSend(expecter expect.Expecter, batch []expect.Batcher, timeout time.Duration) ([]expect.BatchRes, error) {
+func expectBatchWithValidatedSend(expecter expect.Expecter, batch []expect.Batcher, timeout time.Duration) ([]expect.BatchRes, error) {
 	sendFlag := false
 	expectFlag := false
 	previousSend := ""
 
 	const minimumRequiredBatches = 2
 	if len(batch) < minimumRequiredBatches {
-		return nil, fmt.Errorf("ExpectBatchWithValidatedSend requires at least 2 batchers, supplied %v", batch)
+		return nil, fmt.Errorf("expectBatchWithValidatedSend requires at least 2 batchers, supplied %v", batch)
 	}
 
 	for i, batcher := range batch {
@@ -133,7 +146,7 @@ func ExpectBatchWithValidatedSend(expecter expect.Expecter, batch []expect.Batch
 			expectFlag = true
 			sendFlag = false
 			if _, ok := batch[i].(*expect.BExp); !ok {
-				return nil, fmt.Errorf("ExpectBatchWithValidatedSend support only expect of type BExp")
+				return nil, fmt.Errorf("expectBatchWithValidatedSend support only expect of type BExp")
 			}
 			bExp, _ := batch[i].(*expect.BExp)
 			previousSend = regexp.QuoteMeta(previousSend)
@@ -149,9 +162,9 @@ func ExpectBatchWithValidatedSend(expecter expect.Expecter, batch []expect.Batch
 			expectFlag = false
 			previousSend = batcher.Arg()
 		case expect.BatchSwitchCase:
-			return nil, fmt.Errorf("ExpectBatchWithValidatedSend doesn't support BatchSwitchCase")
+			return nil, fmt.Errorf("expectBatchWithValidatedSend doesn't support BatchSwitchCase")
 		default:
-			return nil, fmt.Errorf("unknown command: ExpectBatchWithValidatedSend supports only BatchExpect and BatchSend")
+			return nil, fmt.Errorf("unknown command: expectBatchWithValidatedSend supports only BatchExpect and BatchSend")
 		}
 	}
 

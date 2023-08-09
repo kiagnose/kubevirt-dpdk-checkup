@@ -72,19 +72,19 @@ func New(client vmiSerialConsoleClient, namespace string, cfg config.Config) Exe
 
 func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMIName string) (status.Results, error) {
 	log.Printf("Login to VMI under test...")
-	if err := console.LoginToCentOS(e.vmiSerialClient, e.namespace, vmiUnderTestName, e.vmiUsername, e.vmiPassword); err != nil {
+	vmiUnderTestConsoleExpecter := console.NewExpecter(e.vmiSerialClient, e.namespace, vmiUnderTestName)
+	if err := vmiUnderTestConsoleExpecter.LoginToCentOS(e.vmiUsername, e.vmiPassword); err != nil {
 		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, vmiUnderTestName, err)
 	}
 
 	log.Printf("Login to traffic generator...")
-	if err := console.LoginToCentOS(e.vmiSerialClient, e.namespace, trafficGenVMIName, e.vmiUsername, e.vmiPassword); err != nil {
+	trafficGenConsoleExpecter := console.NewExpecter(e.vmiSerialClient, e.namespace, trafficGenVMIName)
+	if err := trafficGenConsoleExpecter.LoginToCentOS(e.vmiUsername, e.vmiPassword); err != nil {
 		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
 	}
 
 	trexClient := trex.NewClient(
-		e.vmiSerialClient,
-		e.namespace,
-		trafficGenVMIName,
+		trafficGenConsoleExpecter,
 		e.trafficGeneratorPacketsPerSecond,
 		e.testDuration,
 		e.verbosePrintsEnabled,
@@ -101,9 +101,7 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 	}
 
 	testpmdConsole := testpmd.NewTestpmdConsole(
-		e.vmiSerialClient,
-		e.namespace,
-		vmiUnderTestName,
+		vmiUnderTestConsoleExpecter,
 		e.vmiUnderTestEastNICPCIAddress,
 		e.trafficGenEastMACAddress,
 		e.vmiUnderTestWestNICPCIAddress,

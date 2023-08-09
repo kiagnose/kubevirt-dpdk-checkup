@@ -32,20 +32,14 @@ import (
 	expect "github.com/google/goexpect"
 
 	"k8s.io/apimachinery/pkg/util/wait"
-
-	"kubevirt.io/client-go/kubecli"
-
-	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/executor/console"
 )
 
-type vmiSerialConsoleClient interface {
-	VMISerialConsole(namespace, name string, timeout time.Duration) (kubecli.StreamInterface, error)
+type consoleExpecter interface {
+	SafeExpectBatchWithResponse(expected []expect.Batcher, timeout time.Duration) ([]expect.BatchRes, error)
 }
 
 type Client struct {
-	vmiSerialClient                  vmiSerialConsoleClient
-	namespace                        string
-	vmiName                          string
+	consoleExpecter                  consoleExpecter
 	trafficGeneratorPacketsPerSecond string
 	testDuration                     time.Duration
 	verbosePrintsEnabled             bool
@@ -67,16 +61,12 @@ const (
 	batchTimeout = 30 * time.Second
 )
 
-func NewClient(vmiSerialClient vmiSerialConsoleClient,
-	namespace,
-	vmiName,
+func NewClient(trafficGenConsoleExpecter consoleExpecter,
 	trafficGeneratorPacketsPerSecond string,
 	testDuration time.Duration,
 	verbosePrintsEnabled bool) Client {
 	return Client{
-		vmiSerialClient:                  vmiSerialClient,
-		namespace:                        namespace,
-		vmiName:                          vmiName,
+		consoleExpecter:                  trafficGenConsoleExpecter,
 		trafficGeneratorPacketsPerSecond: trafficGeneratorPacketsPerSecond,
 		testDuration:                     testDuration,
 		verbosePrintsEnabled:             verbosePrintsEnabled,
@@ -85,11 +75,10 @@ func NewClient(vmiSerialClient vmiSerialConsoleClient,
 
 func (c Client) StartServer() error {
 	command := "systemctl start " + SystemdUnitFileName
-	_, err := console.SafeExpectBatchWithResponse(c.vmiSerialClient, c.namespace, c.vmiName,
-		[]expect.Batcher{
-			&expect.BSnd{S: command + "\n"},
-			&expect.BExp{R: shellPrompt},
-		},
+	_, err := c.consoleExpecter.SafeExpectBatchWithResponse([]expect.Batcher{
+		&expect.BSnd{S: command + "\n"},
+		&expect.BExp{R: shellPrompt},
+	},
 		batchTimeout,
 	)
 	return err
@@ -206,11 +195,10 @@ func (c Client) printTrexServiceFailLogs() error {
 
 func (c Client) getTrexServiceStatus() (string, error) {
 	command := fmt.Sprintf("systemctl status %s | cat", SystemdUnitFileName)
-	resp, err := console.SafeExpectBatchWithResponse(c.vmiSerialClient, c.namespace, c.vmiName,
-		[]expect.Batcher{
-			&expect.BSnd{S: command + "\n"},
-			&expect.BExp{R: shellPrompt},
-		},
+	resp, err := c.consoleExpecter.SafeExpectBatchWithResponse([]expect.Batcher{
+		&expect.BSnd{S: command + "\n"},
+		&expect.BExp{R: shellPrompt},
+	},
 		batchTimeout,
 	)
 	return resp[0].Output, err
@@ -218,11 +206,10 @@ func (c Client) getTrexServiceStatus() (string, error) {
 
 func (c Client) getTrexServiceJournalctl() (string, error) {
 	command := fmt.Sprintf("journalctl | grep %s", SystemdUnitFileName)
-	resp, err := console.SafeExpectBatchWithResponse(c.vmiSerialClient, c.namespace, c.vmiName,
-		[]expect.Batcher{
-			&expect.BSnd{S: command + "\n"},
-			&expect.BExp{R: shellPrompt},
-		},
+	resp, err := c.consoleExpecter.SafeExpectBatchWithResponse([]expect.Batcher{
+		&expect.BSnd{S: command + "\n"},
+		&expect.BExp{R: shellPrompt},
+	},
 		batchTimeout,
 	)
 	return resp[0].Output, err
@@ -240,11 +227,10 @@ func (c Client) getStartTrafficCmd(port PortIdx) string {
 
 func (c Client) runTrexConsoleCmd(command string) (string, error) {
 	shellCommand := fmt.Sprintf("cd %s && echo %q | ./trex-console -q", BinDirectory, command)
-	resp, err := console.SafeExpectBatchWithResponse(c.vmiSerialClient, c.namespace, c.vmiName,
-		[]expect.Batcher{
-			&expect.BSnd{S: shellCommand + "\n"},
-			&expect.BExp{R: shellPrompt},
-		},
+	resp, err := c.consoleExpecter.SafeExpectBatchWithResponse([]expect.Batcher{
+		&expect.BSnd{S: shellCommand + "\n"},
+		&expect.BExp{R: shellPrompt},
+	},
 		batchTimeout,
 	)
 
@@ -259,11 +245,10 @@ func (c Client) runTrexConsoleCmdWithJSONResponse(command, requestKey string) (s
 	trexConsoleCommand := verboseOn + command
 	shellCommand := fmt.Sprintf("cd %s && echo %q | ./trex-console -q", BinDirectory, trexConsoleCommand)
 
-	resp, err := console.SafeExpectBatchWithResponse(c.vmiSerialClient, c.namespace, c.vmiName,
-		[]expect.Batcher{
-			&expect.BSnd{S: shellCommand + "\n"},
-			&expect.BExp{R: shellPrompt},
-		},
+	resp, err := c.consoleExpecter.SafeExpectBatchWithResponse([]expect.Batcher{
+		&expect.BSnd{S: shellCommand + "\n"},
+		&expect.BExp{R: shellPrompt},
+	},
 		batchTimeout,
 	)
 

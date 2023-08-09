@@ -27,20 +27,14 @@ import (
 	"time"
 
 	expect "github.com/google/goexpect"
-
-	"kubevirt.io/client-go/kubecli"
-
-	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/executor/console"
 )
 
-type vmiSerialConsoleClient interface {
-	VMISerialConsole(namespace, name string, timeout time.Duration) (kubecli.StreamInterface, error)
+type consoleExpecter interface {
+	SafeExpectBatchWithResponse(expected []expect.Batcher, timeout time.Duration) ([]expect.BatchRes, error)
 }
 
 type TestpmdConsole struct {
-	vmiSerialClient          vmiSerialConsoleClient
-	namespace                string
-	vmiName                  string
+	consoleExpecter          consoleExpecter
 	vmiEastNICPCIAddress     string
 	vmiEastEthPeerMACAddress string
 	vmiWestNICPCIAddress     string
@@ -68,18 +62,14 @@ const (
 
 const testpmdPrompt = "testpmd> "
 
-func NewTestpmdConsole(vmiSerialClient vmiSerialConsoleClient,
-	namespace,
-	vmiName,
+func NewTestpmdConsole(vmiUnderTestConsoleExpecter consoleExpecter,
 	vmiUnderTestEastNICPCIAddress,
 	trafficGenEastMACAddress,
 	vmiUnderTestWestNICPCIAddress,
 	trafficGenWestMACAddress string,
 	verbosePrintsEnabled bool) *TestpmdConsole {
 	return &TestpmdConsole{
-		vmiSerialClient:          vmiSerialClient,
-		namespace:                namespace,
-		vmiName:                  vmiName,
+		consoleExpecter:          vmiUnderTestConsoleExpecter,
 		vmiEastEthPeerMACAddress: trafficGenEastMACAddress,
 		vmiWestEthPeerMACAddress: trafficGenWestMACAddress,
 		vmiEastNICPCIAddress:     vmiUnderTestEastNICPCIAddress,
@@ -93,13 +83,12 @@ func (t TestpmdConsole) Run() error {
 
 	testpmdCmd := buildTestpmdCmd(t.vmiEastNICPCIAddress, t.vmiWestNICPCIAddress, t.vmiEastEthPeerMACAddress, t.vmiWestEthPeerMACAddress)
 
-	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, t.vmiName,
-		[]expect.Batcher{
-			&expect.BSnd{S: testpmdCmd + "\n"},
-			&expect.BExp{R: testpmdPrompt},
-			&expect.BSnd{S: "start" + "\n"},
-			&expect.BExp{R: testpmdPrompt},
-		},
+	resp, err := t.consoleExpecter.SafeExpectBatchWithResponse([]expect.Batcher{
+		&expect.BSnd{S: testpmdCmd + "\n"},
+		&expect.BExp{R: testpmdPrompt},
+		&expect.BSnd{S: "start" + "\n"},
+		&expect.BExp{R: testpmdPrompt},
+	},
 		batchTimeout,
 	)
 
@@ -117,11 +106,10 @@ func (t TestpmdConsole) ClearStats() error {
 
 	const testpmdCmd = "clear fwd stats all"
 
-	_, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, t.vmiName,
-		[]expect.Batcher{
-			&expect.BSnd{S: testpmdCmd + "\n"},
-			&expect.BExp{R: testpmdPrompt},
-		},
+	_, err := t.consoleExpecter.SafeExpectBatchWithResponse([]expect.Batcher{
+		&expect.BSnd{S: testpmdCmd + "\n"},
+		&expect.BExp{R: testpmdPrompt},
+	},
 		batchTimeout,
 	)
 
@@ -139,11 +127,10 @@ func (t TestpmdConsole) GetStats() ([StatsArraySize]PortStats, error) {
 
 	testpmdCmd := "show fwd stats all"
 
-	resp, err := console.SafeExpectBatchWithResponse(t.vmiSerialClient, t.namespace, t.vmiName,
-		[]expect.Batcher{
-			&expect.BSnd{S: testpmdCmd + "\n"},
-			&expect.BExp{R: testpmdPromt},
-		},
+	resp, err := t.consoleExpecter.SafeExpectBatchWithResponse([]expect.Batcher{
+		&expect.BSnd{S: testpmdCmd + "\n"},
+		&expect.BExp{R: testpmdPromt},
+	},
 		batchTimeout,
 	)
 
