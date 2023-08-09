@@ -25,6 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"path"
 	"regexp"
 	"strings"
 	"time"
@@ -50,10 +51,6 @@ type PortIdx int
 const (
 	SourcePort PortIdx = iota
 	DestPort
-)
-
-const (
-	StreamsPyPath = "/opt/tests"
 )
 
 const (
@@ -218,7 +215,7 @@ func (c Client) getTrexServiceJournalctl() (string, error) {
 func (c Client) getStartTrafficCmd(port PortIdx) string {
 	sb := strings.Builder{}
 	sb.WriteString("start ")
-	sb.WriteString(fmt.Sprintf("-f %s/testpmd.py ", StreamsPyPath))
+	sb.WriteString(fmt.Sprintf("-f %s ", path.Join(StreamsPyPath, StreamPyFileName)))
 	sb.WriteString(fmt.Sprintf("-m %spps ", c.trafficGeneratorPacketsPerSecond))
 	sb.WriteString(fmt.Sprintf("-p %d ", port))
 	sb.WriteString(fmt.Sprintf("-d %.0f", c.testDuration.Seconds()))
