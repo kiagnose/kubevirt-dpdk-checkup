@@ -166,37 +166,19 @@ func TestSetupShouldFail(t *testing.T) {
 }
 
 func TestTeardownShouldFailWhen(t *testing.T) {
-	type FailTestCase struct {
-		description        string
-		vmiDeletionFailure error
-		expectedFailure    string
-	}
+	t.Run("VMI deletion fails", func(t *testing.T) {
+		testClient := newClientStub()
+		testConfig := newTestConfig()
 
-	const (
-		vmiDeletionFailureMsg = "failed to delete VMI"
-	)
-	testCases := []FailTestCase{
-		{
-			description:        "VMI deletion fails",
-			vmiDeletionFailure: errors.New(vmiDeletionFailureMsg),
-			expectedFailure:    vmiDeletionFailureMsg,
-		},
-	}
+		testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{results: successfulRunResults()})
 
-	for _, testCase := range testCases {
-		t.Run(testCase.description, func(t *testing.T) {
-			testClient := newClientStub()
-			testConfig := newTestConfig()
+		assert.NoError(t, testCheckup.Setup(context.Background()))
+		assert.NoError(t, testCheckup.Run(context.Background()))
 
-			testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{results: successfulRunResults()})
-
-			assert.NoError(t, testCheckup.Setup(context.Background()))
-			assert.NoError(t, testCheckup.Run(context.Background()))
-
-			testClient.vmiDeletionFailure = testCase.vmiDeletionFailure
-			assert.ErrorContains(t, testCheckup.Teardown(context.Background()), testCase.expectedFailure)
-		})
-	}
+		vmiDeletionFailureErr := errors.New("failed to delete VMI")
+		testClient.vmiDeletionFailure = vmiDeletionFailureErr
+		assert.ErrorIs(t, testCheckup.Teardown(context.Background()), vmiDeletionFailureErr)
+	})
 }
 
 func TestTrafficGenCMTeardownFailure(t *testing.T) {
