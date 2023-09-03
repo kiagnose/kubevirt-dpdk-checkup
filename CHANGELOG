@@ -1,3 +1,21 @@
+## [0.2.0] - 2023-09-04
+### Breaking Changes
+ - The checkup now executes the traffic generator inside a VM.
+ - RBAC rules were removed.
+ - traffic-gen ServiceAccount and SCC were removed.
+ - User-facing API was updated.
+
+### New Features
+ - Teardown logic was updated to aggregate failures.
+ - go version was upgraded to 1.20.6.
+ - kubevirt/client-go version was upgraded to v1.0.0.
+
+### Bug Fixes
+ - There is a default anti-affinity between the VMIs.
+ - Node affinity now works.
+ - The checkup fails in case the traffic-gen fails to send any packets.
+ - timeout input field is printed to log.
+
 ## [0.1.0] - 2023-03-02
 ### New Features
  - Initial release.
