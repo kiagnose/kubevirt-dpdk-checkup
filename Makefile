@@ -3,7 +3,7 @@ ORG ?= kiagnose
 CHECKUP_IMAGE_NAME ?= kubevirt-dpdk-checkup
 CHECKUP_IMAGE_TAG ?= latest
 CHECKUP_GIT_TAG ?= $(shell git describe --always --abbrev=8 --tags)
-CHECKUP_BASE_IMAGE_TAG ?= latest
+CHECKUP_BASE_IMAGE_TAG ?= 9.2-717
 VM_IMAGE_BUILDER_IMAGE_NAME := kubevirt-dpdk-checkup-vm-image-builder
 VM_IMAGE_BUILDER_IMAGE_TAG ?= latest
 VIRT_BUILDER_CACHE_DIR := $(CURDIR)/_virt_builder/cache
