@@ -3,6 +3,7 @@ ORG ?= kiagnose
 CHECKUP_IMAGE_NAME ?= kubevirt-dpdk-checkup
 CHECKUP_IMAGE_TAG ?= latest
 CHECKUP_GIT_TAG ?= $(shell git describe --always --abbrev=8 --tags)
+CHECKUP_BASE_IMAGE_TAG ?= latest
 VM_IMAGE_BUILDER_IMAGE_NAME := kubevirt-dpdk-checkup-vm-image-builder
 VM_IMAGE_BUILDER_IMAGE_TAG ?= latest
 VIRT_BUILDER_CACHE_DIR := $(CURDIR)/_virt_builder/cache
@@ -15,7 +16,6 @@ GO_IMAGE_NAME := docker.io/library/golang
 GO_IMAGE_TAG := 1.20.6
 BIN_DIR = $(CURDIR)/_output/bin
 CRI_BIN ?= $(shell hack/detect_cri.sh)
-CHECKUP_BASE_IMAGE_TAG ?= latest
 LINTER_IMAGE_NAME := docker.io/golangci/golangci-lint
 LINTER_IMAGE_TAG := v1.50.1
 GO_MOD_VERSION=$(shell hack/go-mod-version.sh)
