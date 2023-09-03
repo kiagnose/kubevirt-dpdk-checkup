@@ -15,7 +15,7 @@ GO_IMAGE_NAME := docker.io/library/golang
 GO_IMAGE_TAG := 1.20.6
 BIN_DIR = $(CURDIR)/_output/bin
 CRI_BIN ?= $(shell hack/detect_cri.sh)
-CRI_BUILD_BASE_IMAGE_TAG ?= latest
+CHECKUP_BASE_IMAGE_TAG ?= latest
 LINTER_IMAGE_NAME := docker.io/golangci/golangci-lint
 LINTER_IMAGE_TAG := v1.50.1
 GO_MOD_VERSION=$(shell hack/go-mod-version.sh)
@@ -37,7 +37,7 @@ build:
 	           -e GOOS=linux \
 	           -e GOARCH=amd64 \
 	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go build -v -o $(BIN_DIR)/$(CHECKUP_IMAGE_NAME) ./cmd/
-	$(CRI_BIN) build --build-arg BASE_IMAGE_TAG=$(CRI_BUILD_BASE_IMAGE_TAG) . -t $(REG)/$(ORG)/$(CHECKUP_IMAGE_NAME):$(CHECKUP_IMAGE_TAG)
+	$(CRI_BIN) build --build-arg BASE_IMAGE_TAG=$(CHECKUP_BASE_IMAGE_TAG) . -t $(REG)/$(ORG)/$(CHECKUP_IMAGE_NAME):$(CHECKUP_IMAGE_TAG)
 .PHONY: build
 
 push:
