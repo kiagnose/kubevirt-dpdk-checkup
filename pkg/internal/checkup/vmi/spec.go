@@ -113,6 +113,7 @@ func WithDedicatedCPU(socketsCount, coresCount, threadsCount uint32) Option {
 			Cores:                 coresCount,
 			Threads:               threadsCount,
 			DedicatedCPUPlacement: true,
+			IsolateEmulatorThread: true,
 		}
 	}
 }
