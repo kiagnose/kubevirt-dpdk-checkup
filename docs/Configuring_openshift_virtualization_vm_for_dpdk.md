@@ -7,9 +7,9 @@ Running [DPDK](https://core.dpdk.org/doc/) workloads on VMs requires careful con
 ## Prerequisites
 
 - [Deploy](https://www.redhat.com/en/technologies/cloud-computing/openshift/deploy-red-hat-openshift) an OpenShift Container Platform cluster (OCP v4.13)
-- [Deploy](https://docs.openshift.com/container-platform/4.12/virt/install/installing-virt-cli.html) OpenShift Virtualization plugin.
-- [Deploy](https://docs.openshift.com/container-platform/4.12/networking/hardware_networks/installing-sriov-operator.html) SR-IOV Network Operator.
-- [Create](https://docs.openshift.com/container-platform/4.12/applications/projects/working-with-projects.html) a project on the cluster where the VM will run.
+- [Deploy](https://docs.openshift.com/container-platform/4.13/virt/install/installing-virt-cli.html) OpenShift Virtualization plugin.
+- [Deploy](https://docs.openshift.com/container-platform/4.13/networking/hardware_networks/installing-sriov-operator.html) SR-IOV Network Operator.
+- [Create](https://docs.openshift.com/container-platform/4.13/applications/projects/working-with-projects.html) a project on the cluster where the VM will run.
 - The relevant worker nodes must have:
   - SR-IOV enabled NICs.
   - Allocatable Hugepages.
@@ -27,13 +27,13 @@ The configuration chapter will consist of three parts:
 ### Cluster configurations
 
 This step consists of:
-- Deploying a `vfio-pci` typed [SriovNetworkNodePolicy](https://docs.openshift.com/container-platform/4.12/networking/hardware_networks/configuring-sriov-device.html) and [SriovNetwork](https://docs.openshift.com/container-platform/4.12/networking/hardware_networks/configuring-sriov-device.html#cnf-assigning-a-sriov-network-to-a-vrf_configuring-sriov-device) using the [sriov-network-operator](https://github.com/openshift/sriov-network-operator) that is deployed on the cluster.
-Doing so will result in the creation of a [network-attachment-definition](https://docs.openshift.com/container-platform/4.12/virt/virtual_machines/vm_networking/virt-attaching-vm-multiple-networks.html) that will be used by the VM in the next steps.
-- [Checking](https://docs.openshift.com/container-platform/4.12/post_installation_configuration/machine-configuration-tasks.html#checking-mco-status_post-install-machine-configuration-tasks) the node has a machineConfigPool, and [creating](https://access.redhat.com/solutions/5688941) one if needed.
-- Creating a [performance-profile](https://docs.openshift.com/container-platform/4.12/scalability_and_performance/cnf-create-performance-profiles.html) using the [Node-Tuning-Operator](https://docs.openshift.com/container-platform/4.12/scalability_and_performance/using-node-tuning-operator.html).
+- Deploying a `vfio-pci` typed [SriovNetworkNodePolicy](https://docs.openshift.com/container-platform/4.13/networking/hardware_networks/configuring-sriov-device.html) and [SriovNetwork](https://docs.openshift.com/container-platform/4.13/networking/hardware_networks/configuring-sriov-device.html#cnf-assigning-a-sriov-network-to-a-vrf_configuring-sriov-device) using the [sriov-network-operator](https://github.com/openshift/sriov-network-operator) that is deployed on the cluster.
+Doing so will result in the creation of a [network-attachment-definition](https://docs.openshift.com/container-platform/4.13/virt/virtual_machines/vm_networking/virt-attaching-vm-multiple-networks.html) that will be used by the VM in the next steps.
+- [Checking](https://docs.openshift.com/container-platform/4.13/post_installation_configuration/machine-configuration-tasks.html#checking-mco-status_post-install-machine-configuration-tasks) the node has a machineConfigPool, and [creating](https://access.redhat.com/solutions/5688941) one if needed.
+- Creating a [performance-profile](https://docs.openshift.com/container-platform/4.13/scalability_and_performance/cnf-create-performance-profiles.html) using the [Node-Tuning-Operator](https://docs.openshift.com/container-platform/4.13/scalability_and_performance/using-node-tuning-operator.html).
 Doing so will create a [runtimeClass](https://kubernetes.io/docs/concepts/containers/runtime-class/) that would be used by the VM in the next steps.
 
-In order to configure the cluster according to these steps please follow this [OCP documentation](https://docs.openshift.com/container-platform/4.12/networking/hardware_networks/using-dpdk-and-rdma.html).
+In order to configure the cluster according to these steps please follow this [OCP documentation](https://docs.openshift.com/container-platform/4.13/networking/hardware_networks/using-dpdk-and-rdma.html).
 
 ## VM configuration
 
@@ -57,7 +57,7 @@ The changes are explained on each subchapter with appropriate snippets. In the e
 
 #### Requesting the SR-IOV interfaces
 
-If for example the created SR-IOV [network-attachment-definition](https://docs.openshift.com/container-platform/4.12/virt/virtual_machines/vm_networking/virt-attaching-vm-multiple-networks.html) name is `dpdk-net`, then the VM template interface request snippet should be like this:
+If for example the created SR-IOV [network-attachment-definition](https://docs.openshift.com/container-platform/4.13/virt/virtual_machines/vm_networking/virt-attaching-vm-multiple-networks.html) name is `dpdk-net`, then the VM template interface request snippet should be like this:
 ```yaml
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine
@@ -125,7 +125,7 @@ spec:
 
 #### Hugepages request
 
-In order to request an amount of [Hugepages](https://docs.openshift.com/container-platform/4.12/scalability_and_performance/what-huge-pages-do-and-how-they-are-consumed-by-apps.html), the resources snippet should look like this:
+In order to request an amount of [Hugepages](https://docs.openshift.com/container-platform/4.13/scalability_and_performance/what-huge-pages-do-and-how-they-are-consumed-by-apps.html), the resources snippet should look like this:
 ```yaml
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine
@@ -292,5 +292,5 @@ reboot
 
 ## Additional resources
 
-- [OCP Low latency tuning documentation](https://docs.openshift.com/container-platform/4.12/scalability_and_performance/cnf-low-latency-tuning.html#node-tuning-operator-disabling-cpu-load-balancing-for-dpdk_cnf-master).
+- [OCP Low latency tuning documentation](https://docs.openshift.com/container-platform/4.13/scalability_and_performance/cnf-low-latency-tuning.html#node-tuning-operator-disabling-cpu-load-balancing-for-dpdk_cnf-master).
 - [Validating DPDK performance on OpenShift](https://access.redhat.com/articles/6969629)
