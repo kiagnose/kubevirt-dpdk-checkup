@@ -22,7 +22,7 @@ set -e
 systemctl disable NetworkManager-wait-online
 systemctl disable sshd
 
-grubby --update-kernel=ALL --args="default_hugepagesz=1GB hugepagesz=1G hugepages=1 isolcpus=2-7"
+grubby --update-kernel=ALL --args="default_hugepagesz=1GB hugepagesz=1G hugepages=1"
 
 echo  isolated_cores=2-7 > /etc/tuned/cpu-partitioning-variables.conf
 tuned-adm profile cpu-partitioning
