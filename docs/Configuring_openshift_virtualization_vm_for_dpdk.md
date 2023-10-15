@@ -232,6 +232,12 @@ spec:
 
 Once the VM is deployed and running, there are configurations that need to be set once on the guest. The changes are explained on each subchapter with appropriate snippets. In the end, an example guest configuration summary script is offered.
 
+### Linux grub cmdLine on guest
+The hugepages are specified on the grub cmdLine:
+```bash
+grubby --update-kernel=ALL --args="default_hugepagesz=1GB hugepagesz=1G hugepages=8"
+```
+
 ### CPU isolation on guest
 
 If we continue with the example from previous chapters, 5 hyper-threads translate to 10 CPUs on the guest:
@@ -253,11 +259,6 @@ The expected result should look like this:
 ```
 
 That leaves CPUS `2-9` to be configured as isolated.
-Linux grub cmdLine on guest
-The hugepages and isolated CPU are specified on the grub cmdLine:
-```bash
-grubby --update-kernel=ALL --args="default_hugepagesz=1GB hugepagesz=1G hugepages=8 isolcpus=2-9"
-```
 
 ### CPU partitioning on guest
 
