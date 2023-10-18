@@ -227,13 +227,13 @@ func parseTestpmdStatsSection(stats *PortStats, section string) error {
 
 func buildTestpmdCmd(vmiEastNICPCIAddress, vmiWestNICPCIAddress, eastEthPeerMACAddress, westEthPeerMACAddress string) string {
 	const (
-		cpuList       = "2-7"
-		numberOfCores = 5
+		cpuAssignmentMap = "0@2-3,1@4,2@5,3@6,4@7"
+		numberOfCores    = 4
 	)
 
 	sb := strings.Builder{}
 	sb.WriteString("dpdk-testpmd ")
-	sb.WriteString(fmt.Sprintf("-l %s ", cpuList))
+	sb.WriteString(fmt.Sprintf("--lcores %s ", cpuAssignmentMap))
 	sb.WriteString(fmt.Sprintf("-a %s ", vmiEastNICPCIAddress))
 	sb.WriteString(fmt.Sprintf("-a %s ", vmiWestNICPCIAddress))
 	sb.WriteString("-- ")
