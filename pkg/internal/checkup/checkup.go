@@ -86,14 +86,18 @@ func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config
 }
 
 func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
+	const setupTimeout = 10 * time.Minute
+	setupCtx, cancel := context.WithTimeout(ctx, setupTimeout)
+	defer cancel()
+
 	const errMessagePrefix = "setup"
 	var err error
 
-	if err = c.createTrafficGenCM(ctx); err != nil {
+	if err = c.createTrafficGenCM(setupCtx); err != nil {
 		return fmt.Errorf("%s: %w", errMessagePrefix, err)
 	}
 
-	if err = c.createVMI(ctx, c.vmiUnderTest); err != nil {
+	if err = c.createVMI(setupCtx, c.vmiUnderTest); err != nil {
 		return fmt.Errorf("%s: %w", errMessagePrefix, err)
 	}
 	defer func() {
@@ -102,7 +106,7 @@ func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
 		}
 	}()
 
-	if err = c.createVMI(ctx, c.trafficGen); err != nil {
+	if err = c.createVMI(setupCtx, c.trafficGen); err != nil {
 		return fmt.Errorf("%s: %w", errMessagePrefix, err)
 	}
 	defer func() {
@@ -112,7 +116,7 @@ func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
 	}()
 
 	var updatedVMIUnderTest *kvcorev1.VirtualMachineInstance
-	updatedVMIUnderTest, err = c.waitForVMIToBoot(ctx, c.vmiUnderTest.Name)
+	updatedVMIUnderTest, err = c.waitForVMIToBoot(setupCtx, c.vmiUnderTest.Name)
 	if err != nil {
 		return err
 	}
@@ -120,7 +124,7 @@ func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
 	c.vmiUnderTest = updatedVMIUnderTest
 
 	var updatedTrafficGen *kvcorev1.VirtualMachineInstance
-	updatedTrafficGen, err = c.waitForVMIToBoot(ctx, c.trafficGen.Name)
+	updatedTrafficGen, err = c.waitForVMIToBoot(setupCtx, c.trafficGen.Name)
 	if err != nil {
 		return err
 	}
