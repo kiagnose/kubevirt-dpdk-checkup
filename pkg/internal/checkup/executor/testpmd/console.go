@@ -227,8 +227,9 @@ func parseTestpmdStatsSection(stats *PortStats, section string) error {
 
 func buildTestpmdCmd(vmiEastNICPCIAddress, vmiWestNICPCIAddress, eastEthPeerMACAddress, westEthPeerMACAddress string) string {
 	const (
-		cpuList       = "2-7"
-		numberOfCores = 5
+		cpuList                  = "2-7"
+		socketMemSizeInMegaBytes = 1024
+		numberOfCores            = 5
 	)
 
 	sb := strings.Builder{}
@@ -236,6 +237,7 @@ func buildTestpmdCmd(vmiEastNICPCIAddress, vmiWestNICPCIAddress, eastEthPeerMACA
 	sb.WriteString(fmt.Sprintf("-l %s ", cpuList))
 	sb.WriteString(fmt.Sprintf("-a %s ", vmiEastNICPCIAddress))
 	sb.WriteString(fmt.Sprintf("-a %s ", vmiWestNICPCIAddress))
+	sb.WriteString(fmt.Sprintf("--socket-mem %d ", socketMemSizeInMegaBytes))
 	sb.WriteString("-- ")
 	sb.WriteString("-i ")
 	sb.WriteString(fmt.Sprintf("--nb-cores=%d ", numberOfCores))
