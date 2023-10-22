@@ -229,6 +229,7 @@ func buildTestpmdCmd(vmiEastNICPCIAddress, vmiWestNICPCIAddress, eastEthPeerMACA
 	const (
 		cpuAssignmentMap = "0@2-3,1@4,2@5,3@6,4@7"
 		numberOfCores    = 4
+		queuesPerPort    = numberOfCores
 	)
 
 	sb := strings.Builder{}
@@ -241,6 +242,8 @@ func buildTestpmdCmd(vmiEastNICPCIAddress, vmiWestNICPCIAddress, eastEthPeerMACA
 	sb.WriteString(fmt.Sprintf("--nb-cores=%d ", numberOfCores))
 	sb.WriteString("--rxd=2048 ")
 	sb.WriteString("--txd=2048 ")
+	sb.WriteString(fmt.Sprintf("--rxq=%d ", queuesPerPort))
+	sb.WriteString(fmt.Sprintf("--txq=%d ", queuesPerPort))
 	sb.WriteString("--forward-mode=mac ")
 	sb.WriteString(fmt.Sprintf("--eth-peer=0,%s ", eastEthPeerMACAddress))
 	sb.WriteString(fmt.Sprintf("--eth-peer=1,%s", westEthPeerMACAddress))
