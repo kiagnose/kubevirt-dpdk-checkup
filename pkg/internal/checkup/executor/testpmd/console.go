@@ -227,9 +227,10 @@ func parseTestpmdStatsSection(stats *PortStats, section string) error {
 
 func buildTestpmdCmd(vmiEastNICPCIAddress, vmiWestNICPCIAddress, eastEthPeerMACAddress, westEthPeerMACAddress string) string {
 	const (
-		cpuAssignmentMap = "0@2-3,1@4,2@5,3@6,4@7"
-		numberOfCores    = 4
-		queuesPerPort    = numberOfCores
+		cpuAssignmentMap        = "0@2-3,1@4,2@5,3@6,4@7"
+		numberOfCores           = 4
+		queuesPerPort           = numberOfCores
+		hugepageSizeInMegaBytes = 1024
 	)
 
 	sb := strings.Builder{}
@@ -237,6 +238,7 @@ func buildTestpmdCmd(vmiEastNICPCIAddress, vmiWestNICPCIAddress, eastEthPeerMACA
 	sb.WriteString(fmt.Sprintf("--lcores %s ", cpuAssignmentMap))
 	sb.WriteString(fmt.Sprintf("-a %s ", vmiEastNICPCIAddress))
 	sb.WriteString(fmt.Sprintf("-a %s ", vmiWestNICPCIAddress))
+	sb.WriteString(fmt.Sprintf("--socket-mem %d ", hugepageSizeInMegaBytes))
 	sb.WriteString("-- ")
 	sb.WriteString("-i ")
 	sb.WriteString(fmt.Sprintf("--nb-cores=%d ", numberOfCores))
