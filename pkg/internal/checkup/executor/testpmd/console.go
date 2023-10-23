@@ -231,6 +231,7 @@ func buildTestpmdCmd(vmiEastNICPCIAddress, vmiWestNICPCIAddress, eastEthPeerMACA
 		numberOfCores           = 4
 		queuesPerPort           = numberOfCores
 		hugepageSizeInMegaBytes = 1024
+		hugepagesMountedDir     = "/mnt/huge"
 	)
 
 	sb := strings.Builder{}
@@ -239,6 +240,7 @@ func buildTestpmdCmd(vmiEastNICPCIAddress, vmiWestNICPCIAddress, eastEthPeerMACA
 	sb.WriteString(fmt.Sprintf("-a %s ", vmiEastNICPCIAddress))
 	sb.WriteString(fmt.Sprintf("-a %s ", vmiWestNICPCIAddress))
 	sb.WriteString(fmt.Sprintf("--socket-mem %d ", hugepageSizeInMegaBytes))
+	sb.WriteString(fmt.Sprintf("--huge-dir %s ", hugepagesMountedDir))
 	sb.WriteString("-- ")
 	sb.WriteString("-i ")
 	sb.WriteString(fmt.Sprintf("--nb-cores=%d ", numberOfCores))
