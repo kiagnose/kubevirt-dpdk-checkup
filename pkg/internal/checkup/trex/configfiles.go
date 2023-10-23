@@ -51,10 +51,10 @@ type Config struct {
 
 func NewConfig(cfg config.Config) Config {
 	const (
-		masterCPU        = "0"
-		latencyCPU       = "1"
-		trafficCPUs      = "2,3,4,5,6,7"
-		numOfTrafficCPUs = "6"
+		masterCPU        = "2"
+		latencyCPU       = "3"
+		trafficCPUs      = "4,5,6,7"
+		numOfTrafficCPUs = "4"
 	)
 	return Config{
 		masterCPU:                      masterCPU,

@@ -47,11 +47,11 @@ func TestGetTrexCfgFile(t *testing.T) {
     - ip: 10.10.20.2
       default_gw: 10.10.20.1
   platform:
-    master_thread_id: 0
-    latency_thread_id: 1
+    master_thread_id: 2
+    latency_thread_id: 3
     dual_if:
       - socket: 0
-        threads: [2,3,4,5,6,7]
+        threads: [4,5,6,7]
 `
 	assert.Equal(t, expectedCfgFile, cfgFile)
 }
@@ -95,7 +95,7 @@ class STLS1(object):
     def get_streams (self, direction = 0, **kwargs):
         # create multiple streams, one stream per core generating traffic...
         s = []
-        for i in range(6):
+        for i in range(4):
             s.append(self.create_stream(direction = direction))
         return s
 
@@ -127,7 +127,7 @@ func TestExecutionScript(t *testing.T) {
 	actualExecutionScript := trexConfig.GenerateExecutionScript()
 
 	expextedExecutionScript := `#!/usr/bin/env bash
-./t-rex-64 --no-ofed-check --no-scapy-server --no-hw-flow-stat -i -c 6 --iom 0
+./t-rex-64 --no-ofed-check --no-scapy-server --no-hw-flow-stat -i -c 4 --iom 0
 `
 
 	assert.Equal(t, expextedExecutionScript, actualExecutionScript)
