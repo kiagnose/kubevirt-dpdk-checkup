@@ -47,6 +47,8 @@ type Config struct {
 	trafficGeneratorWestMacAddress string
 	DPDKEastMacAddress             string
 	DPDKWestMacAddress             string
+	rxDesc                         string
+	txDesc                         string
 }
 
 func NewConfig(cfg config.Config) Config {
@@ -55,6 +57,8 @@ func NewConfig(cfg config.Config) Config {
 		latencyCPU       = "3"
 		trafficCPUs      = "4,5,6,7"
 		numOfTrafficCPUs = "4"
+		rxDesc           = "4096"
+		txDesc           = "4096"
 	)
 	return Config{
 		masterCPU:                      masterCPU,
@@ -66,6 +70,8 @@ func NewConfig(cfg config.Config) Config {
 		trafficGeneratorWestMacAddress: cfg.TrafficGenWestMacAddress.String(),
 		DPDKEastMacAddress:             cfg.VMUnderTestEastMacAddress.String(),
 		DPDKWestMacAddress:             cfg.VMUnderTestWestMacAddress.String(),
+		rxDesc:                         rxDesc,
+		txDesc:                         txDesc,
 	}
 }
 
@@ -75,6 +81,8 @@ func (c Config) GenerateCfgFile() string {
   interfaces:
     - %q
     - %q
+  rx_desc: %s
+  tx_desc: %s
   port_bandwidth_gb: %s
   port_info:
     - ip: 10.10.10.2
@@ -91,6 +99,8 @@ func (c Config) GenerateCfgFile() string {
 	return fmt.Sprintf(cfgTemplate,
 		config.VMIEastNICPCIAddress,
 		config.VMIWestNICPCIAddress,
+		c.rxDesc,
+		c.txDesc,
 		c.portBandwidthGB,
 		c.masterCPU,
 		c.latencyCPU,

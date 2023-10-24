@@ -40,6 +40,8 @@ func TestGetTrexCfgFile(t *testing.T) {
   interfaces:
     - "0000:06:00.0"
     - "0000:07:00.0"
+  rx_desc: 4096
+  tx_desc: 4096
   port_bandwidth_gb: 40
   port_info:
     - ip: 10.10.10.2
