@@ -128,20 +128,32 @@ type expecterStub struct {
 
 const (
 	getStatsCmd    = "show fwd stats all\n"
-	getStatsOutput = "  ---------------------- Forward statistics for port 0  ----------------------\r\n" +
-		"  RX-packets: 480000001      RX-dropped: 2             RX-total: 480000003\r\n" +
-		"  TX-packets: 4              TX-dropped: 5             TX-total: 6\r\n" +
-		"  ----------------------------------------------------------------------------\r\n" +
-		"\r\n" +
-		"  ---------------------- Forward statistics for port 1  ----------------------\r\n" +
-		"  RX-packets: 7              RX-dropped: 8             RX-total: 9\r\n" +
-		"  TX-packets: 480000010      TX-dropped: 11            TX-total: 480000012\r\n" +
-		"  ----------------------------------------------------------------------------\r\n" +
-		"\r\n" +
-		"  +++++++++++++++ Accumulated forward statistics for all ports+++++++++++++++\r\n" +
-		"  RX-packets: 480000013      RX-dropped: 14            RX-total: 480000015\r\n" +
-		"  TX-packets: 480000016      TX-dropped: 17            TX-total: 480000018\r\n" +
-		"  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\r\n" +
+	getStatsOutput = "" +
+		"  ------- Forward Stats for RX Port= 0/Queue= 0 -> TX Port= 1/Queue= 0 -------\n" +
+		"  RX-packets: 160000000      TX-packets: 160000000      TX-dropped: 0             \n" +
+		"\n" +
+		"  ------- Forward Stats for RX Port= 0/Queue= 1 -> TX Port= 1/Queue= 1 -------\n" +
+		"  RX-packets: 80000000       TX-packets: 80000000       TX-dropped: 0             \n" +
+		"\n" +
+		"  ------- Forward Stats for RX Port= 0/Queue= 2 -> TX Port= 1/Queue= 2 -------\n" +
+		"  RX-packets: 80000000       TX-packets: 80000000       TX-dropped: 0             \n" +
+		"\n" +
+		"  ------- Forward Stats for RX Port= 0/Queue= 3 -> TX Port= 1/Queue= 3 -------\n" +
+		"  RX-packets: 160000000      TX-packets: 160000000      TX-dropped: 0" +
+		"  ---------------------- Forward statistics for port 0  ----------------------\n" +
+		"  RX-packets: 480000001     RX-dropped: 2             RX-total: 480000003\n" +
+		"  TX-packets: 4              TX-dropped: 5             TX-total: 6\n" +
+		"  ----------------------------------------------------------------------------\n" +
+		"\n" +
+		"  ---------------------- Forward statistics for port 1  ----------------------\n" +
+		"  RX-packets: 7              RX-dropped: 8             RX-total: 9\n" +
+		"  TX-packets: 480000010     TX-dropped: 11             TX-total: 480000012\n" +
+		"  ----------------------------------------------------------------------------\n" +
+		"\n" +
+		"  +++++++++++++++ Accumulated forward statistics for all ports+++++++++++++++\n" +
+		"  RX-packets: 480000013     RX-dropped: 14             RX-total: 480000015\n" +
+		"  TX-packets: 480000016     TX-dropped: 17             TX-total: 480000018\n" +
+		"  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n" +
 		"testpmd> "
 )
 

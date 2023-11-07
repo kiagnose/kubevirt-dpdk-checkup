@@ -227,20 +227,27 @@ func parseTestpmdStatsSection(stats *PortStats, section string) error {
 
 func buildTestpmdCmd(vmiEastNICPCIAddress, vmiWestNICPCIAddress, eastEthPeerMACAddress, westEthPeerMACAddress string) string {
 	const (
-		cpuList       = "2-7"
-		numberOfCores = 5
+		cpuAssignmentMap        = "0@2-3,1@4,2@5,3@6,4@7"
+		numberOfCores           = 4
+		queuesPerPort           = numberOfCores
+		hugepageSizeInMegaBytes = 1024
+		hugepagesMountedDir     = "/mnt/huge"
 	)
 
 	sb := strings.Builder{}
 	sb.WriteString("dpdk-testpmd ")
-	sb.WriteString(fmt.Sprintf("-l %s ", cpuList))
+	sb.WriteString(fmt.Sprintf("--lcores %s ", cpuAssignmentMap))
 	sb.WriteString(fmt.Sprintf("-a %s ", vmiEastNICPCIAddress))
 	sb.WriteString(fmt.Sprintf("-a %s ", vmiWestNICPCIAddress))
+	sb.WriteString(fmt.Sprintf("--socket-mem %d ", hugepageSizeInMegaBytes))
+	sb.WriteString(fmt.Sprintf("--huge-dir %s ", hugepagesMountedDir))
 	sb.WriteString("-- ")
 	sb.WriteString("-i ")
 	sb.WriteString(fmt.Sprintf("--nb-cores=%d ", numberOfCores))
 	sb.WriteString("--rxd=2048 ")
 	sb.WriteString("--txd=2048 ")
+	sb.WriteString(fmt.Sprintf("--rxq=%d ", queuesPerPort))
+	sb.WriteString(fmt.Sprintf("--txq=%d ", queuesPerPort))
 	sb.WriteString("--forward-mode=mac ")
 	sb.WriteString(fmt.Sprintf("--eth-peer=0,%s ", eastEthPeerMACAddress))
 	sb.WriteString(fmt.Sprintf("--eth-peer=1,%s", westEthPeerMACAddress))
