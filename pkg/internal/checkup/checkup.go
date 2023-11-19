@@ -86,7 +86,7 @@ func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config
 }
 
 func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
-	const setupTimeout = 10 * time.Minute
+	const setupTimeout = 15 * time.Minute
 	setupCtx, cancel := context.WithTimeout(ctx, setupTimeout)
 	defer cancel()
 
