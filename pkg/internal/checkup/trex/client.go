@@ -266,12 +266,7 @@ func (c Client) runTrexConsoleCmdWithJSONResponse(command, requestKey string) (s
 }
 
 func cleanStdout(rawStdout string) string {
-	stdout := strings.Replace(rawStdout, "Using 'python3' as Python interpeter", "", -1)
-	stdout = strings.Replace(stdout, "-=TRex Console v3.0=-", "", -1)
-	stdout = strings.Replace(stdout, "Type 'help' or '?' for supported actions", "", -1)
-	stdout = strings.Replace(stdout, "trex>Global Statistitcs", "", -1)
-	stdout = strings.Replace(stdout, "trex>", "", -1)
-	return removeUnprintableCharacters(stdout)
+	return removeUnprintableCharacters(rawStdout)
 }
 
 func removeUnprintableCharacters(input string) string {
