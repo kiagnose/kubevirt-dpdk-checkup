@@ -256,7 +256,13 @@ func (c Client) runTrexConsoleCmdWithJSONResponse(command, requestKey string) (s
 		return "", err
 	}
 
-	return extractJSONString(cleanStdout(resp[0].Output), requestKey)
+	stdout := cleanStdout(resp[0].Output)
+	jsonResponse, err := extractJSONString(stdout, requestKey)
+	if err != nil {
+		log.Printf("failed to extract JSON Response of %q in input: \n%q", requestKey, stdout)
+		return "", fmt.Errorf("failed to extract JSON Response of %q: %w. See logs for more information", requestKey, err)
+	}
+	return jsonResponse, nil
 }
 
 func cleanStdout(rawStdout string) string {
