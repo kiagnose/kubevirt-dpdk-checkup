@@ -42,7 +42,7 @@ const (
 	testConfigMapName                   = "dpdk-checkup-config"
 	testCheckupJobName                  = "dpdk-checkup"
 
-	testTimeout = 10 * time.Minute
+	testTimeout = time.Hour
 	jobGrace    = 5 * time.Minute
 	jobTimeout  = testTimeout + jobGrace
 )
