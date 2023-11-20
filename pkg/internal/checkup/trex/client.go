@@ -226,7 +226,7 @@ func (c Client) getStartTrafficCmd(port PortIdx) string {
 }
 
 func (c Client) runTrexConsoleCmd(command string) (string, error) {
-	shellCommand := fmt.Sprintf("cd %s && echo %q | ./trex-console -q", BinDirectory, command)
+	shellCommand := fmt.Sprintf("cd %s && echo %q | ./trex-console", BinDirectory, command)
 	resp, err := c.consoleExpecter.SafeExpectBatchWithResponse([]expect.Batcher{
 		&expect.BSnd{S: shellCommand + "\n"},
 		&expect.BExp{R: shellPrompt},
@@ -237,7 +237,13 @@ func (c Client) runTrexConsoleCmd(command string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return cleanStdout(resp[0].Output), nil
+	stdout := cleanStdout(resp[0].Output)
+	if err = checkStdoutForFailures(stdout); err != nil {
+		log.Printf("command %q failed. Output:\n%s", shellCommand, stdout)
+		return "", fmt.Errorf("trex command %q failed. check logs for more information", command)
+	}
+
+	return stdout, nil
 }
 
 func (c Client) runTrexConsoleCmdWithJSONResponse(command, requestKey string) (string, error) {
@@ -267,6 +273,14 @@ func (c Client) runTrexConsoleCmdWithJSONResponse(command, requestKey string) (s
 
 func cleanStdout(rawStdout string) string {
 	return removeUnprintableCharacters(rawStdout)
+}
+
+func checkStdoutForFailures(stdout string) error {
+	const trexFailureStatus = "[FAILED]"
+	if strings.Contains(stdout, trexFailureStatus) {
+		return fmt.Errorf("found failing status %q", trexFailureStatus)
+	}
+	return nil
 }
 
 func removeUnprintableCharacters(input string) string {

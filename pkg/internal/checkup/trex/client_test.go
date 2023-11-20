@@ -40,6 +40,38 @@ const (
 	portIdx = trex.SourcePort
 )
 
+func TestClearStatsSuccess(t *testing.T) {
+	expecter := expecterStub{expectTrexConsoleFailure: false}
+	c := trex.NewClient(expecter, trafficGeneratorPacketsPerSecond, testDuration, verbosePrintsEnabled)
+
+	_, err := c.ClearStats()
+	assert.NoError(t, err, "ClearStats returned an error")
+}
+
+func TestClearStatsFailure(t *testing.T) {
+	expecter := expecterStub{expectTrexConsoleFailure: true}
+	c := trex.NewClient(expecter, trafficGeneratorPacketsPerSecond, testDuration, verbosePrintsEnabled)
+
+	_, err := c.ClearStats()
+	assert.ErrorContains(t, err, "trex command \"clear\" failed. check logs for more information")
+}
+
+func TestStartTrafficSuccess(t *testing.T) {
+	expecter := expecterStub{expectTrexConsoleFailure: false}
+	c := trex.NewClient(expecter, trafficGeneratorPacketsPerSecond, testDuration, verbosePrintsEnabled)
+
+	_, err := c.StartTraffic(trex.SourcePort)
+	assert.NoError(t, err, "StartTraffic returned an error")
+}
+
+func TestStartTrafficFailure(t *testing.T) {
+	expecter := expecterStub{expectTrexConsoleFailure: true}
+	c := trex.NewClient(expecter, trafficGeneratorPacketsPerSecond, testDuration, verbosePrintsEnabled)
+
+	_, err := c.StartTraffic(trex.SourcePort)
+	assert.ErrorContains(t, err, "trex command \"start -f /opt/tests/testpmd.py -m 1mpps -p 0 -d 1\" failed. check logs for more information")
+}
+
 func TestGetPortStatsSuccess(t *testing.T) {
 	expecter := expecterStub{}
 	c := trex.NewClient(expecter, trafficGeneratorPacketsPerSecond, testDuration, verbosePrintsEnabled)
@@ -145,6 +177,58 @@ func TestGetGlobalStatsSuccess(t *testing.T) {
 }
 
 const (
+	clearCmd                 = "cd /opt/trex && echo \"clear\" | ./trex-console\n"
+	clearCmdSuccessfulOutput = "Using 'python3' as Python interpeter\n\n\n" +
+		"Connecting to RPC server on localhost:4501                   [SUCCESS]\n\n\n" +
+		"Connecting to publisher server on localhost:4500             [SUCCESS]\n\n\n" +
+		"Acquiring ports [0, 1]:                                      [SUCCESS]\n\n" +
+		"*** Warning - Port 0 destination is unresolved ***\n" +
+		"*** Warning - Port 1 destination is unresolved ***\n\n" +
+		"Server Info:\n\nServer version:   v3.03 @ STL\nServer mode:      Stateless\nServer CPU:       4 x Intel Xeon Processor (Cascade" +
+		"lake)\nPorts count:      2 x 10.0Gbps @ Ethernet Virtual Function 700 Series\t\n\n-=TRex Console v3.0=-\n\nType 'help' or '?' for" +
+		" supported actions\n\ntrex>\n" +
+		"Clearing stats :                                             [SUCCESS]\n\n" +
+		"107.02 [ms]\n\ntrex>Shutting down RPC client"
+	clearCmdFailedOutput = "Using 'python3' as Python interpeter\n\n\n" +
+		"Connecting to RPC server on localhost:4501                   [SUCCESS]\n\n\n" +
+		"Connecting to publisher server on localhost:4500             [SUCCESS]\n\n\n" +
+		"Acquiring ports [0, 1]:                                      [SUCCESS]\n\n" +
+		"*** Warning - Port 0 destination is unresolved ***\n" +
+		"*** Warning - Port 1 destination is unresolved ***\n\n" +
+		"Server Info:\n\nServer version:   v3.03 @ STL\nServer mode:      Stateless\nServer CPU:       4 x Intel Xeon Processor (Cascade" +
+		"lake)\nPorts count:      2 x 10.0Gbps @ Ethernet Virtual Function 700 Series\t\n\n-=TRex Console v3.0=-\n\nType 'help' or '?' for" +
+		" supported actions\n\ntrex>\n" +
+		"Clearing stats :                                             [FAILED]\n\n" +
+		"Clear : *** some error\n\n" +
+		"107.02 [ms]\n\ntrex>Shutting down RPC client"
+	startTrafficCmd          = "cd /opt/trex && echo \"start -f /opt/tests/testpmd.py -m 1mpps -p 0 -d 1\" | ./trex-console\n"
+	startCmdSuccessfulOutput = "Using 'python3' as Python interpeter\n\n\n" +
+		"Connecting to RPC server on localhost:4501                   [SUCCESS]\n\n\n" +
+		"Connecting to publisher server on localhost:4500             [SUCCESS]\n\n\n" +
+		"Acquiring ports [0, 1]:                                      [SUCCESS]\n\n" +
+		"*** Warning - Port 0 destination is unresolved ***\n" +
+		"*** Warning - Port 1 destination is unresolved ***\n\n" +
+		"Server Info:\n\nServer version:   v3.03 @ STL\nServer mode:      Stateless\nServer CPU:       4 x Intel Xeon Processor (Cascade" +
+		"lake)\nPorts count:      2 x 10.0Gbps @ Ethernet Virtual Function 700 Series\t\n\n-=TRex Console v3.0=-\n\nType 'help' or '?' f" +
+		"or supported actions\n\ntrex>\n" +
+		"Removing all streams from port(s) [0._]:                     [SUCCESS]\n\n\n" +
+		"Attaching 4 streams to port(s) [0._]:                        [SUCCESS]\n\n\n" +
+		"Starting traffic on port(s) [0._]:                           [SUCCESS]\n\n" +
+		"72.94 [ms]\n\ntrex>Shutting down RPC client"
+	startCmdFailedOutput = "Using 'python3' as Python interpeter\n\n\n" +
+		"Connecting to RPC server on localhost:4501                   [SUCCESS]\n\n\n" +
+		"Connecting to publisher server on localhost:4500             [SUCCESS]\n\n\n" +
+		"Acquiring ports [0, 1]:                                      [SUCCESS]\n\n" +
+		"*** Warning - Port 0 destination is unresolved ***\n" +
+		"*** Warning - Port 1 destination is unresolved ***\n\n" +
+		"Server Info:\n\nServer version:   v3.03 @ STL\nServer mode:      Stateless\nServer CPU:       4 x Intel Xeon Processor (Cascade" +
+		"lake)\nPorts count:  2 x 10.0Gbps @ Ethernet Virtual Function 700 Series\t\n\n-=TRex Console v3.0=-\n\nType 'help' or '?' for s" +
+		"upported actions\n\ntrex>\n" +
+		"Removing all streams from port(s) [0._]:                     [SUCCESS]\n\n\n" +
+		"Attaching 4 streams to port(s) [0._]:                        [SUCCESS]\n\n\n" +
+		"Starting traffic on port(s) [0._]:                           [FAILED]\n\n\n" +
+		"start - Port 0 : *** Expected L1 B/W: '13.44 Gbps' exceeds port line rate: '10 Gbps'\n\n" +
+		"trex>Shutting down RPC client"
 	portStatsCmd    = "cd /opt/trex && echo \"verbose on;stats --port 0 -p\" | ./trex-console -q\n"
 	portStatsOutput = "Using 'python3' as Python interpeter\r\n\r\n\r\n-=TRex Console v3.0=-\r\n\r\nType 'help' or '?' for supported act" +
 		"ions\r\n\r\ntrex>\r\n\x1b[1m\x1b[32mverbose set to on\x1b[39m\x1b[22m\r\n\r\n\r\n\r\n[verbose] Sending Request To Server:\r\n\r" +
@@ -240,8 +324,9 @@ const (
 )
 
 type expecterStub struct {
-	expectBatchErr error
-	timeoutErr     error
+	expectBatchErr           error
+	timeoutErr               error
+	expectTrexConsoleFailure bool
 }
 
 func (es expecterStub) SafeExpectBatchWithResponse(expected []expect.Batcher, _ time.Duration) ([]expect.BatchRes, error) {
@@ -265,6 +350,30 @@ func (es expecterStub) SafeExpectBatchWithResponse(expected []expect.Batcher, _ 
 			expect.BatchRes{
 				Idx:    1,
 				Output: globalStatsOutput,
+			})
+	case startTrafficCmd:
+		var consoleResponse string
+		if es.expectTrexConsoleFailure {
+			consoleResponse = startCmdFailedOutput
+		} else {
+			consoleResponse = startCmdSuccessfulOutput
+		}
+		batchRes = append(batchRes,
+			expect.BatchRes{
+				Idx:    1,
+				Output: consoleResponse,
+			})
+	case clearCmd:
+		var consoleResponse string
+		if es.expectTrexConsoleFailure {
+			consoleResponse = clearCmdFailedOutput
+		} else {
+			consoleResponse = clearCmdSuccessfulOutput
+		}
+		batchRes = append(batchRes,
+			expect.BatchRes{
+				Idx:    1,
+				Output: consoleResponse,
 			})
 	default:
 		return nil, fmt.Errorf("command not recognized: %s", expected[0].Arg())
