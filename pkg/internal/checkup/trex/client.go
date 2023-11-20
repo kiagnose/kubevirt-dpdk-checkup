@@ -133,7 +133,7 @@ func (c Client) GetGlobalStats() (GlobalStats, error) {
 	}
 
 	if c.verbosePrintsEnabled {
-		log.Printf("GetGlobalStats JSON: %s", globalStatsJSONString)
+		log.Printf("GetGlobalStats JSON Response:\n%s", globalStatsJSONString)
 	}
 
 	var gs GlobalStats
@@ -154,7 +154,7 @@ func (c Client) GetPortStats(port PortIdx) (PortStats, error) {
 	}
 
 	if c.verbosePrintsEnabled {
-		log.Printf("GetPortStats JSON: %s", portStatsJSONString)
+		log.Printf("GetPortStats JSON Response:\n%s", portStatsJSONString)
 	}
 
 	var ps PortStats
@@ -168,6 +168,9 @@ func (c Client) GetPortStats(port PortIdx) (PortStats, error) {
 func (c Client) isServerRunning() bool {
 	const helpSubstring = "Console Commands"
 	resp, err := c.runTrexConsoleCmd("help")
+	if c.verbosePrintsEnabled {
+		log.Printf("trex-console help resp:\n%s", resp)
+	}
 	if err != nil || !strings.Contains(resp, helpSubstring) {
 		return false
 	}
