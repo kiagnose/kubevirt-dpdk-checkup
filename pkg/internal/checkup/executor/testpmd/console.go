@@ -96,7 +96,10 @@ func (t TestpmdConsole) Run() error {
 		return err
 	}
 
-	log.Printf("%v", resp)
+	if t.verbosePrintsEnabled {
+		log.Printf("testpmd run:\n%s", resp[0].Output)
+		log.Printf("testpmd start:\n%s", resp[1].Output)
+	}
 
 	return nil
 }
@@ -139,7 +142,7 @@ func (t TestpmdConsole) GetStats() ([StatsArraySize]PortStats, error) {
 	}
 
 	if t.verbosePrintsEnabled {
-		log.Printf("testpmd stats: %v", resp)
+		log.Printf("testpmd stats:\n%s", resp[0].Output)
 	}
 
 	return parseTestpmdStats(resp[0].Output)
