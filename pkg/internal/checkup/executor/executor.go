@@ -183,7 +183,7 @@ func calculateStats(trexClient trex.Client, testpmdConsole *testpmd.TestpmdConso
 func (e Executor) monitorDropRates(ctx context.Context, trexClient trex.Client) (float64, error) {
 	const interval = 10 * time.Second
 
-	log.Printf("Monitoring traffic generator side drop rates every %ss during the test duration...", interval)
+	log.Printf("Monitoring traffic generator side drop rates every %s during the test duration...", interval)
 	maxDropRateBps := float64(0)
 
 	ctxWithNewDeadline, cancel := context.WithTimeout(ctx, e.testDuration)
