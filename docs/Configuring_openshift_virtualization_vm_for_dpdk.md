@@ -96,11 +96,20 @@ spec:
           threads: 2
           cores: 5
           dedicatedCpuPlacement: true
+          isolateEmulatorThread: true
 ...
 ```
 > **Notes**
 > - The sockets field should be 1, in order to make sure the CPUs are scheduled from the same NUMA Node.
 > - In this snippet example, the VM will be scheduled with 5 [hyper-threads](https://access.redhat.com/articles/7445) (or 10 CPUs).
+
+#### SMT Aligment
+If the checkup is executed on nodes with SMT enabled, in order to avoid `SMT Alignment` errors - set the [alignCPUs](https://github.com/kubevirt/hyperconverged-cluster-operator/blob/main/docs/cluster-configuration.md#aligncpus-feature-gate) enabler on HCO:
+```bash
+oc patch hyperconvergeds.hco.kubevirt.io kubevirt-hyperconverged -n openshift-cnv --type=json -p '[{"op": "replace", "path": "/spec/featureGates/alignCPUs", "value": true}]'
+```
+
+More information in Jira [CNV-31584](https://issues.redhat.com/browse/CNV-31584)
 
 #### CRI-O related annotations
 
