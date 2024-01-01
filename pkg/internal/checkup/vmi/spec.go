@@ -114,6 +114,9 @@ func WithDedicatedCPU(socketsCount, coresCount, threadsCount uint32) Option {
 			Threads:               threadsCount,
 			DedicatedCPUPlacement: true,
 			IsolateEmulatorThread: true,
+			NUMA: &kvcorev1.NUMA{
+				GuestMappingPassthrough: &kvcorev1.NUMAGuestMappingPassthrough{},
+			},
 		}
 	}
 }
