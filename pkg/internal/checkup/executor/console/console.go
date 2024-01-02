@@ -80,7 +80,7 @@ func (e Expecter) spawnConsole(timeout time.Duration) (*expect.GExpect, error) {
 		})
 	}()
 
-	e.opts = append(e.opts, expect.SendTimeout(timeout), expect.Verbose(true))
+	e.opts = append(e.opts, expect.SendTimeout(timeout), expect.Verbose(false))
 	genExpect, _, err := expect.SpawnGeneric(&expect.GenOptions{
 		In:  vmiWriter,
 		Out: expecterReader,
