@@ -27,7 +27,10 @@ disable_services() {
   done
 }
 
-grubby --update-kernel=ALL --args="default_hugepagesz=1GB hugepagesz=1G hugepages=1"
+# Setup hugepages in cmdline
+setup_hugepages() {
+  grubby --update-kernel=ALL --args="default_hugepagesz=1GB hugepagesz=1G hugepages=1"
+}
 
 echo  isolated_cores=2-7 > /etc/tuned/cpu-partitioning-variables.conf
 tuned-adm profile cpu-partitioning
@@ -48,3 +51,4 @@ tar -xzf ${TREX_ARCHIVE_NAME} --strip-components=1
 rm ${TREX_ARCHIVE_NAME}
 
 disable_services
+setup_hugepages
