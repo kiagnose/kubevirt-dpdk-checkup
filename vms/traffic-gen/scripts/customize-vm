@@ -51,8 +51,13 @@ setup_hugepages() {
 
 echo  isolated_cores=2-7 > /etc/tuned/cpu-partitioning-variables.conf
 tuned-adm profile cpu-partitioning
-echo "options vfio enable_unsafe_noiommu_mode=1" > /etc/modprobe.d/vfio-noiommu.conf
+
+# Enable unsafe noiommu mode
+set_unsafe_no_io_mmu_mode() {
+  echo "options vfio enable_unsafe_noiommu_mode=1" > /etc/modprobe.d/vfio-noiommu.conf
+}
 
 disable_services
 setup_hugepages
 install_trex
+set_unsafe_no_io_mmu_mode
