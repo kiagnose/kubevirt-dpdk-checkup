@@ -19,8 +19,13 @@
 
 set -e
 
-systemctl disable NetworkManager-wait-online
-systemctl disable sshd
+# Disable unnecessary services
+disable_services() {
+  local service_list=("NetworkManager-wait-online" "sshd")
+  for service in "${service_list[@]}"; do
+    systemctl disable "$service"
+  done
+}
 
 grubby --update-kernel=ALL --args="default_hugepagesz=1GB hugepagesz=1G hugepages=1"
 
@@ -41,3 +46,5 @@ curl --insecure ${TREX_URL}/${TREX_ARCHIVE_NAME} --output ${TREX_ARCHIVE_NAME}
 tar -xzf ${TREX_ARCHIVE_NAME} --strip-components=1
 
 rm ${TREX_ARCHIVE_NAME}
+
+disable_services
