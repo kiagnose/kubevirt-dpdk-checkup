@@ -83,6 +83,14 @@ func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMINa
 		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
 	}
 
+	if e.verbosePrintsEnabled {
+		vmiUnderTestKernelArgs, _ := vmiUnderTestConsoleExpecter.GetGuestKernelArgs()
+		log.Printf("VMI under test guest kernel Args: %s", vmiUnderTestKernelArgs)
+
+		trafficGenKernelArgs, _ := trafficGenConsoleExpecter.GetGuestKernelArgs()
+		log.Printf("traffic generator guest kernel Args: %s", trafficGenKernelArgs)
+	}
+
 	trexClient := trex.NewClient(
 		trafficGenConsoleExpecter,
 		e.trafficGeneratorPacketsPerSecond,
