@@ -19,11 +19,18 @@
 
 set -e
 
-systemctl disable NetworkManager-wait-online
-systemctl disable sshd
+# Disable unnecessary services
+disable_services() {
+  local service_list=("NetworkManager-wait-online" "sshd")
+  for service in "${service_list[@]}"; do
+    systemctl disable "$service"
+  done
+}
 
 grubby --update-kernel=ALL --args="default_hugepagesz=1GB hugepagesz=1G hugepages=1"
 
 echo  isolated_cores=2-7 > /etc/tuned/cpu-partitioning-variables.conf
 tuned-adm profile cpu-partitioning
 echo "options vfio enable_unsafe_noiommu_mode=1" > /etc/modprobe.d/vfio-noiommu.conf
+
+disable_services
