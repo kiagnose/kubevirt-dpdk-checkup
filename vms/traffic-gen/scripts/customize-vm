@@ -19,25 +19,113 @@
 
 set -e
 
-systemctl disable NetworkManager-wait-online
-systemctl disable sshd
+# Disable unnecessary services
+disable_services() {
+  local service_list=("NetworkManager-wait-online" "sshd")
+  for service in "${service_list[@]}"; do
+    systemctl disable "$service"
+  done
+}
 
-grubby --update-kernel=ALL --args="default_hugepagesz=1GB hugepagesz=1G hugepages=1"
+# Install trex package
+install_trex() {
+  local TREX_URL=https://trex-tgn.cisco.com/trex/release
+  local TREX_VERSION=v3.03
+  local TREX_ARCHIVE_NAME=${TREX_VERSION}.tar.gz
+  local TREX_DIR=/opt/trex
 
-echo  isolated_cores=2-7 > /etc/tuned/cpu-partitioning-variables.conf
-tuned-adm profile cpu-partitioning
-echo "options vfio enable_unsafe_noiommu_mode=1" > /etc/modprobe.d/vfio-noiommu.conf
+  mkdir -p ${TREX_DIR}
+  cd ${TREX_DIR}
 
-TREX_URL=https://trex-tgn.cisco.com/trex/release
-TREX_VERSION=v3.03
-TREX_ARCHIVE_NAME=${TREX_VERSION}.tar.gz
-TREX_DIR=/opt/trex
+  curl --insecure ${TREX_URL}/${TREX_ARCHIVE_NAME} --output ${TREX_ARCHIVE_NAME}
 
-mkdir -p ${TREX_DIR}
-cd ${TREX_DIR}
+  tar -xzf ${TREX_ARCHIVE_NAME} --strip-components=1
 
-curl --insecure ${TREX_URL}/${TREX_ARCHIVE_NAME} --output ${TREX_ARCHIVE_NAME}
+  rm ${TREX_ARCHIVE_NAME}
+}
 
-tar -xzf ${TREX_ARCHIVE_NAME} --strip-components=1
+# Setup hugepages in cmdline
+setup_hugepages() {
+  grubby --update-kernel=ALL --args="default_hugepagesz=1GB hugepagesz=1G hugepages=1"
+}
 
-rm ${TREX_ARCHIVE_NAME}
+# Enable unsafe noiommu mode
+set_unsafe_no_io_mmu_mode() {
+  echo "options vfio enable_unsafe_noiommu_mode=1" > /etc/modprobe.d/vfio-noiommu.conf
+}
+
+# Create and enable the boot checkup service
+setup_boot_service() {
+  local service_name="dpdk-checkup-boot.service"
+  local checkup_boot_script_full_path="/usr/bin/dpdk-checkup-boot.sh"
+  local checkup_boot_service_full_path="/usr/lib/systemd/system/$service_name"
+  local checkup_tuned_adm_set_marker_full_path="/var/dpdk-checkup-tuned-adm-set-marker"
+
+  setup_checkup_boot_script "$checkup_boot_script_full_path"
+
+  cat <<EOF > "$checkup_boot_service_full_path"
+[Unit]
+Description=Checkup Boot Script
+Before=qemu-guest-agent.service
+[Service]
+ExecStart=$checkup_boot_script_full_path $checkup_tuned_adm_set_marker_full_path
+Restart=no
+User=root
+Group=root
+[Install]
+WantedBy=multi-user.target
+EOF
+
+  systemctl enable "$checkup_boot_service_full_path"
+  systemctl start "$checkup_boot_service_full_path"
+}
+
+setup_checkup_boot_script() {
+  local checkup_boot_script_full_path=$1
+cat <<'EOF' > "$checkup_boot_script_full_path"
+#!/usr/bin/env bash
+#
+# This file is part of the kiagnose project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Copyright 2024 Red Hat, Inc.
+#
+
+set -e
+
+checkup_tuned_adm_set_marker_full_path=$1
+
+driverctl set-override 0000:06:00.0 vfio-pci
+driverctl set-override 0000:07:00.0 vfio-pci
+
+mkdir -p /mnt/huge
+mount /mnt/huge --source nodev -t hugetlbfs -o pagesize=1GB
+
+if [ ! -f "$checkup_tuned_adm_set_marker_full_path" ]; then
+  echo "isolated_cores=2-7" > /etc/tuned/cpu-partitioning-variables.conf
+  tuned-adm profile cpu-partitioning
+
+  touch $checkup_tuned_adm_set_marker_full_path
+  reboot
+fi
+EOF
+
+  chmod +x "$checkup_boot_script_full_path"
+}
+
+disable_services
+setup_hugepages
+install_trex
+set_unsafe_no_io_mmu_mode
+setup_boot_service
