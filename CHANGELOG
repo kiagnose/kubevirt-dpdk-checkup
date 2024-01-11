@@ -1,3 +1,14 @@
+## [0.3.0] - 2023-01-11
+### New Features
+ - VM under test and Traffic generator are now using the isolateEmulatorThread option
+ - logs were streamlined
+ - trex output is checked for errors
+ - Upgraded go version to 1.20.12
+ - Checkup base image was upgraded to `registry.access.redhat.com/ubi9/ubi-minimal:9.3-1475`
+### Bug Fixes
+ - Packet loss issue was fixed with better configuration
+ - Setup stage is now bound to its own timeout instead to the global timeout
+
 ## [0.2.0] - 2023-09-04
 ### Breaking Changes
  - The checkup now executes the traffic generator inside a VM.
