@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	k8scorev1 "k8s.io/api/core/v1"
@@ -125,19 +126,34 @@ func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
 		}
 	}()
 
+	var wg sync.WaitGroup
+
+	wg.Add(1)
 	var updatedVMIUnderTest *kvcorev1.VirtualMachineInstance
-	updatedVMIUnderTest, err = c.setupVMIWaitReady(setupCtx, c.vmiUnderTest.Name)
-	if err != nil {
-		return err
-	}
+	var vmiUnderTestErr error
+	go func() {
+		defer wg.Done()
+		updatedVMIUnderTest, vmiUnderTestErr = c.setupVMIWaitReady(setupCtx, c.vmiUnderTest.Name)
+	}()
 
-	c.vmiUnderTest = updatedVMIUnderTest
+	wg.Add(1)
 	var updatedTrafficGen *kvcorev1.VirtualMachineInstance
-	updatedTrafficGen, err = c.setupVMIWaitReady(setupCtx, c.trafficGen.Name)
-	if err != nil {
-		return err
-	}
+	var trafficGenErr error
+	go func() {
+		defer wg.Done()
+		updatedTrafficGen, trafficGenErr = c.setupVMIWaitReady(setupCtx, c.trafficGen.Name)
+	}()
 
+	wg.Wait()
+
+	if vmiUnderTestErr != nil {
+		return vmiUnderTestErr
+	}
+	c.vmiUnderTest = updatedVMIUnderTest
+
+	if trafficGenErr != nil {
+		return trafficGenErr
+	}
 	c.trafficGen = updatedTrafficGen
 
 	return nil
