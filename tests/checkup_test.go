@@ -255,8 +255,8 @@ func newKubeVirtDPDKCheckerRole() *rbacv1.Role {
 			},
 			{
 				APIGroups: []string{"subresources.kubevirt.io"},
-				Resources: []string{"virtualmachineinstances/console"},
-				Verbs:     []string{"get"},
+				Resources: []string{"virtualmachineinstances/console", "virtualmachineinstances/softreboot"},
+				Verbs:     []string{"get", "update"},
 			},
 			{
 				APIGroups: []string{""},
