@@ -124,15 +124,14 @@ func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
 	}()
 
 	var updatedVMIUnderTest *kvcorev1.VirtualMachineInstance
-	updatedVMIUnderTest, err = c.waitForVMIToBoot(setupCtx, c.vmiUnderTest.Name)
+	updatedVMIUnderTest, err = c.setupVMIWaitReady(setupCtx, c.vmiUnderTest.Name)
 	if err != nil {
 		return err
 	}
 
 	c.vmiUnderTest = updatedVMIUnderTest
-
 	var updatedTrafficGen *kvcorev1.VirtualMachineInstance
-	updatedTrafficGen, err = c.waitForVMIToBoot(setupCtx, c.trafficGen.Name)
+	updatedTrafficGen, err = c.setupVMIWaitReady(setupCtx, c.trafficGen.Name)
 	if err != nil {
 		return err
 	}
@@ -231,6 +230,15 @@ func (c *Checkup) createVMI(ctx context.Context, vmiToCreate *kvcorev1.VirtualMa
 
 	_, err := c.client.CreateVirtualMachineInstance(ctx, c.namespace, vmiToCreate)
 	return err
+}
+
+func (c *Checkup) setupVMIWaitReady(ctx context.Context, name string) (*kvcorev1.VirtualMachineInstance, error) {
+	vmiFullName := ObjectFullName(c.namespace, name)
+	updatedVMI, err := c.waitForVMIToBoot(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to wait on VMI %q boot: %w", vmiFullName, err)
+	}
+	return updatedVMI, err
 }
 
 func (c *Checkup) waitForVMIToBoot(ctx context.Context, name string) (*kvcorev1.VirtualMachineInstance, error) {
