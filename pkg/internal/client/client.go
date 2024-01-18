@@ -58,6 +58,10 @@ func (c *Client) GetVirtualMachineInstance(ctx context.Context, namespace, name 
 	return c.KubevirtClient.VirtualMachineInstance(namespace).Get(ctx, name, &metav1.GetOptions{})
 }
 
+func (c *Client) SoftRebootVirtualMachineInstance(ctx context.Context, namespace, name string) error {
+	return c.KubevirtClient.VirtualMachineInstance(namespace).SoftReboot(ctx, name)
+}
+
 func (c *Client) DeleteVirtualMachineInstance(ctx context.Context, namespace, name string) error {
 	return c.KubevirtClient.VirtualMachineInstance(namespace).Delete(ctx, name, &metav1.DeleteOptions{})
 }
