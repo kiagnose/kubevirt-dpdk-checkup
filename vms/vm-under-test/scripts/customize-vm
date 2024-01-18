@@ -42,7 +42,6 @@ setup_boot_service() {
   local service_name="dpdk-checkup-boot.service"
   local checkup_boot_script_full_path="/usr/bin/dpdk-checkup-boot.sh"
   local checkup_boot_service_full_path="/usr/lib/systemd/system/$service_name"
-  local checkup_tuned_adm_set_marker_full_path="/var/dpdk-checkup-tuned-adm-set-marker"
 
   setup_checkup_boot_script "$checkup_boot_script_full_path"
 
@@ -51,7 +50,7 @@ setup_boot_service() {
 Description=Checkup Boot Script
 Before=qemu-guest-agent.service
 [Service]
-ExecStart=$checkup_boot_script_full_path $checkup_tuned_adm_set_marker_full_path
+ExecStart=$checkup_boot_script_full_path
 Restart=no
 User=root
 Group=root
@@ -87,7 +86,7 @@ cat <<'EOF' > "$checkup_boot_script_full_path"
 
 set -e
 
-checkup_tuned_adm_set_marker_full_path=$1
+checkup_tuned_adm_set_marker_full_path="/var/dpdk-checkup-tuned-adm-set-marker"
 
 driverctl set-override 0000:06:00.0 vfio-pci
 driverctl set-override 0000:07:00.0 vfio-pci
