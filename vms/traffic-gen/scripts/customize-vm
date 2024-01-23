@@ -47,6 +47,8 @@ install_trex() {
 # Setup hugepages in cmdline
 setup_hugepages() {
   grubby --update-kernel=ALL --args="default_hugepagesz=1GB hugepagesz=1G hugepages=1"
+  mkdir -p /mnt/huge
+  echo "hugetlbfs /mnt/huge hugetlbfs defaults,pagesize=1GB 0 0" >> /etc/fstab
 }
 
 # Enable unsafe noiommu mode
@@ -107,9 +109,6 @@ checkup_tuned_adm_set_marker_full_path="/var/dpdk-checkup-tuned-adm-set-marker"
 
 driverctl set-override 0000:06:00.0 vfio-pci
 driverctl set-override 0000:07:00.0 vfio-pci
-
-mkdir -p /mnt/huge
-mount /mnt/huge --source nodev -t hugetlbfs -o pagesize=1GB
 
 if [ ! -f "$checkup_tuned_adm_set_marker_full_path" ]; then
   echo "isolated_cores=2-7" > /etc/tuned/cpu-partitioning-variables.conf
