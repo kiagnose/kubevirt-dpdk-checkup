@@ -92,8 +92,8 @@ func TestAffinityCalculation(t *testing.T) {
 func TestCloudInitString(t *testing.T) {
 	const username = "user"
 	const password = "password"
-	t.Run("without boot commands", func(t *testing.T) {
-		actualString := checkup.CloudInit(username, password, nil)
+	t.Run("without boot commands and run commands", func(t *testing.T) {
+		actualString := checkup.CloudInit(username, password, nil, nil)
 		expectedString := `#cloud-config
 user: user
 password: password
@@ -110,7 +110,7 @@ chpasswd:
 			"sudo mount /dev/$(lsblk --nodeps -no name,serial | grep DEADBEEF | cut -f1 -d' ') /mnt/app-config",
 		}
 
-		actualString := checkup.CloudInit(username, password, bootCommands)
+		actualString := checkup.CloudInit(username, password, bootCommands, nil)
 		expectedString := `#cloud-config
 user: user
 password: password
@@ -119,6 +119,31 @@ chpasswd:
 bootcmd:
   - "sudo mkdir /mnt/app-config"
   - "sudo mount /dev/$(lsblk --nodeps -no name,serial | grep DEADBEEF | cut -f1 -d' ') /mnt/app-config"
+`
+
+		assert.Equal(t, expectedString, actualString)
+	})
+
+	t.Run("with boot and run commands", func(t *testing.T) {
+		bootCommands := []string{
+			"sudo mkdir /mnt/app-config",
+			"sudo mount /dev/$(lsblk --nodeps -no name,serial | grep DEADBEEF | cut -f1 -d' ') /mnt/app-config",
+		}
+		runCommands := []string{
+			"/usr/bin/dpdk-checkup-boot.sh",
+		}
+
+		actualString := checkup.CloudInit(username, password, bootCommands, runCommands)
+		expectedString := `#cloud-config
+user: user
+password: password
+chpasswd:
+  expire: false
+bootcmd:
+  - "sudo mkdir /mnt/app-config"
+  - "sudo mount /dev/$(lsblk --nodeps -no name,serial | grep DEADBEEF | cut -f1 -d' ') /mnt/app-config"
+runcmd:
+  - "/usr/bin/dpdk-checkup-boot.sh"
 `
 
 		assert.Equal(t, expectedString, actualString)

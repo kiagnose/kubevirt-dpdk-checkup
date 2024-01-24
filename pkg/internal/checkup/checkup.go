@@ -33,6 +33,7 @@ import (
 
 	kvcorev1 "kubevirt.io/api/core/v1"
 
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/clountinitconfig"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/configmap"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/trex"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
@@ -330,22 +331,29 @@ func ObjectFullName(namespace, name string) string {
 }
 
 func newVMIUnderTestConfigMap(name string, checkupConfig config.Config) *k8scorev1.ConfigMap {
+	cloudInitConfig := clountinitconfig.NewConfig()
+	vmiUnderTestConfigData := map[string]string{
+		clountinitconfig.CfgScriptName: cloudInitConfig.GenerateCfgFile(),
+	}
+
 	return configmap.New(
 		name,
 		checkupConfig.PodName,
 		checkupConfig.PodUID,
-		nil,
+		vmiUnderTestConfigData,
 	)
 }
 
 func newTrafficGenConfigMap(name string, checkupConfig config.Config) *k8scorev1.ConfigMap {
 	trexConfig := trex.NewConfig(checkupConfig)
+	cloudInitConfig := clountinitconfig.NewConfig()
 	trafficGenConfigData := map[string]string{
 		trex.SystemdUnitFileName:        trex.GenerateSystemdUnitFile(),
 		trex.ExecutionScriptName:        trexConfig.GenerateExecutionScript(),
 		trex.CfgFileName:                trexConfig.GenerateCfgFile(),
 		trex.StreamPyFileName:           trexConfig.GenerateStreamPyFile(),
 		trex.StreamPeerParamsPyFileName: trexConfig.GenerateStreamAddrPyFile(),
+		clountinitconfig.CfgScriptName:  cloudInitConfig.GenerateCfgFile(),
 	}
 	return configmap.New(
 		name,

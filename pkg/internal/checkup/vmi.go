@@ -27,6 +27,7 @@ import (
 	k8scorev1 "k8s.io/api/core/v1"
 	kvcorev1 "kubevirt.io/api/core/v1"
 
+	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/clountinitconfig"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/trex"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/checkup/vmi"
 	"github.com/kiagnose/kubevirt-dpdk-checkup/pkg/internal/config"
@@ -67,7 +68,7 @@ func newVMIUnderTest(name string, checkupConfig config.Config, configMapName str
 		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.VMUnderTestWestMacAddress.String(), config.VMIWestNICPCIAddress),
 		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMUnderTestContainerDiskImage),
 		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName,
-			CloudInit(config.VMIUsername, config.VMIPassword, vmiUnderTestBootCommands(configDiskSerial))),
+			CloudInit(config.VMIUsername, config.VMIPassword, vmiUnderTestBootCommands(configDiskSerial), cloudInitRunCommands())),
 		vmi.WithConfigMapVolume(configVolumeName, configMapName),
 		vmi.WithConfigMapDisk(configVolumeName, configDiskSerial),
 	)
@@ -86,9 +87,8 @@ func newTrafficGen(name string, checkupConfig config.Config, configMapName strin
 		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.TrafficGenEastMacAddress.String(), config.VMIEastNICPCIAddress),
 		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.TrafficGenWestMacAddress.String(), config.VMIWestNICPCIAddress),
 		vmi.WithContainerDisk(rootDiskName, checkupConfig.TrafficGenContainerDiskImage),
-		vmi.WithCloudInitNoCloudVolume(
-			cloudInitDiskName,
-			CloudInit(config.VMIUsername, config.VMIPassword, trafficGenBootCommands(configDiskSerial)),
+		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName,
+			CloudInit(config.VMIUsername, config.VMIPassword, trafficGenBootCommands(configDiskSerial), cloudInitRunCommands()),
 		),
 		vmi.WithConfigMapVolume(configVolumeName, configMapName),
 		vmi.WithConfigMapDisk(configVolumeName, configDiskSerial),
@@ -131,7 +131,7 @@ func Affinity(nodeName, ownerUID string) *k8scorev1.Affinity {
 	return &affinity
 }
 
-func CloudInit(username, password string, bootCommands []string) string {
+func CloudInit(username, password string, bootCommands, runCommands []string) string {
 	sb := strings.Builder{}
 	sb.WriteString("#cloud-config\n")
 	sb.WriteString(fmt.Sprintf("user: %s\n", username))
@@ -143,6 +143,14 @@ func CloudInit(username, password string, bootCommands []string) string {
 		sb.WriteString("bootcmd:\n")
 
 		for _, command := range bootCommands {
+			sb.WriteString(fmt.Sprintf("  - %q\n", command))
+		}
+	}
+
+	if len(runCommands) != 0 {
+		sb.WriteString("runcmd:\n")
+
+		for _, command := range runCommands {
 			sb.WriteString(fmt.Sprintf("  - %q\n", command))
 		}
 	}
@@ -162,6 +170,8 @@ func trafficGenBootCommands(configDiskSerial string) []string {
 		fmt.Sprintf("cp %s /etc", path.Join(configMountDirectory, trex.CfgFileName)),
 		fmt.Sprintf("mkdir -p %s", trex.StreamsPyPath),
 		fmt.Sprintf("cp %s/*.py %s", configMountDirectory, trex.StreamsPyPath),
+		fmt.Sprintf("cp %s %s", path.Join(configMountDirectory, clountinitconfig.CfgScriptName), clountinitconfig.BinDirectory),
+		fmt.Sprintf("chmod 744 %s", path.Join(clountinitconfig.BinDirectory, clountinitconfig.CfgScriptName)),
 	}
 }
 
@@ -171,5 +181,13 @@ func vmiUnderTestBootCommands(configDiskSerial string) []string {
 	return []string{
 		fmt.Sprintf("mkdir %s", configMountDirectory),
 		fmt.Sprintf("mount /dev/$(lsblk --nodeps -no name,serial | grep %s | cut -f1 -d' ') %s", configDiskSerial, configMountDirectory),
+		fmt.Sprintf("cp %s %s", path.Join(configMountDirectory, clountinitconfig.CfgScriptName), clountinitconfig.BinDirectory),
+		fmt.Sprintf("chmod 744 %s", path.Join(clountinitconfig.BinDirectory, clountinitconfig.CfgScriptName)),
+	}
+}
+
+func cloudInitRunCommands() []string {
+	return []string{
+		path.Join(clountinitconfig.BinDirectory, clountinitconfig.CfgScriptName),
 	}
 }
