@@ -45,6 +45,7 @@ type kubeVirtVMIClient interface {
 		vmi *kvcorev1.VirtualMachineInstance) (*kvcorev1.VirtualMachineInstance, error)
 	GetVirtualMachineInstance(ctx context.Context, namespace, name string) (*kvcorev1.VirtualMachineInstance, error)
 	DeleteVirtualMachineInstance(ctx context.Context, namespace, name string) error
+	SoftRebootVirtualMachineInstance(ctx context.Context, namespace, name string) error
 	CreateConfigMap(ctx context.Context, namespace string, configMap *k8scorev1.ConfigMap) (*k8scorev1.ConfigMap, error)
 	DeleteConfigMap(ctx context.Context, namespace, name string) error
 }
@@ -239,6 +240,12 @@ func (c *Checkup) setupVMIWaitReady(ctx context.Context, name string) (*kvcorev1
 	updatedVMI, err := c.waitForVMIReadyCondition(ctx, name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to wait on VMI %q ready condition: %w", vmiFullName, err)
+	}
+
+	log.Printf("Performing boot for tuned-adm profile to take affect on VMI %q...", vmiFullName)
+	err = c.client.SoftRebootVirtualMachineInstance(ctx, c.namespace, name)
+	if err != nil {
+		return nil, fmt.Errorf("VMI %q failed to reboot: %w", vmiFullName, err)
 	}
 
 	return updatedVMI, err

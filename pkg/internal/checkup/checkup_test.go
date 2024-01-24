@@ -473,6 +473,10 @@ func (cs *clientStub) DeleteConfigMap(_ context.Context, namespace, name string)
 	return nil
 }
 
+func (cs *clientStub) SoftRebootVirtualMachineInstance(ctx context.Context, namespace, name string) error {
+	return nil
+}
+
 func (cs *clientStub) VMIName(namePrefix string) string {
 	for _, vmi := range cs.createdVMIs {
 		if strings.Contains(vmi.Name, namePrefix) {
