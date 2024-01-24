@@ -129,6 +129,22 @@ func WithVirtIODisk(name string) Option {
 	}
 }
 
+func WithReadinessFileProbe(fileName string) Option {
+	return func(vmi *kvcorev1.VirtualMachineInstance) {
+		var readinessProbeCommand = []string{"cat", fileName}
+		vmi.Spec.ReadinessProbe = &kvcorev1.Probe{
+			Handler: kvcorev1.Handler{
+				Exec: &corev1.ExecAction{
+					Command: readinessProbeCommand,
+				},
+			},
+			FailureThreshold:    10,
+			InitialDelaySeconds: 60,
+			PeriodSeconds:       10,
+		}
+	}
+}
+
 func WithConfigMapDisk(name, serial string) Option {
 	return func(vmi *kvcorev1.VirtualMachineInstance) {
 		vmi.Spec.Domain.Devices.Disks = append(vmi.Spec.Domain.Devices.Disks,

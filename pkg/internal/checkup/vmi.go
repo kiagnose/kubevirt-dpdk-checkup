@@ -70,6 +70,7 @@ func newVMIUnderTest(name string, checkupConfig config.Config, configMapName str
 			CloudInit(config.VMIUsername, config.VMIPassword, vmiUnderTestBootCommands(configDiskSerial))),
 		vmi.WithConfigMapVolume(configVolumeName, configMapName),
 		vmi.WithConfigMapDisk(configVolumeName, configDiskSerial),
+		vmi.WithReadinessFileProbe(config.BootScriptTunedAdmSetMarkerFileFullPath),
 	)
 
 	return vmi.New(name, optionsToApply...)
@@ -92,6 +93,7 @@ func newTrafficGen(name string, checkupConfig config.Config, configMapName strin
 		),
 		vmi.WithConfigMapVolume(configVolumeName, configMapName),
 		vmi.WithConfigMapDisk(configVolumeName, configDiskSerial),
+		vmi.WithReadinessFileProbe(config.BootScriptTunedAdmSetMarkerFileFullPath),
 	)
 
 	return vmi.New(name, optionsToApply...)

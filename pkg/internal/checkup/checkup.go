@@ -234,16 +234,18 @@ func (c *Checkup) createVMI(ctx context.Context, vmiToCreate *kvcorev1.VirtualMa
 
 func (c *Checkup) setupVMIWaitReady(ctx context.Context, name string) (*kvcorev1.VirtualMachineInstance, error) {
 	vmiFullName := ObjectFullName(c.namespace, name)
-	updatedVMI, err := c.waitForVMIToBoot(ctx, name)
+
+	log.Printf("Waiting for VMI %q ready condition...", vmiFullName)
+	updatedVMI, err := c.waitForVMIReadyCondition(ctx, name)
 	if err != nil {
-		return nil, fmt.Errorf("failed to wait on VMI %q boot: %w", vmiFullName, err)
+		return nil, fmt.Errorf("failed to wait on VMI %q ready condition: %w", vmiFullName, err)
 	}
+
 	return updatedVMI, err
 }
 
-func (c *Checkup) waitForVMIToBoot(ctx context.Context, name string) (*kvcorev1.VirtualMachineInstance, error) {
+func (c *Checkup) waitForVMIReadyCondition(ctx context.Context, name string) (*kvcorev1.VirtualMachineInstance, error) {
 	vmiFullName := ObjectFullName(c.namespace, name)
-	log.Printf("Waiting for VMI %q to boot...", vmiFullName)
 	var updatedVMI *kvcorev1.VirtualMachineInstance
 
 	conditionFn := func(ctx context.Context) (bool, error) {
@@ -254,7 +256,7 @@ func (c *Checkup) waitForVMIToBoot(ctx context.Context, name string) (*kvcorev1.
 		}
 
 		for _, condition := range updatedVMI.Status.Conditions {
-			if condition.Type == kvcorev1.VirtualMachineInstanceAgentConnected && condition.Status == k8scorev1.ConditionTrue {
+			if condition.Type == kvcorev1.VirtualMachineInstanceReady && condition.Status == k8scorev1.ConditionTrue {
 				return true, nil
 			}
 		}
@@ -263,10 +265,10 @@ func (c *Checkup) waitForVMIToBoot(ctx context.Context, name string) (*kvcorev1.
 	}
 	const pollInterval = 5 * time.Second
 	if err := wait.PollImmediateUntilWithContext(ctx, pollInterval, conditionFn); err != nil {
-		return nil, fmt.Errorf("failed to wait for VMI %q to boot: %v", vmiFullName, err)
+		return nil, fmt.Errorf("failed to wait for VMI %q to be ready: %v", vmiFullName, err)
 	}
 
-	log.Printf("VMI %q had successfully booted", vmiFullName)
+	log.Printf("VMI %q has successfully reached ready condition", vmiFullName)
 
 	return updatedVMI, nil
 }
