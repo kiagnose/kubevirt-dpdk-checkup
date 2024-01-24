@@ -69,6 +69,7 @@ func newVMIUnderTest(name string, checkupConfig config.Config, configMapName str
 		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(vmiUnderTestBootCommands(configDiskSerial))),
 		vmi.WithConfigMapVolume(configVolumeName, configMapName),
 		vmi.WithConfigMapDisk(configVolumeName, configDiskSerial),
+		vmi.WithReadinessFileProbe(config.BootScriptReadinessMarkerFileFullPath),
 	)
 
 	return vmi.New(name, optionsToApply...)
@@ -88,6 +89,7 @@ func newTrafficGen(name string, checkupConfig config.Config, configMapName strin
 		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(trafficGenBootCommands(configDiskSerial))),
 		vmi.WithConfigMapVolume(configVolumeName, configMapName),
 		vmi.WithConfigMapDisk(configVolumeName, configDiskSerial),
+		vmi.WithReadinessFileProbe(config.BootScriptReadinessMarkerFileFullPath),
 	)
 
 	return vmi.New(name, optionsToApply...)
