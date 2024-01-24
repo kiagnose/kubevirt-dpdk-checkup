@@ -40,6 +40,13 @@ set_unsafe_no_io_mmu_mode() {
   echo "options vfio enable_unsafe_noiommu_mode=1" > /etc/modprobe.d/vfio-noiommu.conf
 }
 
+# Enable guest-exec on the qemu-guest-agent configuration
+enable_guest_exec() {
+  sed -i '/^BLACKLIST_RPC=/ { s/guest-exec-status//; s/guest-exec//g }' /etc/sysconfig/qemu-ga
+  sed -i '/^BLACKLIST_RPC=/ { s/,\+/,/g; s/^,\|,$//g }' /etc/sysconfig/qemu-ga
+}
+
 disable_services
 setup_hugepages
 set_unsafe_no_io_mmu_mode
+enable_guest_exec
