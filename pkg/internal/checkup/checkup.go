@@ -252,8 +252,45 @@ func (c *Checkup) setupVMIWaitReady(ctx context.Context, name string) (*kvcorev1
 	if err != nil {
 		return nil, fmt.Errorf("failed to wait on VMI %q boot: %w", vmiFullName, err)
 	}
+
+	log.Printf("Waiting for VMI %q ready condition...", vmiFullName)
+	_, err = c.waitForVMIReadyCondition(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to wait on VMI %q ready condition: %w", vmiFullName, err)
+	}
+
 	return updatedVMI, err
 }
+
+func (c *Checkup) waitForVMIReadyCondition(ctx context.Context, name string) (*kvcorev1.VirtualMachineInstance, error) {
+	vmiFullName := ObjectFullName(c.namespace, name)
+	var updatedVMI *kvcorev1.VirtualMachineInstance
+
+	conditionFn := func(ctx context.Context) (bool, error) {
+		var err error
+		updatedVMI, err = c.client.GetVirtualMachineInstance(ctx, c.namespace, name)
+		if err != nil {
+			return false, err
+		}
+
+		for _, condition := range updatedVMI.Status.Conditions {
+			if condition.Type == kvcorev1.VirtualMachineInstanceReady && condition.Status == k8scorev1.ConditionTrue {
+				return true, nil
+			}
+		}
+
+		return false, nil
+	}
+	const pollInterval = 5 * time.Second
+	if err := wait.PollImmediateUntilWithContext(ctx, pollInterval, conditionFn); err != nil {
+		return nil, fmt.Errorf("failed to wait for VMI %q to be ready: %v", vmiFullName, err)
+	}
+
+	log.Printf("VMI %q has successfully reached ready condition", vmiFullName)
+
+	return updatedVMI, nil
+}
+
 func (c *Checkup) waitForVMIToBoot(ctx context.Context, name string) (*kvcorev1.VirtualMachineInstance, error) {
 	vmiFullName := ObjectFullName(c.namespace, name)
 	log.Printf("Waiting for VMI %q to boot...", vmiFullName)
