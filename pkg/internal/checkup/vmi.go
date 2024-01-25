@@ -139,8 +139,6 @@ func generateBootScript() string {
 	sb.WriteString("set -e\n")
 	sb.WriteString("\n")
 	sb.WriteString("checkup_tuned_adm_set_marker_full_path=" + config.BootScriptTunedAdmSetMarkerFileFullPath + "\n")
-	sb.WriteString("driverctl set-override " + config.VMIEastNICPCIAddress + " vfio-pci\n")
-	sb.WriteString("driverctl set-override " + config.VMIWestNICPCIAddress + " vfio-pci\n")
 	sb.WriteString("\n")
 	sb.WriteString("if [ ! -f \"$checkup_tuned_adm_set_marker_full_path\" ]; then\n")
 	sb.WriteString("  echo \"isolated_cores=" + isolatedCores + "\" > /etc/tuned/cpu-partitioning-variables.conf\n")
@@ -148,6 +146,9 @@ func generateBootScript() string {
 	sb.WriteString("  touch $checkup_tuned_adm_set_marker_full_path\n")
 	sb.WriteString("  reboot\n")
 	sb.WriteString("fi\n")
+	sb.WriteString("\n")
+	sb.WriteString("driverctl set-override " + config.VMIEastNICPCIAddress + " vfio-pci\n")
+	sb.WriteString("driverctl set-override " + config.VMIWestNICPCIAddress + " vfio-pci\n")
 
 	return sb.String()
 }
