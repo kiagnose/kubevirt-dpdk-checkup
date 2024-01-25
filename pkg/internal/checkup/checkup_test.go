@@ -200,7 +200,7 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 	})
 }
 
-func TestTrafficGenCMTeardownFailure(t *testing.T) {
+func TestVMConfigMapTeardownFailure(t *testing.T) {
 	testClient := newClientStub()
 	testConfig := newTestConfig()
 
