@@ -317,11 +317,15 @@ func ObjectFullName(namespace, name string) string {
 }
 
 func newVMIUnderTestConfigMap(name string, checkupConfig config.Config) *k8scorev1.ConfigMap {
+	vmiUnderTestConfigData := map[string]string{
+		config.BootScriptName: generateBootScript(),
+	}
+
 	return configmap.New(
 		name,
 		checkupConfig.PodName,
 		checkupConfig.PodUID,
-		nil,
+		vmiUnderTestConfigData,
 	)
 }
 
@@ -333,6 +337,7 @@ func newTrafficGenConfigMap(name string, checkupConfig config.Config) *k8scorev1
 		trex.CfgFileName:                trexConfig.GenerateCfgFile(),
 		trex.StreamPyFileName:           trexConfig.GenerateStreamPyFile(),
 		trex.StreamPeerParamsPyFileName: trexConfig.GenerateStreamAddrPyFile(),
+		config.BootScriptName:           generateBootScript(),
 	}
 	return configmap.New(
 		name,
