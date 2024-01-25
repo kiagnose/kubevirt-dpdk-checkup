@@ -65,6 +65,7 @@ const (
 	BootScriptName                          = "dpdk-checkup-boot.sh"
 	BootScriptBinDirectory                  = "/usr/bin/"
 	BootScriptTunedAdmSetMarkerFileFullPath = "/var/dpdk-checkup-tuned-adm-set-marker"
+	BootScriptReadinessMarkerFileFullPath   = "/tmp/dpdk-checkup-ready-marker"
 )
 
 var (
