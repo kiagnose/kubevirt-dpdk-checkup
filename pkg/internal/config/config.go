@@ -62,6 +62,10 @@ const (
 
 	VMIEastNICPCIAddress = "0000:06:00.0"
 	VMIWestNICPCIAddress = "0000:07:00.0"
+
+	BootScriptName                          = "dpdk-checkup-boot.sh"
+	BootScriptBinDirectory                  = "/usr/bin/"
+	BootScriptTunedAdmSetMarkerFileFullPath = "/var/dpdk-checkup-tuned-adm-set-marker"
 )
 
 var (
