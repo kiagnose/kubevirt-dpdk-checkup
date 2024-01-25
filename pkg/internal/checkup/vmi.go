@@ -131,6 +131,27 @@ func Affinity(nodeName, ownerUID string) *k8scorev1.Affinity {
 	return &affinity
 }
 
+func generateBootScript() string {
+	const isolatedCores = "2-7"
+	sb := strings.Builder{}
+
+	sb.WriteString("#!/bin/bash\n")
+	sb.WriteString("set -e\n")
+	sb.WriteString("\n")
+	sb.WriteString("checkup_tuned_adm_set_marker_full_path=" + config.BootScriptTunedAdmSetMarkerFileFullPath + "\n")
+	sb.WriteString("driverctl set-override " + config.VMIEastNICPCIAddress + " vfio-pci\n")
+	sb.WriteString("driverctl set-override " + config.VMIWestNICPCIAddress + " vfio-pci\n")
+	sb.WriteString("\n")
+	sb.WriteString("if [ ! -f \"$checkup_tuned_adm_set_marker_full_path\" ]; then\n")
+	sb.WriteString("  echo \"isolated_cores=" + isolatedCores + "\" > /etc/tuned/cpu-partitioning-variables.conf\n")
+	sb.WriteString("  tuned-adm profile cpu-partitioning\n\n")
+	sb.WriteString("  touch $checkup_tuned_adm_set_marker_full_path\n")
+	sb.WriteString("  reboot\n")
+	sb.WriteString("fi\n")
+
+	return sb.String()
+}
+
 func CloudInit(username, password string, bootCommands []string) string {
 	sb := strings.Builder{}
 	sb.WriteString("#cloud-config\n")
@@ -162,6 +183,8 @@ func trafficGenBootCommands(configDiskSerial string) []string {
 		fmt.Sprintf("cp %s /etc", path.Join(configMountDirectory, trex.CfgFileName)),
 		fmt.Sprintf("mkdir -p %s", trex.StreamsPyPath),
 		fmt.Sprintf("cp %s/*.py %s", configMountDirectory, trex.StreamsPyPath),
+		fmt.Sprintf("cp %s %s", path.Join(configMountDirectory, config.BootScriptName), config.BootScriptBinDirectory),
+		fmt.Sprintf("chmod 744 %s", path.Join(config.BootScriptBinDirectory, config.BootScriptName)),
 	}
 }
 
@@ -171,5 +194,7 @@ func vmiUnderTestBootCommands(configDiskSerial string) []string {
 	return []string{
 		fmt.Sprintf("mkdir %s", configMountDirectory),
 		fmt.Sprintf("mount /dev/$(lsblk --nodeps -no name,serial | grep %s | cut -f1 -d' ') %s", configDiskSerial, configMountDirectory),
+		fmt.Sprintf("cp %s %s", path.Join(configMountDirectory, config.BootScriptName), config.BootScriptBinDirectory),
+		fmt.Sprintf("chmod 744 %s", path.Join(config.BootScriptBinDirectory, config.BootScriptName)),
 	}
 }
