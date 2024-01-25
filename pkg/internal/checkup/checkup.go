@@ -81,7 +81,7 @@ func New(client kubeVirtVMIClient, namespace string, checkupConfig config.Config
 		client:                client,
 		namespace:             namespace,
 		params:                checkupConfig,
-		vmiUnderTest:          newVMIUnderTest(vmiUnderTestName(randomSuffix), checkupConfig),
+		vmiUnderTest:          newVMIUnderTest(vmiUnderTestName(randomSuffix), checkupConfig, vmiUnderTestCMName),
 		vmiUnderTestConfigMap: newVMIUnderTestConfigMap(vmiUnderTestCMName, checkupConfig),
 		trafficGen:            newTrafficGen(trafficGenName(randomSuffix), checkupConfig, trafficGenCMName),
 		trafficGenConfigMap:   newTrafficGenConfigMap(trafficGenCMName, checkupConfig),

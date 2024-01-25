@@ -53,7 +53,12 @@ const (
 	terminationGracePeriodSeconds = 0
 )
 
-func newVMIUnderTest(name string, checkupConfig config.Config) *kvcorev1.VirtualMachineInstance {
+func newVMIUnderTest(name string, checkupConfig config.Config, configMapName string) *kvcorev1.VirtualMachineInstance {
+	const (
+		configDiskSerial = "DEADBEEF"
+		configVolumeName = "vmi-under-test-config"
+	)
+
 	optionsToApply := baseOptions(checkupConfig)
 
 	optionsToApply = append(optionsToApply,
@@ -61,7 +66,10 @@ func newVMIUnderTest(name string, checkupConfig config.Config) *kvcorev1.Virtual
 		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.VMUnderTestEastMacAddress.String(), config.VMIEastNICPCIAddress),
 		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.VMUnderTestWestMacAddress.String(), config.VMIWestNICPCIAddress),
 		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMUnderTestContainerDiskImage),
-		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(config.VMIUsername, config.VMIPassword, nil)),
+		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName,
+			CloudInit(config.VMIUsername, config.VMIPassword, vmiUnderTestBootCommands(configDiskSerial))),
+		vmi.WithConfigMapVolume(configVolumeName, configMapName),
+		vmi.WithConfigMapDisk(configVolumeName, configDiskSerial),
 	)
 
 	return vmi.New(name, optionsToApply...)
@@ -154,5 +162,14 @@ func trafficGenBootCommands(configDiskSerial string) []string {
 		fmt.Sprintf("cp %s /etc", path.Join(configMountDirectory, trex.CfgFileName)),
 		fmt.Sprintf("mkdir -p %s", trex.StreamsPyPath),
 		fmt.Sprintf("cp %s/*.py %s", configMountDirectory, trex.StreamsPyPath),
+	}
+}
+
+func vmiUnderTestBootCommands(configDiskSerial string) []string {
+	const configMountDirectory = "/mnt/app-config"
+
+	return []string{
+		fmt.Sprintf("mkdir %s", configMountDirectory),
+		fmt.Sprintf("mount /dev/$(lsblk --nodeps -no name,serial | grep %s | cut -f1 -d' ') %s", configDiskSerial, configMountDirectory),
 	}
 }
