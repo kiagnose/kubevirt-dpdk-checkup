@@ -146,6 +146,8 @@ func generateBootScript() string {
 	sb.WriteString("\n")
 	sb.WriteString("driverctl set-override " + config.VMIEastNICPCIAddress + " vfio-pci\n")
 	sb.WriteString("driverctl set-override " + config.VMIWestNICPCIAddress + " vfio-pci\n")
+	sb.WriteString("touch " + config.BootScriptReadinessMarkerFileFullPath + "\n")
+	sb.WriteString("chcon -t virt_qemu_ga_exec_t " + config.BootScriptReadinessMarkerFileFullPath + "\n")
 
 	return sb.String()
 }
