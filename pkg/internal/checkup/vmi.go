@@ -141,6 +141,7 @@ func generateBootScript() string {
 	sb.WriteString("  tuned-adm profile cpu-partitioning\n\n")
 	sb.WriteString("  touch $checkup_tuned_adm_set_marker_full_path\n")
 	sb.WriteString("  reboot\n")
+	sb.WriteString("  exit 0\n")
 	sb.WriteString("fi\n")
 	sb.WriteString("\n")
 	sb.WriteString("driverctl set-override " + config.VMIEastNICPCIAddress + " vfio-pci\n")
