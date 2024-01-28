@@ -57,7 +57,6 @@ const (
 )
 
 const (
-	VMIUsername = "root"
 	VMIPassword = "redhat" // #nosec
 
 	VMIEastNICPCIAddress = "0000:06:00.0"
