@@ -57,8 +57,8 @@ const (
 )
 
 const (
-	VMIUsername = "cloud-user"
-	VMIPassword = "0tli-pxem-xknu" // #nosec
+	VMIUsername = "root"
+	VMIPassword = "redhat" // #nosec
 
 	VMIEastNICPCIAddress = "0000:06:00.0"
 	VMIWestNICPCIAddress = "0000:07:00.0"

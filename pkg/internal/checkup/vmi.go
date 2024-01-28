@@ -66,8 +66,7 @@ func newVMIUnderTest(name string, checkupConfig config.Config, configMapName str
 		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.VMUnderTestEastMacAddress.String(), config.VMIEastNICPCIAddress),
 		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.VMUnderTestWestMacAddress.String(), config.VMIWestNICPCIAddress),
 		vmi.WithContainerDisk(rootDiskName, checkupConfig.VMUnderTestContainerDiskImage),
-		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName,
-			CloudInit(config.VMIUsername, config.VMIPassword, vmiUnderTestBootCommands(configDiskSerial))),
+		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(vmiUnderTestBootCommands(configDiskSerial))),
 		vmi.WithConfigMapVolume(configVolumeName, configMapName),
 		vmi.WithConfigMapDisk(configVolumeName, configDiskSerial),
 	)
@@ -86,10 +85,7 @@ func newTrafficGen(name string, checkupConfig config.Config, configMapName strin
 		vmi.WithSRIOVInterface(eastNetworkName, checkupConfig.TrafficGenEastMacAddress.String(), config.VMIEastNICPCIAddress),
 		vmi.WithSRIOVInterface(westNetworkName, checkupConfig.TrafficGenWestMacAddress.String(), config.VMIWestNICPCIAddress),
 		vmi.WithContainerDisk(rootDiskName, checkupConfig.TrafficGenContainerDiskImage),
-		vmi.WithCloudInitNoCloudVolume(
-			cloudInitDiskName,
-			CloudInit(config.VMIUsername, config.VMIPassword, trafficGenBootCommands(configDiskSerial)),
-		),
+		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(trafficGenBootCommands(configDiskSerial))),
 		vmi.WithConfigMapVolume(configVolumeName, configMapName),
 		vmi.WithConfigMapDisk(configVolumeName, configDiskSerial),
 	)
@@ -153,13 +149,9 @@ func generateBootScript() string {
 	return sb.String()
 }
 
-func CloudInit(username, password string, bootCommands []string) string {
+func CloudInit(bootCommands []string) string {
 	sb := strings.Builder{}
 	sb.WriteString("#cloud-config\n")
-	sb.WriteString(fmt.Sprintf("user: %s\n", username))
-	sb.WriteString(fmt.Sprintf("password: %s\n", password))
-	sb.WriteString("chpasswd:\n")
-	sb.WriteString("  expire: false\n")
 
 	if len(bootCommands) != 0 {
 		sb.WriteString("bootcmd:\n")

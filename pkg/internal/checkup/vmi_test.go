@@ -90,32 +90,14 @@ func TestAffinityCalculation(t *testing.T) {
 }
 
 func TestCloudInitString(t *testing.T) {
-	const username = "user"
-	const password = "password"
-	t.Run("without boot commands", func(t *testing.T) {
-		actualString := checkup.CloudInit(username, password, nil)
-		expectedString := `#cloud-config
-user: user
-password: password
-chpasswd:
-  expire: false
-`
-
-		assert.Equal(t, expectedString, actualString)
-	})
-
 	t.Run("with boot commands", func(t *testing.T) {
 		bootCommands := []string{
 			"sudo mkdir /mnt/app-config",
 			"sudo mount /dev/$(lsblk --nodeps -no name,serial | grep DEADBEEF | cut -f1 -d' ') /mnt/app-config",
 		}
 
-		actualString := checkup.CloudInit(username, password, bootCommands)
+		actualString := checkup.CloudInit(bootCommands)
 		expectedString := `#cloud-config
-user: user
-password: password
-chpasswd:
-  expire: false
 bootcmd:
   - "sudo mkdir /mnt/app-config"
   - "sudo mount /dev/$(lsblk --nodeps -no name,serial | grep DEADBEEF | cut -f1 -d' ') /mnt/app-config"
