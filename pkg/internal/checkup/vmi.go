@@ -132,7 +132,7 @@ func generateBootScript() string {
 	sb := strings.Builder{}
 
 	sb.WriteString("#!/bin/bash\n")
-	sb.WriteString("set -e\n")
+	sb.WriteString("set -x\n")
 	sb.WriteString("\n")
 	sb.WriteString("checkup_tuned_adm_set_marker_full_path=" + config.BootScriptTunedAdmSetMarkerFileFullPath + "\n")
 	sb.WriteString("\n")
