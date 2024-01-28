@@ -69,6 +69,7 @@ func newVMIUnderTest(name string, checkupConfig config.Config, configMapName str
 		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(vmiUnderTestBootCommands(configDiskSerial))),
 		vmi.WithConfigMapVolume(configVolumeName, configMapName),
 		vmi.WithConfigMapDisk(configVolumeName, configDiskSerial),
+		vmi.WithReadinessFileProbe(config.BootScriptReadinessMarkerFileFullPath),
 	)
 
 	return vmi.New(name, optionsToApply...)
@@ -88,6 +89,7 @@ func newTrafficGen(name string, checkupConfig config.Config, configMapName strin
 		vmi.WithCloudInitNoCloudVolume(cloudInitDiskName, CloudInit(trafficGenBootCommands(configDiskSerial))),
 		vmi.WithConfigMapVolume(configVolumeName, configMapName),
 		vmi.WithConfigMapDisk(configVolumeName, configDiskSerial),
+		vmi.WithReadinessFileProbe(config.BootScriptReadinessMarkerFileFullPath),
 	)
 
 	return vmi.New(name, optionsToApply...)
@@ -132,7 +134,7 @@ func generateBootScript() string {
 	sb := strings.Builder{}
 
 	sb.WriteString("#!/bin/bash\n")
-	sb.WriteString("set -e\n")
+	sb.WriteString("set -x\n")
 	sb.WriteString("\n")
 	sb.WriteString("checkup_tuned_adm_set_marker_full_path=" + config.BootScriptTunedAdmSetMarkerFileFullPath + "\n")
 	sb.WriteString("\n")
@@ -141,10 +143,13 @@ func generateBootScript() string {
 	sb.WriteString("  tuned-adm profile cpu-partitioning\n\n")
 	sb.WriteString("  touch $checkup_tuned_adm_set_marker_full_path\n")
 	sb.WriteString("  reboot\n")
+	sb.WriteString("  exit 0\n")
 	sb.WriteString("fi\n")
 	sb.WriteString("\n")
 	sb.WriteString("driverctl set-override " + config.VMIEastNICPCIAddress + " vfio-pci\n")
 	sb.WriteString("driverctl set-override " + config.VMIWestNICPCIAddress + " vfio-pci\n")
+	sb.WriteString("touch " + config.BootScriptReadinessMarkerFileFullPath + "\n")
+	sb.WriteString("chcon -t virt_qemu_ga_exec_t " + config.BootScriptReadinessMarkerFileFullPath + "\n")
 
 	return sb.String()
 }

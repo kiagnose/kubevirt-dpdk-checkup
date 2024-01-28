@@ -124,15 +124,14 @@ func (c *Checkup) Setup(ctx context.Context) (setupErr error) {
 	}()
 
 	var updatedVMIUnderTest *kvcorev1.VirtualMachineInstance
-	updatedVMIUnderTest, err = c.waitForVMIToBoot(setupCtx, c.vmiUnderTest.Name)
+	updatedVMIUnderTest, err = c.waitForVMIToBeReady(setupCtx, c.vmiUnderTest.Name)
 	if err != nil {
 		return err
 	}
 
 	c.vmiUnderTest = updatedVMIUnderTest
-
 	var updatedTrafficGen *kvcorev1.VirtualMachineInstance
-	updatedTrafficGen, err = c.waitForVMIToBoot(setupCtx, c.trafficGen.Name)
+	updatedTrafficGen, err = c.waitForVMIToBeReady(setupCtx, c.trafficGen.Name)
 	if err != nil {
 		return err
 	}
@@ -233,9 +232,9 @@ func (c *Checkup) createVMI(ctx context.Context, vmiToCreate *kvcorev1.VirtualMa
 	return err
 }
 
-func (c *Checkup) waitForVMIToBoot(ctx context.Context, name string) (*kvcorev1.VirtualMachineInstance, error) {
+func (c *Checkup) waitForVMIToBeReady(ctx context.Context, name string) (*kvcorev1.VirtualMachineInstance, error) {
 	vmiFullName := ObjectFullName(c.namespace, name)
-	log.Printf("Waiting for VMI %q to boot...", vmiFullName)
+	log.Printf("Waiting for VMI %q to be ready...", vmiFullName)
 	var updatedVMI *kvcorev1.VirtualMachineInstance
 
 	conditionFn := func(ctx context.Context) (bool, error) {
@@ -246,7 +245,7 @@ func (c *Checkup) waitForVMIToBoot(ctx context.Context, name string) (*kvcorev1.
 		}
 
 		for _, condition := range updatedVMI.Status.Conditions {
-			if condition.Type == kvcorev1.VirtualMachineInstanceAgentConnected && condition.Status == k8scorev1.ConditionTrue {
+			if condition.Type == kvcorev1.VirtualMachineInstanceReady && condition.Status == k8scorev1.ConditionTrue {
 				return true, nil
 			}
 		}
@@ -255,10 +254,10 @@ func (c *Checkup) waitForVMIToBoot(ctx context.Context, name string) (*kvcorev1.
 	}
 	const pollInterval = 5 * time.Second
 	if err := wait.PollImmediateUntilWithContext(ctx, pollInterval, conditionFn); err != nil {
-		return nil, fmt.Errorf("failed to wait for VMI %q to boot: %v", vmiFullName, err)
+		return nil, fmt.Errorf("failed to wait for VMI %q to be ready: %v", vmiFullName, err)
 	}
 
-	log.Printf("VMI %q had successfully booted", vmiFullName)
+	log.Printf("VMI %q has successfully reached ready condition", vmiFullName)
 
 	return updatedVMI, nil
 }
