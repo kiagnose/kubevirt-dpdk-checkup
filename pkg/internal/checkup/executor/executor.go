@@ -43,7 +43,6 @@ type vmiSerialConsoleClient interface {
 type Executor struct {
 	vmiSerialClient                  vmiSerialConsoleClient
 	namespace                        string
-	vmiUsername                      string
 	vmiPassword                      string
 	vmiUnderTestEastNICPCIAddress    string
 	trafficGenEastMACAddress         string
@@ -58,7 +57,6 @@ func New(client vmiSerialConsoleClient, namespace string, cfg config.Config) Exe
 	return Executor{
 		vmiSerialClient:                  client,
 		namespace:                        namespace,
-		vmiUsername:                      config.VMIUsername,
 		vmiPassword:                      config.VMIPassword,
 		vmiUnderTestEastNICPCIAddress:    config.VMIEastNICPCIAddress,
 		trafficGenEastMACAddress:         cfg.TrafficGenEastMacAddress.String(),
@@ -73,13 +71,13 @@ func New(client vmiSerialConsoleClient, namespace string, cfg config.Config) Exe
 func (e Executor) Execute(ctx context.Context, vmiUnderTestName, trafficGenVMIName string) (status.Results, error) {
 	log.Printf("Login to VMI under test...")
 	vmiUnderTestConsoleExpecter := console.NewExpecter(e.vmiSerialClient, e.namespace, vmiUnderTestName)
-	if err := vmiUnderTestConsoleExpecter.LoginToCentOS(e.vmiUsername, e.vmiPassword); err != nil {
+	if err := vmiUnderTestConsoleExpecter.LoginToCentOSAsRoot(e.vmiPassword); err != nil {
 		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, vmiUnderTestName, err)
 	}
 
 	log.Printf("Login to traffic generator...")
 	trafficGenConsoleExpecter := console.NewExpecter(e.vmiSerialClient, e.namespace, trafficGenVMIName)
-	if err := trafficGenConsoleExpecter.LoginToCentOS(e.vmiUsername, e.vmiPassword); err != nil {
+	if err := trafficGenConsoleExpecter.LoginToCentOSAsRoot(e.vmiPassword); err != nil {
 		return status.Results{}, fmt.Errorf("failed to login to VMI \"%s/%s\": %w", e.namespace, trafficGenVMIName, err)
 	}
 
