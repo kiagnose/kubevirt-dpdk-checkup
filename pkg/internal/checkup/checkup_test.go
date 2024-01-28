@@ -200,7 +200,7 @@ func TestTeardownShouldFailWhen(t *testing.T) {
 	})
 }
 
-func TestTrafficGenCMTeardownFailure(t *testing.T) {
+func TestVMConfigMapTeardownFailure(t *testing.T) {
 	testClient := newClientStub()
 	testConfig := newTestConfig()
 
@@ -417,10 +417,11 @@ func (cs *clientStub) GetVirtualMachineInstance(_ context.Context, namespace, na
 		return nil, k8serrors.NewNotFound(schema.GroupResource{Group: "kubevirt.io", Resource: "virtualmachineinstances"}, name)
 	}
 
-	vmi.Status.Conditions = append(vmi.Status.Conditions, kvcorev1.VirtualMachineInstanceCondition{
-		Type:   kvcorev1.VirtualMachineInstanceAgentConnected,
-		Status: k8scorev1.ConditionTrue,
-	})
+	vmi.Status.Conditions = append(vmi.Status.Conditions,
+		kvcorev1.VirtualMachineInstanceCondition{
+			Type:   kvcorev1.VirtualMachineInstanceReady,
+			Status: k8scorev1.ConditionTrue,
+		})
 
 	return vmi, nil
 }

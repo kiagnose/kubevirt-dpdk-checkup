@@ -29,7 +29,7 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func (e Expecter) LoginToCentOS(username, password string) error {
+func (e Expecter) LoginToCentOSAsRoot(password string) error {
 	const (
 		connectionTimeout = 10 * time.Second
 		promptTimeout     = 5 * time.Second
@@ -47,9 +47,7 @@ func (e Expecter) LoginToCentOS(username, password string) error {
 	}
 
 	// Do not login, if we already logged in
-	loggedInPromptRegex := fmt.Sprintf(
-		`(\[%s@(localhost|centos|%s) ~\]\$ |\[root@(localhost|centos|%s) centos\]\# )`, username, e.vmiName, e.vmiName,
-	)
+	loggedInPromptRegex := fmt.Sprintf(`(\[root@(localhost|centos|%s) ~\]\# )`, e.vmiName)
 	b := []expect.Batcher{
 		&expect.BSnd{S: "\n"},
 		&expect.BExp{R: loggedInPromptRegex},
@@ -67,7 +65,7 @@ func (e Expecter) LoginToCentOS(username, password string) error {
 				// Using only "login: " would match things like "Last failed login: Tue Jun  9 22:25:30 UTC 2020 on ttyS0"
 				// and in case the VM's did not get hostname form DHCP server try the default hostname
 				R:  regexp.MustCompile(fmt.Sprintf(`(localhost|centos|%s) login: `, e.vmiName)),
-				S:  fmt.Sprintf("%s\n", username),
+				S:  "root\n",
 				T:  expect.Next(),
 				Rt: 10,
 			},
@@ -87,8 +85,6 @@ func (e Expecter) LoginToCentOS(username, password string) error {
 				T: expect.OK(),
 			},
 		}},
-		&expect.BSnd{S: "sudo su\n"},
-		&expect.BExp{R: PromptExpression},
 	}
 	const loginTimeout = 2 * time.Minute
 	res, err := genExpect.ExpectBatch(b, loginTimeout)
@@ -101,9 +97,28 @@ func (e Expecter) LoginToCentOS(username, password string) error {
 		}
 	}
 
-	err = configureConsole(genExpect, false)
+	err = configureConsole(genExpect)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func configureConsole(expecter expect.Expecter) error {
+	batch := []expect.Batcher{
+		&expect.BSnd{S: "stty cols 500 rows 500\n"},
+		&expect.BExp{R: PromptExpression},
+		&expect.BSnd{S: "echo $?\n"},
+		&expect.BExp{R: RetValue("0")},
+		&expect.BSnd{S: "dmesg -n 1\n"},
+		&expect.BExp{R: PromptExpression},
+		&expect.BSnd{S: "echo $?\n"},
+		&expect.BExp{R: RetValue("0")},
+	}
+	const configureConsoleTimeout = 30 * time.Second
+	resp, err := expecter.ExpectBatch(batch, configureConsoleTimeout)
+	if err != nil {
+		log.Printf("%v", resp)
+	}
+	return err
 }
