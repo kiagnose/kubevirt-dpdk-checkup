@@ -118,6 +118,8 @@ build-vm-container-disk: build-vm-image
 
 push-vm-container-disk:
 	$(CRI_BIN) push $(REG)/$(ORG)/$(VM_CONTAINER_DISK_IMAGE_NAME):$(VM_CONTAINER_DISK_IMAGE_TAG)
+	$(CRI_BIN) tag $(REG)/$(ORG)/$(VM_CONTAINER_DISK_IMAGE_NAME):$(VM_CONTAINER_DISK_IMAGE_TAG) $(REG)/$(ORG)/$(VM_CONTAINER_DISK_IMAGE_NAME):$(CHECKUP_GIT_TAG)
+	$(CRI_BIN) push $(REG)/$(ORG)/$(VM_CONTAINER_DISK_IMAGE_NAME):$(CHECKUP_GIT_TAG)
 .PHONY: push-vm-container-disk
 
 build-traffic-gen-vm-image: build-vm-image-builder
