@@ -140,4 +140,6 @@ build-traffic-gen-container-disk: build-traffic-gen-vm-image
 
 push-traffic-gen-container-disk:
 	$(CRI_BIN) push $(REG)/$(ORG)/$(TRAFFIC_GEN_CONTAINER_DISK_IMAGE_NAME):$(TRAFFIC_GEN_CONTAINER_DISK_IMAGE_TAG)
+	$(CRI_BIN) tag $(REG)/$(ORG)/$(TRAFFIC_GEN_CONTAINER_DISK_IMAGE_NAME):$(TRAFFIC_GEN_CONTAINER_DISK_IMAGE_TAG) $(REG)/$(ORG)/$(TRAFFIC_GEN_CONTAINER_DISK_IMAGE_NAME):$(CHECKUP_GIT_TAG)
+	$(CRI_BIN) push $(REG)/$(ORG)/$(TRAFFIC_GEN_CONTAINER_DISK_IMAGE_NAME):$(CHECKUP_GIT_TAG)
 .PHONY: push-traffic-gen-container-disk
