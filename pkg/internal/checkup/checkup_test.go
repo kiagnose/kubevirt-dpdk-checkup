@@ -217,6 +217,13 @@ func TestVMConfigMapTeardownFailure(t *testing.T) {
 	assert.ErrorContains(t, testCheckup.Teardown(context.Background()), expectedCMDeletionFailure.Error())
 }
 
+type runFailTestCase struct {
+	description     string
+	executorFailure error
+	results         status.Results
+	expectedRunErr  error
+}
+
 func TestRunFailure(t *testing.T) {
 	const (
 		executeFailureMsg               = "failed to execute dpdk checkup"
@@ -234,14 +241,7 @@ func TestRunFailure(t *testing.T) {
 		vmUnderTestReceivedPackets  = trafficGenSentPackets - 1
 	)
 
-	type FailTestCase struct {
-		description     string
-		executorFailure error
-		results         status.Results
-		expectedRunErr  error
-	}
-
-	testCases := []FailTestCase{
+	testCases := []runFailTestCase{
 		{
 			description:     "Run Execute fails",
 			executorFailure: errors.New(executeFailureMsg),
@@ -261,8 +261,11 @@ func TestRunFailure(t *testing.T) {
 				TrafficGenSentPackets:        trafficGenSentPackets,
 				TrafficGenOutputErrorPackets: trafficGenOutputErrPackets,
 				TrafficGenInputErrorPackets:  trafficGenInputErrPackets,
+				VMUnderTestReceivedPackets:   vmUnderTestReceivedPackets,
 			},
-			expectedRunErr: fmt.Errorf(trafficGenIOPacketsErrMsg, trafficGenOutputErrPackets, trafficGenInputErrPackets),
+			expectedRunErr: fmt.Errorf("%s, %s",
+				fmt.Errorf(trafficGenIOPacketsErrMsg, trafficGenOutputErrPackets, trafficGenInputErrPackets),
+				fmt.Errorf(packetsDontMatchErrMsg, trafficGenSentPackets, vmUnderTestReceivedPackets)),
 		},
 		{
 			description: "fail because found err packets on VM-under-test side",
@@ -270,6 +273,7 @@ func TestRunFailure(t *testing.T) {
 				TrafficGenSentPackets:       trafficGenSentPackets,
 				VMUnderTestTxDroppedPackets: vmUnderTestTxDroppedPackets,
 				VMUnderTestRxDroppedPackets: vmUnderTestRxDroppedPackets,
+				VMUnderTestReceivedPackets:  trafficGenSentPackets,
 			},
 			expectedRunErr: fmt.Errorf(vmUnderTestDroppedPacketsErrMsg, vmUnderTestRxDroppedPackets, vmUnderTestTxDroppedPackets),
 		},
@@ -283,27 +287,7 @@ func TestRunFailure(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
-		t.Run(testCase.description, func(t *testing.T) {
-			testClient := newClientStub()
-			testConfig := newTestConfig()
-
-			testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{
-				results:    testCase.results,
-				executeErr: testCase.executorFailure,
-			})
-
-			assert.NoError(t, testCheckup.Setup(context.Background()))
-
-			assert.ErrorContains(t, testCheckup.Run(context.Background()), testCase.expectedRunErr.Error())
-
-			assert.NoError(t, testCheckup.Teardown(context.Background()))
-			assert.Empty(t, testClient.createdVMIs)
-
-			actualResults := testCheckup.Results()
-			assert.Equal(t, testCase.results, actualResults)
-		})
-	}
+	checkRunFailureCases(t, testCases)
 }
 
 func assertPodAntiAffinityExists(t *testing.T, testClient *clientStub, vmiName, ownerUID string) {
@@ -371,6 +355,31 @@ func assertNodeAffinityDoesNotExist(t *testing.T, testClient *clientStub, vmiNam
 	assert.NoError(t, err)
 
 	assert.Nil(t, actualVmi.Spec.Affinity.NodeAffinity)
+}
+
+func checkRunFailureCases(t *testing.T, testCases []runFailTestCase) {
+	for idx := range testCases {
+		testCase := testCases[idx]
+		t.Run(testCase.description, func(t *testing.T) {
+			testClient := newClientStub()
+			testConfig := newTestConfig()
+
+			testCheckup := checkup.New(testClient, testNamespace, testConfig, executorStub{
+				results:    testCase.results,
+				executeErr: testCase.executorFailure,
+			})
+
+			assert.NoError(t, testCheckup.Setup(context.Background()))
+
+			assert.Exactly(t, testCheckup.Run(context.Background()), testCase.expectedRunErr)
+
+			assert.NoError(t, testCheckup.Teardown(context.Background()))
+			assert.Empty(t, testClient.createdVMIs)
+
+			actualResults := testCheckup.Results()
+			assert.Equal(t, testCase.results, actualResults)
+		})
+	}
 }
 
 type clientStub struct {
