@@ -43,7 +43,6 @@ const (
 )
 
 const (
-	TrafficGenDefaultContainerDiskImage  = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main"
 	TrafficGenDefaultPacketsPerSecond    = "8m"
 	VMUnderTestDefaultContainerDiskImage = "quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main"
 	TestDurationDefault                  = 5 * time.Minute
@@ -70,6 +69,7 @@ const (
 
 var (
 	ErrInvalidNetworkAttachmentDefinitionName = errors.New("invalid Network-Attachment-Definition Name")
+	ErrInvalidTrafficGenContainerDiskImage    = errors.New("invalid Traffic Generator container disk image")
 	ErrIllegalTargetNodeNamesCombination      = errors.New("illegal Traffic Generator and VM under test target node names combination")
 	ErrInvalidTrafficGenPacketsPerSecond      = errors.New("invalid Traffic Generator Packets Per Second")
 	ErrInvalidTestDuration                    = errors.New("invalid Test Duration")
@@ -120,7 +120,7 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		PodName:                         baseConfig.PodName,
 		PodUID:                          baseConfig.PodUID,
 		NetworkAttachmentDefinitionName: baseConfig.Params[NetworkAttachmentDefinitionNameParamName],
-		TrafficGenContainerDiskImage:    TrafficGenDefaultContainerDiskImage,
+		TrafficGenContainerDiskImage:    baseConfig.Params[TrafficGenContainerDiskImageParamName],
 		TrafficGenTargetNodeName:        baseConfig.Params[TrafficGenTargetNodeNameParamName],
 		TrafficGenPacketsPerSecond:      TrafficGenDefaultPacketsPerSecond,
 		TrafficGenEastMacAddress:        trafficGenEastMacAddress,
@@ -138,6 +138,10 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		return Config{}, ErrInvalidNetworkAttachmentDefinitionName
 	}
 
+	if newConfig.TrafficGenContainerDiskImage == "" {
+		return Config{}, ErrInvalidTrafficGenContainerDiskImage
+	}
+
 	if newConfig.TrafficGenTargetNodeName == "" && newConfig.VMUnderTestTargetNodeName != "" ||
 		newConfig.TrafficGenTargetNodeName != "" && newConfig.VMUnderTestTargetNodeName == "" {
 		return Config{}, ErrIllegalTargetNodeNamesCombination
@@ -148,10 +152,6 @@ func New(baseConfig kconfig.Config) (Config, error) {
 
 func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, error) {
 	var err error
-
-	if rawVal := baseConfig.Params[TrafficGenContainerDiskImageParamName]; rawVal != "" {
-		newConfig.TrafficGenContainerDiskImage = rawVal
-	}
 
 	if rawVal := baseConfig.Params[TrafficGenPacketsPerSecondParamName]; rawVal != "" {
 		newConfig.TrafficGenPacketsPerSecond, err = parseTrafficGenPacketsPerSecond(rawVal)

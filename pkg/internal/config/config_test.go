@@ -51,6 +51,7 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		PodUID:  testPodUID,
 		Params: map[string]string{
 			config.NetworkAttachmentDefinitionNameParamName: networkAttachmentDefinitionName,
+			config.TrafficGenContainerDiskImageParamName:    testTrafficGenContainerDiskImage,
 		},
 	}
 
@@ -66,7 +67,7 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		PodName:                         testPodName,
 		PodUID:                          testPodUID,
 		NetworkAttachmentDefinitionName: networkAttachmentDefinitionName,
-		TrafficGenContainerDiskImage:    config.TrafficGenDefaultContainerDiskImage,
+		TrafficGenContainerDiskImage:    testTrafficGenContainerDiskImage,
 		TrafficGenPacketsPerSecond:      config.TrafficGenDefaultPacketsPerSecond,
 		TrafficGenEastMacAddress:        actualConfig.TrafficGenEastMacAddress,
 		TrafficGenWestMacAddress:        actualConfig.TrafficGenWestMacAddress,
@@ -161,6 +162,12 @@ func TestNewShouldFailWhen(t *testing.T) {
 			key:            config.NetworkAttachmentDefinitionNameParamName,
 			faultyKeyValue: "",
 			expectedError:  config.ErrInvalidNetworkAttachmentDefinitionName,
+		},
+		{
+			description:    "TrafficGenContainerDiskImage is invalid",
+			key:            config.TrafficGenContainerDiskImageParamName,
+			faultyKeyValue: "",
+			expectedError:  config.ErrInvalidTrafficGenContainerDiskImage,
 		},
 		{
 			description:    "trafficGenTargetNodeName is missing and vmUnderTestTargetNodeName is set",
