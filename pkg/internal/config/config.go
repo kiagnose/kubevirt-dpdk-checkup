@@ -43,12 +43,10 @@ const (
 )
 
 const (
-	TrafficGenDefaultContainerDiskImage  = "quay.io/kiagnose/kubevirt-dpdk-checkup-traffic-gen:main"
-	TrafficGenDefaultPacketsPerSecond    = "8m"
-	VMUnderTestDefaultContainerDiskImage = "quay.io/kiagnose/kubevirt-dpdk-checkup-vm:main"
-	TestDurationDefault                  = 5 * time.Minute
-	PortBandwidthGbpsDefault             = 10
-	VerboseDefault                       = false
+	TrafficGenDefaultPacketsPerSecond = "8m"
+	TestDurationDefault               = 5 * time.Minute
+	PortBandwidthGbpsDefault          = 10
+	VerboseDefault                    = false
 
 	TrafficGenMACAddressPrefixOctet  = 0x50
 	VMUnderTestMACAddressPrefixOctet = 0x60
@@ -70,8 +68,10 @@ const (
 
 var (
 	ErrInvalidNetworkAttachmentDefinitionName = errors.New("invalid Network-Attachment-Definition Name")
+	ErrInvalidTrafficGenContainerDiskImage    = errors.New("invalid Traffic Generator container disk image")
 	ErrIllegalTargetNodeNamesCombination      = errors.New("illegal Traffic Generator and VM under test target node names combination")
 	ErrInvalidTrafficGenPacketsPerSecond      = errors.New("invalid Traffic Generator Packets Per Second")
+	ErrInvalidVMUnderTestContainerDiskImage   = errors.New("invalid VM Under test container disk image")
 	ErrInvalidTestDuration                    = errors.New("invalid Test Duration")
 	ErrInvalidPortBandwidthGbps               = errors.New("invalid Port Bandwidth [Gbps]")
 	ErrInvalidVerbose                         = errors.New("invalid Verbose value [true|false]")
@@ -120,12 +120,12 @@ func New(baseConfig kconfig.Config) (Config, error) {
 		PodName:                         baseConfig.PodName,
 		PodUID:                          baseConfig.PodUID,
 		NetworkAttachmentDefinitionName: baseConfig.Params[NetworkAttachmentDefinitionNameParamName],
-		TrafficGenContainerDiskImage:    TrafficGenDefaultContainerDiskImage,
+		TrafficGenContainerDiskImage:    baseConfig.Params[TrafficGenContainerDiskImageParamName],
 		TrafficGenTargetNodeName:        baseConfig.Params[TrafficGenTargetNodeNameParamName],
 		TrafficGenPacketsPerSecond:      TrafficGenDefaultPacketsPerSecond,
 		TrafficGenEastMacAddress:        trafficGenEastMacAddress,
 		TrafficGenWestMacAddress:        trafficGenWestMacAddress,
-		VMUnderTestContainerDiskImage:   VMUnderTestDefaultContainerDiskImage,
+		VMUnderTestContainerDiskImage:   baseConfig.Params[VMUnderTestContainerDiskImageParamName],
 		VMUnderTestTargetNodeName:       baseConfig.Params[VMUnderTestTargetNodeNameParamName],
 		VMUnderTestEastMacAddress:       vmUnderTestEastMACAddress,
 		VMUnderTestWestMacAddress:       vmUnderTestWestMacAddress,
@@ -136,6 +136,14 @@ func New(baseConfig kconfig.Config) (Config, error) {
 
 	if newConfig.NetworkAttachmentDefinitionName == "" {
 		return Config{}, ErrInvalidNetworkAttachmentDefinitionName
+	}
+
+	if newConfig.TrafficGenContainerDiskImage == "" {
+		return Config{}, ErrInvalidTrafficGenContainerDiskImage
+	}
+
+	if newConfig.VMUnderTestContainerDiskImage == "" {
+		return Config{}, ErrInvalidVMUnderTestContainerDiskImage
 	}
 
 	if newConfig.TrafficGenTargetNodeName == "" && newConfig.VMUnderTestTargetNodeName != "" ||
@@ -149,19 +157,11 @@ func New(baseConfig kconfig.Config) (Config, error) {
 func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, error) {
 	var err error
 
-	if rawVal := baseConfig.Params[TrafficGenContainerDiskImageParamName]; rawVal != "" {
-		newConfig.TrafficGenContainerDiskImage = rawVal
-	}
-
 	if rawVal := baseConfig.Params[TrafficGenPacketsPerSecondParamName]; rawVal != "" {
 		newConfig.TrafficGenPacketsPerSecond, err = parseTrafficGenPacketsPerSecond(rawVal)
 		if err != nil {
 			return Config{}, ErrInvalidTrafficGenPacketsPerSecond
 		}
-	}
-
-	if rawVal := baseConfig.Params[VMUnderTestContainerDiskImageParamName]; rawVal != "" {
-		newConfig.VMUnderTestContainerDiskImage = rawVal
 	}
 
 	if rawVal := baseConfig.Params[TestDurationParamName]; rawVal != "" {

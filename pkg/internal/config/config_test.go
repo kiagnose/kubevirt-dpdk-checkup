@@ -51,6 +51,8 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		PodUID:  testPodUID,
 		Params: map[string]string{
 			config.NetworkAttachmentDefinitionNameParamName: networkAttachmentDefinitionName,
+			config.TrafficGenContainerDiskImageParamName:    testTrafficGenContainerDiskImage,
+			config.VMUnderTestContainerDiskImageParamName:   testVMUnderTestContainerDiskImage,
 		},
 	}
 
@@ -66,11 +68,11 @@ func TestNewShouldApplyDefaultsWhenOptionalFieldsAreMissing(t *testing.T) {
 		PodName:                         testPodName,
 		PodUID:                          testPodUID,
 		NetworkAttachmentDefinitionName: networkAttachmentDefinitionName,
-		TrafficGenContainerDiskImage:    config.TrafficGenDefaultContainerDiskImage,
+		TrafficGenContainerDiskImage:    testTrafficGenContainerDiskImage,
 		TrafficGenPacketsPerSecond:      config.TrafficGenDefaultPacketsPerSecond,
 		TrafficGenEastMacAddress:        actualConfig.TrafficGenEastMacAddress,
 		TrafficGenWestMacAddress:        actualConfig.TrafficGenWestMacAddress,
-		VMUnderTestContainerDiskImage:   config.VMUnderTestDefaultContainerDiskImage,
+		VMUnderTestContainerDiskImage:   testVMUnderTestContainerDiskImage,
 		VMUnderTestEastMacAddress:       actualConfig.VMUnderTestEastMacAddress,
 		VMUnderTestWestMacAddress:       actualConfig.VMUnderTestWestMacAddress,
 		TestDuration:                    config.TestDurationDefault,
@@ -161,6 +163,18 @@ func TestNewShouldFailWhen(t *testing.T) {
 			key:            config.NetworkAttachmentDefinitionNameParamName,
 			faultyKeyValue: "",
 			expectedError:  config.ErrInvalidNetworkAttachmentDefinitionName,
+		},
+		{
+			description:    "TrafficGenContainerDiskImage is invalid",
+			key:            config.TrafficGenContainerDiskImageParamName,
+			faultyKeyValue: "",
+			expectedError:  config.ErrInvalidTrafficGenContainerDiskImage,
+		},
+		{
+			description:    "VMUnderTestContainerDiskImage is invalid",
+			key:            config.VMUnderTestContainerDiskImageParamName,
+			faultyKeyValue: "",
+			expectedError:  config.ErrInvalidVMUnderTestContainerDiskImage,
 		},
 		{
 			description:    "trafficGenTargetNodeName is missing and vmUnderTestTargetNodeName is set",
