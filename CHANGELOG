@@ -1,3 +1,11 @@
+## [0.4.0] - 2023-05-01
+### Breaking Changes
+ - trafficGenContainerDiskImage and vmUnderTestContainerDiskImage are now mandatory fields
+### New Features
+ - Checkup base image was upgraded to `registry.access.redhat.com/ubi9/ubi-minimal:9.3-1612`
+### Bug Fixes
+ - A race condition when trying to login was fixed
+
 ## [0.3.0] - 2023-01-11
 ### New Features
  - VM under test and Traffic generator are now using the isolateEmulatorThread option
