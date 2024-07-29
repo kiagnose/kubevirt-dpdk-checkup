@@ -46,7 +46,12 @@ enable_guest_exec() {
   sed -i '/^BLACKLIST_RPC=/ { s/,\+/,/g; s/^,\|,$//g }' /etc/sysconfig/qemu-ga
 }
 
+disable_bracketed_paste() {
+  echo "set enable-bracketed-paste off" >> /root/.inputrc
+}
+
 disable_services
 setup_hugepages
 set_unsafe_no_io_mmu_mode
 enable_guest_exec
+disable_bracketed_paste
