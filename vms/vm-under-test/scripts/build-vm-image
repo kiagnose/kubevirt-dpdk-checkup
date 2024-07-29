@@ -19,7 +19,7 @@
 
 export LIBGUESTFS_BACKEND=direct
 
-virt-builder centosstream-8 \
+virt-builder centosstream-9 \
   --format qcow2 \
   --root-password password:redhat \
   --install cloud-init,dpdk,dpdk-tools,driverctl,tuned-profiles-cpu-partitioning \
