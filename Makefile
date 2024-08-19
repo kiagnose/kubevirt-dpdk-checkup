@@ -17,7 +17,7 @@ GO_IMAGE_TAG := 1.22.5
 BIN_DIR = $(CURDIR)/_output/bin
 CRI_BIN ?= $(shell hack/detect_cri.sh)
 LINTER_IMAGE_NAME := docker.io/golangci/golangci-lint
-LINTER_IMAGE_TAG := v1.50.1
+LINTER_IMAGE_TAG := v1.60.1
 GO_MOD_VERSION=$(shell hack/go-mod-version.sh)
 KUBECONFIG ?= $(HOME)/.kube/config
 
