@@ -34,7 +34,7 @@ build:
 	           --volume $(CURDIR)/_go-cache:/root/.cache/go-build:Z \
 	           --workdir $(CURDIR) \
 	           -e GOOS=linux \
-	           -e GOARCH=amd64 \
+	           -e GOARCH=$(shell go env GOARCH) \
 	           $(GO_IMAGE_NAME):$(GO_IMAGE_TAG) go build -v -o $(BIN_DIR)/$(CHECKUP_IMAGE_NAME) ./cmd/
 	$(CRI_BIN) build --build-arg BASE_IMAGE_TAG=$(CHECKUP_BASE_IMAGE_TAG) . -t $(REG)/$(ORG)/$(CHECKUP_IMAGE_NAME):$(CHECKUP_IMAGE_TAG)
 .PHONY: build
